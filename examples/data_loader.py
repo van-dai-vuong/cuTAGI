@@ -350,7 +350,7 @@ class TimeSeriesDataloader:
 
         # Load data
         x = self.load_data_from_csv(self.x_file)
-        # x = x[:,self.ts_idx:self.ts_idx+1]   # choose time series column
+        x = x[:,self.ts_idx:self.ts_idx+1]   # choose time series column
         date_time = self.load_data_from_csv(self.date_time_file)
 
         # # Add time covariates

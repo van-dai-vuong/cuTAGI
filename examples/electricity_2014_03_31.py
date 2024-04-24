@@ -26,7 +26,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 3
+    num_features = 1
     input_seq_len = 24
     output_seq_len = 1
     seq_stride = 1
@@ -49,8 +49,6 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
         train_dtl = TimeSeriesDataloader(
             x_file="data/electricity/electricity_2014_03_31_train.csv",
             date_time_file="data/electricity/electricity_2014_03_31_train_datetime.csv",
-            # x_file="data/electricity/electricity_last_7_days_train.csv",
-            # date_time_file="data/electricity/electricity_last_7_days_train_datetime.csv",
             output_col=output_col,
             input_seq_len=input_seq_len,
             output_seq_len=output_seq_len,
@@ -61,8 +59,6 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
         val_dtl = TimeSeriesDataloader(
             x_file="data/electricity/electricity_2014_03_31_val.csv",
             date_time_file="data/electricity/electricity_2014_03_31_val_datetime.csv",
-            # x_file="data/electricity/electricity_last_7_days_val.csv",
-            # date_time_file="data/electricity/electricity_last_7_days_val_datetime.csv",
             output_col=output_col,
             input_seq_len=input_seq_len,
             output_seq_len=output_seq_len,
@@ -75,8 +71,6 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
         test_dtl = TimeSeriesDataloader(
             x_file="data/electricity/electricity_2014_03_31_test.csv",
             date_time_file="data/electricity/electricity_2014_03_31_test_datetime.csv",
-            # x_file="data/electricity/electricity_last_7_days_val.csv",
-            # date_time_file="data/electricity/electricity_last_7_days_val_datetime.csv",
             output_col=output_col,
             input_seq_len=input_seq_len,
             output_seq_len=output_seq_len,
@@ -97,8 +91,8 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             LSTM(40, 40, input_seq_len),
             Linear(40 * input_seq_len, 1),
         )
-        # net.to_device("cuda")
-        net.set_threads(8)
+        net.to_device("cuda")
+        # net.set_threads(8)
         out_updater = OutputUpdater(net.device)
 
         # -------------------------------------------------------------------------#
@@ -243,8 +237,9 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
         ytestPd[:,ts]  = mu_preds.flatten()
         SytestPd[:,ts] = std_preds.flatten()**2
 
-    np.savetxt("electricity_2014_03_31_ytestPd_pyTAGI.csv", ytestPd, delimiter=",")
-    np.savetxt("electricity_2014_03_31_SytestPd_pyTAGI.csv", SytestPd, delimiter=",")
+    # np.savetxt("electricity_2014_03_31_ytestPd_pyTAGI.csv", ytestPd, delimiter=",")
+    # np.savetxt("electricity_2014_03_31_SytestPd_pyTAGI.csv", SytestPd, delimiter=",")
+
         # # Compute log-likelihood
         # mse = metric.mse(mu_preds, y_test)
         # log_lik = metric.log_likelihood(
