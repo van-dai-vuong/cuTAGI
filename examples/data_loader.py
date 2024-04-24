@@ -318,7 +318,6 @@ class TimeSeriesDataloader:
         """Load data from csv file"""
 
         data = pd.read_csv(data_file, skiprows=1, delimiter=",", header=None)
-        # data = pd.read_csv(data_file, skiprows=0, delimiter=",", header=None)
 
         return data.values
 
