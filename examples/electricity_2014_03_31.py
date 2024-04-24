@@ -30,7 +30,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
     input_seq_len = 24
     output_seq_len = 1
     seq_stride = 1
-    rolling_window = 3  # for rolling window predictions in the test set
+    rolling_window = 24  # for rolling window predictions in the test set
     early_stopping_criteria = 'log_lik' # 'log_lik' or 'mse'
 
     # Loop over each time series in the benchmark
