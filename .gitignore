@@ -1,7 +1,6 @@
 *build
 *.vscode
 *.json
-*.csv
 debug_data/
 saved_param/
 __pycache__/
