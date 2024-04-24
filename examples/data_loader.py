@@ -299,6 +299,7 @@ class TimeSeriesDataloader:
         stride: int,
         x_mean: Optional[np.ndarray] = None,
         x_std: Optional[np.ndarray] = None,
+        ts_idx: Optional[int] = 0,
     ) -> None:
         self.x_file = x_file
         self.date_time_file = date_time_file
@@ -309,6 +310,7 @@ class TimeSeriesDataloader:
         self.stride = stride
         self.x_mean = x_mean
         self.x_std = x_std
+        self.ts_idx = ts_idx # add time series index when data having multiple ts
 
         self.dataset = self.process_data()
 
@@ -316,6 +318,7 @@ class TimeSeriesDataloader:
         """Load data from csv file"""
 
         data = pd.read_csv(data_file, skiprows=1, delimiter=",", header=None)
+        # data = pd.read_csv(data_file, skiprows=0, delimiter=",", header=None)
 
         return data.values
 
@@ -348,7 +351,16 @@ class TimeSeriesDataloader:
 
         # Load data
         x = self.load_data_from_csv(self.x_file)
+        x = x[:,self.ts_idx:self.ts_idx+1]   # choose time series column
         date_time = self.load_data_from_csv(self.date_time_file)
+
+        # Add time covariates
+        if self.num_features > 1:
+            date_time = np.array(date_time, dtype='datetime64')
+            hour_of_day = date_time.astype('datetime64[h]').astype(int) % 24
+            day_of_week = date_time.astype('datetime64[D]').astype(int) % 7
+            time_cov = np.concatenate((hour_of_day,day_of_week),axis=1)
+            x = np.concatenate((x,time_cov),axis=1)
 
         # Normalizer
         if self.x_mean is None and self.x_std is None:
