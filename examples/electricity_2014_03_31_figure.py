@@ -35,10 +35,8 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
     patience = 10
 
     # Loop over each time series in the benchmark
-    nb_ts = 963
-    ts_idx = np.arange(0, nb_ts)   # time series no.
-    ytestPd  = np.full((168, nb_ts), np.nan)
-    SytestPd = np.full((168, nb_ts), np.nan)
+    nb_ts = 15
+    ts_idx = np.arange(nb_ts-1, nb_ts)   # time series no.
     for ts in ts_idx:
         # options for early stopping
         log_lik_optim = -1E100
@@ -47,8 +45,8 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
         net_optim = []  # to save optimal net at the optimal epoch
 
         train_dtl = TimeSeriesDataloader(
-            x_file="data/traffic/traffic_2008_01_14_train.csv",
-            date_time_file="data/traffic/traffic_2008_01_14_train_datetime.csv",
+            x_file="data/electricity/electricity_2014_03_31_train.csv",
+            date_time_file="data/electricity/electricity_2014_03_31_train_datetime.csv",
             output_col=output_col,
             input_seq_len=input_seq_len,
             output_seq_len=output_seq_len,
@@ -57,8 +55,8 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             ts_idx=ts,
         )
         val_dtl = TimeSeriesDataloader(
-            x_file="data/traffic/traffic_2008_01_14_val.csv",
-            date_time_file="data/traffic/traffic_2008_01_14_val_datetime.csv",
+            x_file="data/electricity/electricity_2014_03_31_val.csv",
+            date_time_file="data/electricity/electricity_2014_03_31_val_datetime.csv",
             output_col=output_col,
             input_seq_len=input_seq_len,
             output_seq_len=output_seq_len,
@@ -69,8 +67,8 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             ts_idx=ts,
         )
         test_dtl = TimeSeriesDataloader(
-            x_file="data/traffic/traffic_2008_01_14_test.csv",
-            date_time_file="data/traffic/traffic_2008_01_14_test_datetime.csv",
+            x_file="data/electricity/electricity_2014_03_31_test.csv",
+            date_time_file="data/electricity/electricity_2014_03_31_test_datetime.csv",
             output_col=output_col,
             input_seq_len=input_seq_len,
             output_seq_len=output_seq_len,
@@ -233,35 +231,29 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             y_test, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
         )
 
-        # save test predicitons for each time series
-        ytestPd[:,ts]  = mu_preds.flatten()
-        SytestPd[:,ts] = std_preds.flatten()**2
-
-    np.savetxt("traffic_2008_01_14_ytestPd_pyTAGI.csv", ytestPd, delimiter=",")
-    np.savetxt("traffic_2008_01_14_SytestPd_pyTAGI.csv", SytestPd, delimiter=",")
-        # # Compute log-likelihood
-        # mse = metric.mse(mu_preds, y_test)
-        # log_lik = metric.log_likelihood(
-        #     prediction=mu_preds, observation=y_test, std=std_preds
-        # )
+        # Compute log-likelihood
+        mse = metric.mse(mu_preds, y_test)
+        log_lik = metric.log_likelihood(
+            prediction=mu_preds, observation=y_test, std=std_preds
+        )
 
         # Visualization
-        # viz.plot_predictions(
-        #     x_test=test_dtl.dataset["date_time"][: len(y_test)],
-        #     y_test=y_test,
-        #     y_pred=mu_preds,
-        #     sy_pred=std_preds,
-        #     std_factor=1,
-        #     label="time_series_forecasting",
-        #     title=r"\textbf{Time Series Forecasting}",
-        #     time_series=True,
-        # )
+        viz.plot_predictions(
+            x_test=test_dtl.dataset["date_time"][: len(y_test)],
+            y_test=y_test,
+            y_pred=mu_preds,
+            sy_pred=std_preds,
+            std_factor=1,
+            label="time_series_forecasting",
+            title=f"Ts #{ts+1}. Electricity_2014_03_31",
+            time_series=True,
+        )
 
-        # print("#############")
-        # print(f"Val MSE           : {mse_optim: 0.2f}")
-        # print(f"Val Log-likelihood: {log_lik_optim: 0.2f}")
-        # print(f"Test MSE           : {mse: 0.2f}")
-        # print(f"Test Log-likelihood: {log_lik: 0.2f}")
+        print("#############")
+        print(f"Val MSE           : {mse_optim: 0.2f}")
+        print(f"Val Log-likelihood: {log_lik_optim: 0.2f}")
+        print(f"Test MSE           : {mse: 0.2f}")
+        print(f"Test Log-likelihood: {log_lik: 0.2f}")
 
 
 class PredictionViz:

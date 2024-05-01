@@ -353,13 +353,13 @@ class TimeSeriesDataloader:
         x = x[:,self.ts_idx:self.ts_idx+1]   # choose time series column
         date_time = self.load_data_from_csv(self.date_time_file)
 
-        # # Add time covariates
-        # if self.num_features > 1:
-        #     date_time = np.array(date_time, dtype='datetime64')
-        #     hour_of_day = date_time.astype('datetime64[h]').astype(int) % 24
-        #     day_of_week = date_time.astype('datetime64[D]').astype(int) % 7
-        #     time_cov = np.concatenate((hour_of_day,day_of_week),axis=1)
-        #     x = np.concatenate((x,time_cov),axis=1)
+        # Add time covariates
+        if self.num_features > 1:
+            date_time = np.array(date_time, dtype='datetime64')
+            hour_of_day = date_time.astype('datetime64[h]').astype(int) % 24
+            day_of_week = date_time.astype('datetime64[D]').astype(int) % 7
+            time_cov = np.concatenate((hour_of_day,day_of_week),axis=1)
+            x = np.concatenate((x,time_cov),axis=1)
 
         # Normalizer
         if self.x_mean is None and self.x_std is None:

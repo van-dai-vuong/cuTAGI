@@ -32,6 +32,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
     seq_stride = 1
     rolling_window = 24  # for rolling window predictions in the test set
     early_stopping_criteria = 'log_lik' # 'log_lik' or 'mse'
+    patience = 10
 
     # Loop over each time series in the benchmark
     nb_ts = 370
@@ -43,7 +44,6 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
         log_lik_optim = -1E100
         mse_optim = 1E100
         epoch_optim = 1
-        patience = 5
         net_optim = []  # to save optimal net at the optimal epoch
 
         train_dtl = TimeSeriesDataloader(
@@ -104,7 +104,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
 
             # Decaying observation's variance
             sigma_v = exponential_scheduler(
-                curr_v=sigma_v, min_v=0.5, decaying_factor=0.99, curr_iter=epoch
+                curr_v=sigma_v, min_v=0.3, decaying_factor=0.99, curr_iter=epoch
             )
             var_y = np.full((batch_size * len(output_col),), sigma_v**2, dtype=np.float32)
 
