@@ -60,11 +60,11 @@ class SSM:
         if mu_obs:
             #
             cov_zy =  Sz_prior @ self.F.T
-            var_y = self.F @ Sz_prior @ self.F.T + var_obs
+            var_y = Sy_pred + var_obs
             # delta for mean z and var Sz
             cov_= cov_zy/var_y
             delta_mean =  cov_ * (mu_obs - y_pred)
-            delta_var  = - np.matmul(cov_, cov_zy.T)
+            delta_var  = - cov_ @ cov_zy.T
             # update mean for mean z and var Sz
             z_posterior = z_prior + delta_mean
             Sz_posterior = Sz_prior + delta_var
@@ -101,13 +101,14 @@ class SSM:
         A = self.A
         A = np.concatenate((A,np.zeros((nb_hs-1,1))),axis=1)
         A = np.concatenate((A,np.zeros((1,nb_hs))),axis=0)
+        A[-1,-1] = 1E-12
 
         for i in range(nb_obs-2,0,-1):
             # J = self.cov_posteriors[:,i].reshape(nb_hs,nb_hs) @ A.T \
             #     @ inv(self.cov_posteriors[:,i+1].reshape(nb_hs,nb_hs) \
-            #           + 1E-8* np.eye(nb_hs))
+            #           + 0* np.eye(nb_hs))
             J = self.cov_posteriors[:,i].reshape(nb_hs,nb_hs) @ A.T \
-                @ pinv(self.cov_posteriors[:,i+1].reshape(nb_hs,nb_hs),rcond=1e-12)
+                @ pinv(self.cov_priors[:,i+1].reshape(nb_hs,nb_hs),rcond=1e-12)
             mu_smoothed[:,i] = self.mu_posteriors[:,i] \
                 + J @ (mu_smoothed[:,i+1] - self.mu_priors[:,i+1])
             cov_ = self.cov_posteriors[:,i].reshape(nb_hs,nb_hs) + \
@@ -124,29 +125,27 @@ class SSM:
         self.mu_posteriors = np.zeros((nb_hs,1))
         self.cov_posteriors = np.zeros((nb_hs**2,1))
         if hasattr(self,'mu_smoothed'):
-            self.zB  = self.mu_smoothed[:-1,1].reshape(-1,1)
-            SzB_ = self.cov_smoothed[:,1].reshape(nb_hs,nb_hs)
+            self.zB  = self.mu_smoothed[:-1,3].reshape(-1,1)
+            SzB_ = self.cov_smoothed[:,3].reshape(nb_hs,nb_hs)
+            SzB_ = np.diag(np.diag(SzB_))
             self.SzB = SzB_[:-1,:-1]
 
 def process_input_ssm(
-    x: np.ndarray,
+    mu_x: np.ndarray,
     mu_preds_lstm: list,
+    var_preds_lstm: list,
     input_seq_len: int,
     num_features: int,
     ):
     mu_preds_lstm = np.array(mu_preds_lstm)
+    var_preds_lstm = np.array(var_preds_lstm)
+    var_x = np.zeros(mu_x.shape)
 
     if len(mu_preds_lstm)>=input_seq_len:
-        x[-input_seq_len*num_features::num_features] =  mu_preds_lstm[-input_seq_len:]
+        mu_x[-input_seq_len*num_features::num_features]  =  mu_preds_lstm[-input_seq_len:]
+        var_x[-input_seq_len*num_features::num_features] =  var_preds_lstm[-input_seq_len:]
+    return mu_x, var_x
 
-    # mu_preds_lstm = np.array(mu_preds_lstm)
-    # x_ = np.zeros(input_seq_len)
-    # nb_replace = min(len(mu_preds_lstm),input_seq_len)
-    # if nb_replace>=input_seq_len:
-    #     x_[-nb_replace:] =  mu_preds_lstm[-nb_replace:]
-    # x[-input_seq_len*num_features::num_features] = x_
-
-    return x
 
 
 

@@ -28,7 +28,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 1
+    num_features = 3
     input_seq_len = 12
     output_seq_len = 1
     seq_stride = 1
@@ -60,7 +60,6 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
     # Network
     net = Sequential(
         LSTM(1, 50, input_seq_len),
-        # LSTM(50, 50, input_seq_len),
         Linear(50 * input_seq_len, 1),
         # LSTM(1, 5, input_seq_len),
         # LSTM(5, 5, input_seq_len),
@@ -73,8 +72,8 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
     # State-space models: for baseline hidden states
     ssm = SSM(
         baseline = 'trend', # 'level', 'trend', 'acceleration', 'ETS'
-        zB  = np.array([-1E0, 3E-3]).reshape(-1, 1),   # initial mu for baseline hidden states
-        SzB = np.diag([1E-6, 1E-7])     # var
+        zB  = np.array([-0.9, 1E-3]).reshape(-1, 1),   # initial mu for baseline hidden states
+        SzB = np.diag([1E-3, 1E-3])     # var
     )
 
     # -------------------------------------------------------------------------#
@@ -91,23 +90,35 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
         )
         var_y = np.full((batch_size * len(output_col),), sigma_v**2, dtype=np.float32)
 
+        # Initialize list to save
         ssm.init_ssm_hs()
         mu_preds_lstm = []
+        var_preds_lstm = []
         mu_preds_unnorm = []
         obs_unnorm = []
+        #
 
         for x, y in batch_iter:
-            # x = x-np.mean(x)
-            x = process_input_ssm(
-                x = x, mu_preds_lstm = mu_preds_lstm,
+            mu_x, var_x = process_input_ssm(
+                mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
                 input_seq_len = input_seq_len,num_features = num_features,
                 )
             # Feed forward
-            m_pred, v_pred = net(x)
+            m_pred, v_pred = net(mu_x, var_x)
+            m_pred = np.array([m_pred[0]])
+            v_pred = np.array([v_pred[0]])
+
+            # out_updater.update(
+            #     output_states=net.output_z_buffer,
+            #     mu_obs=y,
+            #     var_obs=var_y,
+            #     delta_states=net.input_delta_z_buffer,
+            # )
 
             y_pred,_,delta_mu_net, delta_var_net  = ssm.filter(mu_lstm=m_pred, var_lstm=v_pred, var_obs=var_y, mu_obs=y)
             net.input_delta_z_buffer.delta_mu = delta_mu_net
             net.input_delta_z_buffer.delta_var = delta_var_net
+
 
             # Feed backward for LSTM network
             net.backward()
@@ -123,6 +134,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
             mse = metric.mse(pred, obs)
             mses.append(mse)
             mu_preds_lstm.extend(m_pred)
+            var_preds_lstm.extend(v_pred)
             obs_unnorm.extend(y)
             mu_preds_unnorm.extend(y_pred)
 
@@ -135,6 +147,12 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
         plt.plot(ssm.mu_smoothed[0,1:],color='k')
         plt.plot(mu_preds_unnorm,color='b')
         plt.plot(ssm.mu_smoothed[2,1:],color='g')
+
+        # plt.plot(obs_unnorm, color='r')
+        # plt.plot(ssm.mu_smoothed[0,1:],color='k')
+        # plt.plot(ssm.mu_priors[0,1:],color='b')
+        # plt.plot(ssm.mu_posteriors[0,1:],color='g')
+        # plt.show()
 
         filename = f'data/fig/hybrid_epoch_#{epoch}.png'
         plt.savefig(filename)
@@ -152,25 +170,30 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
     # test_batch_iter = test_dtl.create_data_loader(batch_size, shuffle=False)
     test_batch_iter = test_dtl.create_data_loader(batch_size, shuffle=False)
 
+    # Initialize list to save
     mu_preds = []
     var_preds = []
     y_test = []
     obs_test_unnorm = []
+    #
 
     for x, y in test_batch_iter:
-        x = process_input_ssm(
-            x = x, mu_preds_lstm = mu_preds_lstm,
+        mu_x, var_x = process_input_ssm(
+            mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
             input_seq_len = input_seq_len,num_features = num_features,
         )
-        # x = x-np.mean(x)
         # Predicion
-        m_pred, v_pred = net(x)
+        m_pred, v_pred = net(mu_x, var_x)
+        m_pred = np.array([m_pred[0]])
+        v_pred = np.array([v_pred[0]])
+
         y_pred, Sy_red,_,_  = ssm.filter(mu_lstm=m_pred, var_lstm=v_pred)
 
         mu_preds.extend(y_pred)
         var_preds.extend(Sy_red + sigma_v**2)
         y_test.extend(y)
         mu_preds_lstm.extend(m_pred)
+        var_preds_lstm.extend(v_pred)
 
     mu_preds = np.array(mu_preds)
     std_preds = np.array(var_preds) ** 0.5
