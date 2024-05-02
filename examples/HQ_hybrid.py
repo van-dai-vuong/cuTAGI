@@ -28,14 +28,14 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 3
-    input_seq_len = 12
+    num_features = 4
+    input_seq_len = 26
     output_seq_len = 1
     seq_stride = 1
 
     train_dtl = TimeSeriesDataloader(
-        x_file="data/toy_time_series_trend/x_train_sin_trend_matlab.csv",
-        date_time_file="data/toy_time_series_trend/x_train_sin_trend_matlab_datetime.csv",
+        x_file="data/HQ/LGA007PIAP-E010_Y_train.csv",
+        date_time_file="data/HQ/LGA007PIAP-E010_Y_train_datetime.csv",
         output_col=output_col,
         input_seq_len=input_seq_len,
         output_seq_len=output_seq_len,
@@ -43,8 +43,8 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
         stride=seq_stride,
     )
     test_dtl = TimeSeriesDataloader(
-        x_file="data/toy_time_series_trend/x_val_sin_trend_matlab.csv",
-        date_time_file="data/toy_time_series_trend/x_val_sin_trend_matlab_datetime.csv",
+        x_file="data/HQ/LGA007PIAP-E010_Y_val.csv",
+        date_time_file="data/HQ/LGA007PIAP-E010_Y_val_datetime.csv",
         output_col=output_col,
         input_seq_len=input_seq_len,
         output_seq_len=output_seq_len,

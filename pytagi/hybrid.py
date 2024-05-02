@@ -101,12 +101,8 @@ class SSM:
         A = self.A
         A = np.concatenate((A,np.zeros((nb_hs-1,1))),axis=1)
         A = np.concatenate((A,np.zeros((1,nb_hs))),axis=0)
-        A[-1,-1] = 1E-12
 
         for i in range(nb_obs-2,0,-1):
-            # J = self.cov_posteriors[:,i].reshape(nb_hs,nb_hs) @ A.T \
-            #     @ inv(self.cov_posteriors[:,i+1].reshape(nb_hs,nb_hs) \
-            #           + 0* np.eye(nb_hs))
             J = self.cov_posteriors[:,i].reshape(nb_hs,nb_hs) @ A.T \
                 @ pinv(self.cov_priors[:,i+1].reshape(nb_hs,nb_hs),rcond=1e-12)
             mu_smoothed[:,i] = self.mu_posteriors[:,i] \
@@ -125,8 +121,8 @@ class SSM:
         self.mu_posteriors = np.zeros((nb_hs,1))
         self.cov_posteriors = np.zeros((nb_hs**2,1))
         if hasattr(self,'mu_smoothed'):
-            self.zB  = self.mu_smoothed[:-1,3].reshape(-1,1)
-            SzB_ = self.cov_smoothed[:,3].reshape(nb_hs,nb_hs)
+            self.zB  = self.mu_smoothed[:-1,1].reshape(-1,1)
+            SzB_ = self.cov_smoothed[:,1].reshape(nb_hs,nb_hs)
             SzB_ = np.diag(np.diag(SzB_))
             self.SzB = SzB_[:-1,:-1]
 
