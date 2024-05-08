@@ -26,7 +26,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 1
+    num_features = 3
     input_seq_len = 24
     output_seq_len = 1
     seq_stride = 1
@@ -55,6 +55,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             num_features=num_features,
             stride=seq_stride,
             ts_idx=ts,
+            time_covariates = ['hour_of_day','day_of_week'],
         )
         val_dtl = TimeSeriesDataloader(
             x_file="data/electricity/electricity_2014_03_31_val.csv",
@@ -67,6 +68,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             x_mean=train_dtl.x_mean,
             x_std=train_dtl.x_std,
             ts_idx=ts,
+            time_covariates = ['hour_of_day','day_of_week'],
         )
         test_dtl = TimeSeriesDataloader(
             x_file="data/electricity/electricity_2014_03_31_test.csv",
@@ -79,6 +81,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             x_mean=train_dtl.x_mean,
             x_std=train_dtl.x_std,
             ts_idx=ts,
+            time_covariates = ['hour_of_day','day_of_week'],
         )
 
         # Viz
@@ -91,7 +94,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             LSTM(40, 40, input_seq_len),
             Linear(40 * input_seq_len, 1),
         )
-        net.to_device("cuda")
+        # net.to_device("cuda")
         # net.set_threads(8)
         out_updater = OutputUpdater(net.device)
 

@@ -299,7 +299,8 @@ class TimeSeriesDataloader:
         stride: int,
         x_mean: Optional[np.ndarray] = None,
         x_std: Optional[np.ndarray] = None,
-        # ts_idx: Optional[int] = 0,
+        ts_idx: Optional[int] = None,
+        time_covariates: Optional[str] = None,
     ) -> None:
         self.x_file = x_file
         self.date_time_file = date_time_file
@@ -310,8 +311,8 @@ class TimeSeriesDataloader:
         self.stride = stride
         self.x_mean = x_mean
         self.x_std = x_std
-        # self.ts_idx = ts_idx # add time series index when data having multiple ts
-
+        self.ts_idx = ts_idx # add time series index when data having multiple ts
+        self.time_covariates = time_covariates # for adding time covariates
         self.dataset = self.process_data()
 
     def load_data_from_csv(self, data_file: str) -> pd.DataFrame:
@@ -350,16 +351,30 @@ class TimeSeriesDataloader:
 
         # Load data
         x = self.load_data_from_csv(self.x_file)
-        # x = x[:,self.ts_idx:self.ts_idx+1]   # choose time series column
+        if self.ts_idx is not None:
+            x = x[:,self.ts_idx:self.ts_idx+1]   # choose time series column
         date_time = self.load_data_from_csv(self.date_time_file)
 
         # Add time covariates
-        # if self.num_features > 1:
-        #     date_time = np.array(date_time, dtype='datetime64')
-        #     hour_of_day = date_time.astype('datetime64[h]').astype(int) % 24
-        #     day_of_week = date_time.astype('datetime64[D]').astype(int) % 7
-        #     time_cov = np.concatenate((hour_of_day,day_of_week),axis=1)
-        #     x = np.concatenate((x,time_cov),axis=1)
+        if self.time_covariates is not None:
+            date_time = np.array(date_time, dtype='datetime64')
+            for time_cov in self.time_covariates:
+                if time_cov == 'hour_of_day':
+                    hour_of_day = date_time.astype('datetime64[h]').astype(int) % 24
+                    x = np.concatenate((x,hour_of_day),axis=1)
+                elif time_cov == 'day_of_week':
+                    day_of_week = date_time.astype('datetime64[D]').astype(int) % 7
+                    x = np.concatenate((x,day_of_week),axis=1)
+                elif time_cov == 'week_of_year':
+                    week_of_year = date_time.astype('datetime64[W]').astype(int) % 52 + 1
+                    x = np.concatenate((x,week_of_year),axis=1)
+                elif time_cov == 'month_of_year':
+                    month_of_year = date_time.astype('datetime64[M]').astype(int) % 12 + 1
+                    x = np.concatenate((x,month_of_year),axis=1)
+                elif time_cov == 'quarter_of_year':
+                    month_of_year = date_time.astype('datetime64[M]').astype(int) % 12 + 1
+                    quarter_of_year = (month_of_year - 1) // 3 + 1
+                    x = np.concatenate((x,quarter_of_year),axis=1)
 
         # Normalizer
         if self.x_mean is None and self.x_std is None:

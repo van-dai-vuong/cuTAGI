@@ -55,6 +55,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             num_features=num_features,
             stride=seq_stride,
             ts_idx=ts,
+            time_covariates = ['hour_of_day','day_of_week'],
         )
         val_dtl = TimeSeriesDataloader(
             x_file="data/traffic/traffic_2008_01_14_val.csv",
@@ -67,6 +68,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             x_mean=train_dtl.x_mean,
             x_std=train_dtl.x_std,
             ts_idx=ts,
+            time_covariates = ['hour_of_day','day_of_week'],
         )
         test_dtl = TimeSeriesDataloader(
             x_file="data/traffic/traffic_2008_01_14_test.csv",
@@ -79,6 +81,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             x_mean=train_dtl.x_mean,
             x_std=train_dtl.x_std,
             ts_idx=ts,
+            time_covariates = ['hour_of_day','day_of_week'],
         )
 
         # Viz
