@@ -26,12 +26,13 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 1
+    num_features = 3
     input_seq_len = 24
     output_seq_len = 1
     seq_stride = 1
     rolling_window = 24  # for rolling window predictions in the test set
     early_stopping_criteria = 'log_lik' # 'log_lik' or 'mse'
+    patience = 10
 
     # Loop over each time series in the benchmark
     nb_ts = 370
@@ -43,7 +44,6 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
         log_lik_optim = -1E100
         mse_optim = 1E100
         epoch_optim = 1
-        patience = 5
         net_optim = []  # to save optimal net at the optimal epoch
 
         train_dtl = TimeSeriesDataloader(
@@ -55,6 +55,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             num_features=num_features,
             stride=seq_stride,
             ts_idx=ts,
+            time_covariates = ['hour_of_day','day_of_week'],
         )
         val_dtl = TimeSeriesDataloader(
             x_file="data/electricity/electricity_2014_03_31_val.csv",
@@ -67,6 +68,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             x_mean=train_dtl.x_mean,
             x_std=train_dtl.x_std,
             ts_idx=ts,
+            time_covariates = ['hour_of_day','day_of_week'],
         )
         test_dtl = TimeSeriesDataloader(
             x_file="data/electricity/electricity_2014_03_31_test.csv",
@@ -79,6 +81,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             x_mean=train_dtl.x_mean,
             x_std=train_dtl.x_std,
             ts_idx=ts,
+            time_covariates = ['hour_of_day','day_of_week'],
         )
 
         # Viz
@@ -91,7 +94,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             LSTM(40, 40, input_seq_len),
             Linear(40 * input_seq_len, 1),
         )
-        net.to_device("cuda")
+        # net.to_device("cuda")
         # net.set_threads(8)
         out_updater = OutputUpdater(net.device)
 
@@ -104,7 +107,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
 
             # Decaying observation's variance
             sigma_v = exponential_scheduler(
-                curr_v=sigma_v, min_v=0.5, decaying_factor=0.99, curr_iter=epoch
+                curr_v=sigma_v, min_v=0.3, decaying_factor=0.99, curr_iter=epoch
             )
             var_y = np.full((batch_size * len(output_col),), sigma_v**2, dtype=np.float32)
 

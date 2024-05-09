@@ -6,6 +6,7 @@ saved_param/
 __pycache__/
 *.DS_Store
 *.pyc
+*.png
 pytagi.egg-info
 dist
 !test/data/*.csv

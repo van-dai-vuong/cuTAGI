@@ -20,20 +20,22 @@ from pytagi import exponential_scheduler
 from pytagi.nn import LSTM, Linear, OutputUpdater, Sequential
 
 from examples.data_loader import TimeSeriesDataloader
+from pytagi.hybrid import SSM
+from pytagi.hybrid import process_input_ssm
 
 
-def main(num_epochs: int = 20, batch_size: int = 10, sigma_v: float = 2):
+def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 2
-    input_seq_len = 5
+    num_features = 3
+    input_seq_len = 12
     output_seq_len = 1
     seq_stride = 1
 
     train_dtl = TimeSeriesDataloader(
-        x_file="data/toy_time_series/x_train_sin_data_2features.csv",
-        date_time_file="data/toy_time_series/train_sin_datetime.csv",
+        x_file="data/toy_time_series_trend/x_train_sin_trend_matlab.csv",
+        date_time_file="data/toy_time_series_trend/x_train_sin_trend_matlab_datetime.csv",
         output_col=output_col,
         input_seq_len=input_seq_len,
         output_seq_len=output_seq_len,
@@ -41,8 +43,8 @@ def main(num_epochs: int = 20, batch_size: int = 10, sigma_v: float = 2):
         stride=seq_stride,
     )
     test_dtl = TimeSeriesDataloader(
-        x_file="data/toy_time_series/x_test_sin_data_2features.csv",
-        date_time_file="data/toy_time_series/test_sin_datetime.csv",
+        x_file="data/toy_time_series_trend/x_val_sin_trend_matlab.csv",
+        date_time_file="data/toy_time_series_trend/x_val_sin_trend_matlab_datetime.csv",
         output_col=output_col,
         input_seq_len=input_seq_len,
         output_seq_len=output_seq_len,
@@ -57,20 +59,30 @@ def main(num_epochs: int = 20, batch_size: int = 10, sigma_v: float = 2):
 
     # Network
     net = Sequential(
-        LSTM(2, 5, input_seq_len),
-        LSTM(5, 5, input_seq_len),
-        Linear(5 * input_seq_len, 1),
+        LSTM(1, 50, input_seq_len),
+        Linear(50 * input_seq_len, 1),
+        # LSTM(1, 5, input_seq_len),
+        # LSTM(5, 5, input_seq_len),
+        # Linear(5 * input_seq_len, 1),
     )
     # net.to_device("cuda")
-    # net.set_threads(8)
+    net.set_threads(8)
     out_updater = OutputUpdater(net.device)
+
+    # State-space models: for baseline hidden states
+    ssm = SSM(
+        baseline = 'trend', # 'level', 'trend', 'acceleration', 'ETS'
+        zB  = np.array([-0.9, 1E-3]).reshape(-1, 1),   # initial mu for baseline hidden states
+        SzB = np.diag([1E-3, 1E-3])     # var
+    )
 
     # -------------------------------------------------------------------------#
     # Training
     mses = []
+
     pbar = tqdm(range(num_epochs), desc="Training Progress")
     for epoch in pbar:
-        batch_iter = train_dtl.create_data_loader(batch_size)
+        batch_iter = train_dtl.create_data_loader(batch_size, shuffle=False)
 
         # Decaying observation's variance
         sigma_v = exponential_scheduler(
@@ -78,31 +90,67 @@ def main(num_epochs: int = 20, batch_size: int = 10, sigma_v: float = 2):
         )
         var_y = np.full((batch_size * len(output_col),), sigma_v**2, dtype=np.float32)
 
+        # Initialize list to save
+        ssm.init_ssm_hs()
+        mu_preds_lstm = []
+        var_preds_lstm = []
+        mu_preds_unnorm = []
+        obs_unnorm = []
+        #
+
         for x, y in batch_iter:
+            mu_x, var_x = process_input_ssm(
+                mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
+                input_seq_len = input_seq_len,num_features = num_features,
+                )
             # Feed forward
-            m_pred, _ = net(x)
+            m_pred, v_pred = net(mu_x, var_x)
+            m_pred = np.array([m_pred[0]])
+            v_pred = np.array([v_pred[0]])
 
-            # Update output layer
-            out_updater.update(
-                output_states=net.output_z_buffer,
-                mu_obs=y,
-                var_obs=var_y,
-                delta_states=net.input_delta_z_buffer,
-            )
+            y_pred,_,delta_mu_net, delta_var_net  = ssm.filter(mu_lstm=m_pred, var_lstm=v_pred, var_obs=var_y, mu_obs=y)
+            net.input_delta_z_buffer.delta_mu = delta_mu_net
+            net.input_delta_z_buffer.delta_var = delta_var_net
 
-            # Feed backward
+
+            # Feed backward for LSTM network
             net.backward()
             net.step()
 
             # Training metric
             pred = normalizer.unstandardize(
-                m_pred, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
+                y_pred.flatten(), train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
             )
             obs = normalizer.unstandardize(
                 y, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
             )
             mse = metric.mse(pred, obs)
             mses.append(mse)
+            mu_preds_lstm.extend(m_pred)
+            var_preds_lstm.extend(v_pred)
+            obs_unnorm.extend(y)
+            mu_preds_unnorm.extend(y_pred)
+
+        # Smoother
+        ssm.smoother()
+
+        plt.switch_backend('Agg')
+        plt.figure()
+        plt.plot(obs_unnorm, color='r')
+        plt.plot(ssm.mu_smoothed[0,1:],color='k')
+        plt.plot(mu_preds_unnorm,color='b')
+        plt.plot(ssm.mu_smoothed[2,1:],color='g')
+
+        # plt.plot(obs_unnorm, color='r')
+        # plt.plot(ssm.mu_smoothed[0,1:],color='k')
+        # plt.plot(ssm.mu_priors[0,1:],color='b')
+        # plt.plot(ssm.mu_posteriors[0,1:],color='g')
+        # plt.show()
+
+        filename = f'data/fig/hybrid_epoch_#{epoch}.png'
+        plt.savefig(filename)
+        plt.close()  # Close the plot to free up memory
+
 
         # Progress bar
         pbar.set_description(
@@ -112,25 +160,39 @@ def main(num_epochs: int = 20, batch_size: int = 10, sigma_v: float = 2):
 
     # -------------------------------------------------------------------------#
     # Testing
+    # test_batch_iter = test_dtl.create_data_loader(batch_size, shuffle=False)
     test_batch_iter = test_dtl.create_data_loader(batch_size, shuffle=False)
+
+    # Initialize list to save
     mu_preds = []
     var_preds = []
     y_test = []
-    x_test = []
+    obs_test_unnorm = []
+    #
 
     for x, y in test_batch_iter:
+        mu_x, var_x = process_input_ssm(
+            mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
+            input_seq_len = input_seq_len,num_features = num_features,
+        )
         # Predicion
-        m_pred, v_pred = net(x)
+        m_pred, v_pred = net(mu_x, var_x)
+        m_pred = np.array([m_pred[0]])
+        v_pred = np.array([v_pred[0]])
 
-        mu_preds.extend(m_pred)
-        var_preds.extend(v_pred + sigma_v**2)
-        x_test.extend(x)
+        y_pred, Sy_red,_,_  = ssm.filter(mu_lstm=m_pred, var_lstm=v_pred)
+
+        mu_preds.extend(y_pred)
+        var_preds.extend(Sy_red + sigma_v**2)
         y_test.extend(y)
+        mu_preds_lstm.extend(m_pred)
+        var_preds_lstm.extend(v_pred)
 
     mu_preds = np.array(mu_preds)
     std_preds = np.array(var_preds) ** 0.5
     y_test = np.array(y_test)
-    x_test = np.array(x_test)
+    obs_test_unnorm = y_test
+    mu_preds_unnorm_test = mu_preds
 
     mu_preds = normalizer.unstandardize(
         mu_preds, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
@@ -158,6 +220,25 @@ def main(num_epochs: int = 20, batch_size: int = 10, sigma_v: float = 2):
         title=r"\textbf{Time Series Forecasting}",
         time_series=True,
     )
+
+    filename = f'data/fig/test.png'
+    plt.savefig(filename)
+    plt.close()  # Close the plot to free up memory
+
+    #
+    obs = np.concatenate((obs_unnorm,obs_test_unnorm), axis=0)
+    idx_train = range(0,len(obs_unnorm))
+    idx_test = range(len(obs_unnorm),len(obs))
+    idx = np.concatenate((idx_train,idx_test),axis=0)
+
+    plt.figure()
+    plt.plot(idx,obs, color='r',label=r"data")
+    plt.plot(idx_test, mu_preds_unnorm_test, color='b',label=r"test prediction")
+    plt.plot(idx_train,ssm.mu_smoothed[0,1:],color='k',label=r"level")
+    plt.plot(idx_train, mu_preds_unnorm,color='g', label=r"train prediction")
+    filename = f'data/fig/test_prediction.png'
+    plt.savefig(filename)
+    plt.close()  # Close the plot to free up memory
 
     print("#############")
     print(f"MSE           : {mse: 0.2f}")
@@ -331,6 +412,7 @@ class PredictionViz:
             framealpha=0.3,
             frameon=False,
         )
+
         ax.set_ylim([min_y, max_y])
         ax.set_xlim([min_x, max_x])
 
