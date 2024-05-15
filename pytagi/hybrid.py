@@ -21,6 +21,8 @@ class LSTM_SSM:
         baseline: str,
         zB: Optional[np.ndarray] = None,
         SzB: Optional[np.ndarray] = None,
+        phi_AA: Optional[float] = 0.999,
+        Sigma_AR: Optional[float] = 0.05,
     ) -> None:
         self.net = neural_network
         self.baseline = baseline
@@ -29,6 +31,8 @@ class LSTM_SSM:
         self.init_z = self.z.copy()
         self.init_Sz = self.Sz.copy()
         self.nb_hs = len(self.z)
+        self.phi_AA = phi_AA
+        self.Sigma_AR = Sigma_AR
         self.define_matrices()
 
     def __call__(
@@ -175,7 +179,7 @@ class LSTM_SSM:
         elif self.baseline == 'trend + AR':
             self.A = np.array([[1,1,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,0]])
             self.Q = np.zeros((5, 5))
-            self.Q[-2,-2] = 0.05
+            self.Q[-2,-2] = self.Sigma_AR
             self.F = np.array([1,0,0,1,1]).reshape(1, -1)
         # elif self.baseline == 'acceleration + AR':
         #     self.A = np.array([[1,1,0.5,0,0,0],[0,1,1,0,0,0],[0,0,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0]])
@@ -183,10 +187,23 @@ class LSTM_SSM:
         #     # Process error for the online AR
         #     self.Q[-2,-2] = 0.01
         #     self.F = np.array([1,0,0,0,1,1]).reshape(1, -1)
+        elif self.baseline == 'AA + AR':
+            self.A = np.array([[1,1,self.phi_AA,0,0,0], [0,1,self.phi_AA,0,0,0], [0,0,self.phi_AA,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,0], [0,0,0,0,0,0]])
+            # self.A = np.array([[1,1,0,0,0,0], [0,1,0,0,0,0], [0,0,0,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,0], [0,0,0,0,0,0]])
+            self.Q = np.zeros((6,6))
+            self.Q[-2,-2] = self.Sigma_AR
+            self.Q[2, 2] = self.Sigma_AR * 1e-17
+            self.F = np.array([1,0,0,0,1,1]).reshape(1, -1)
+        elif self.baseline == 'AA + plain_AR':
+            self.A = np.array([[1,1,self.phi_AA,0,0], [0,1,self.phi_AA,0,0], [0,0,self.phi_AA,0,0], [0,0,0,0.62,0], [0,0,0,0,0]])
+            self.Q = np.zeros((5,5))
+            self.Q[-2,-2] = self.Sigma_AR
+            self.Q[2, 2] = self.Sigma_AR * 1e-17
+            self.F = np.array([1,0,0,1,1]).reshape(1, -1)
         elif self.baseline == 'trend + plain_AR':
             self.A = np.array([[1,1,0,0],[0,1,0,0],[0,0,      0.62,      0],[0,0,0,0]])
             self.Q = np.zeros((4, 4))
-            self.Q[-2,-2] = 0.05
+            self.Q[-2,-2] = self.Sigma_AR
             self.F = np.array([1,0,1,1]).reshape(1, -1)
 
 
