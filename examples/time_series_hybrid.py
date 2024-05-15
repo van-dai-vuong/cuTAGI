@@ -41,6 +41,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
         output_seq_len=output_seq_len,
         num_features=num_features,
         stride=seq_stride,
+        time_covariates = ['hour_of_day', 'day_of_week'],  # 'hour_of_day','day_of_week', 'week_of_year', 'month_of_year','quarter_of_year'
     )
     test_dtl = TimeSeriesDataloader(
         x_file="data/toy_time_series_trend/x_val_sin_trend_matlab.csv",
@@ -52,6 +53,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
         stride=seq_stride,
         x_mean=train_dtl.x_mean,
         x_std=train_dtl.x_std,
+        time_covariates = ['hour_of_day', 'day_of_week'],  # 'hour_of_day','day_of_week', 'week_of_year', 'month_of_year','quarter_of_year'
     )
 
     # Viz

@@ -4,6 +4,8 @@ from numpy.linalg import inv
 from numpy.linalg import pinv
 import matplotlib.pyplot as plt
 import pandas as pd
+from pytagi.gma_utils import GMA
+from pytagi.cdf_activate import cdf_activate
 
 class LSTM_SSM:
     """State-space models for modeling baselines:
@@ -24,6 +26,8 @@ class LSTM_SSM:
         self.baseline = baseline
         self.z = np.concatenate((zB, np.array([0])), axis=0).reshape(-1,1)
         self.Sz = np.diag(np.concatenate((SzB, np.array([0])), axis=0))
+        self.init_z = self.z.copy()
+        self.init_Sz = self.Sz.copy()
         self.nb_hs = len(self.z)
         self.define_matrices()
 
@@ -35,9 +39,9 @@ class LSTM_SSM:
         m_pred_lstm = np.array([m_pred_lstm[0]])  # check with Ha why?
         v_pred_lstm = np.array([v_pred_lstm[0]])  # check with Ha why?
         # hybrid forward
-        m_pred, v_pred  = self.forward(mu_lstm=m_pred_lstm, var_lstm=v_pred_lstm)
+        m_pred, v_pred, z_prior, Sz_prior  = self.forward(mu_lstm=m_pred_lstm, var_lstm=v_pred_lstm)
 
-        return m_pred, v_pred, m_pred_lstm, v_pred_lstm
+        return m_pred, v_pred, z_prior, Sz_prior, m_pred_lstm, v_pred_lstm
 
     def forward(
         self, mu_lstm: np.ndarray, var_lstm: np.ndarray,
@@ -50,6 +54,13 @@ class LSTM_SSM:
         z_prior[-1,-1]  = mu_lstm[0]
         Sz_prior[-1,-1] = var_lstm[0]
 
+        # Perform GMA on x^phi and x^AR to get the prediction IF ONLINE AR IS USED
+        GMA_z = GMA(z_prior, Sz_prior)
+        GMA_z.multiplicate_elements(-3, -2)
+        GMA_z.remove_element(-3)
+        GMA_z.swap_elements(-2, -1)
+        z_prior, Sz_prior = GMA_z.get_results()
+
         # Predicted mean and var
         m_pred = self.F @ z_prior
         var_pred = self.F @ Sz_prior @ self.F.T
@@ -60,7 +71,7 @@ class LSTM_SSM:
         self.mu_y_pred.append(m_pred)
         self.var_y_pred.append(var_pred)
 
-        return m_pred, var_pred
+        return m_pred, var_pred, z_prior, Sz_prior
 
     def backward(
         self,
@@ -138,6 +149,10 @@ class LSTM_SSM:
             Sz_ = np.diag(np.diag(Sz_))
             self.Sz = Sz_
 
+            self.z[-3] = self.init_z[-3]
+            self.Sz[-3, :] = self.init_Sz[-3, :]
+            self.Sz[:, -3] = self.init_Sz[:, -3]
+
     def define_matrices(self):
         if self.baseline == 'level':
             self.A = np.diag([[1][0]])
@@ -151,6 +166,28 @@ class LSTM_SSM:
             self.A = np.array([[1,1,0.5,0],[0,1,1,0],[0,0,1,0],[0,0,0,0]])
             self.Q = np.zeros((4,4))
             self.F = np.array([1,0,0,1]).reshape(1, -1)
+        # # Add residuals in the model
+        # if self.baseline == 'level + AR':
+        #     self.A = np.diag([[1][1][1][0]])
+        #     self.Q = np.zeros((2,2))
+        #     self.Q[-2,-2] = 1e-2
+        #     self.F = np.array([1,1]).reshape(1, -1)
+        elif self.baseline == 'trend + AR':
+            self.A = np.array([[1,1,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,0]])
+            self.Q = np.zeros((5, 5))
+            self.Q[-2,-2] = 0.05
+            self.F = np.array([1,0,0,1,1]).reshape(1, -1)
+        # elif self.baseline == 'acceleration + AR':
+        #     self.A = np.array([[1,1,0.5,0,0,0],[0,1,1,0,0,0],[0,0,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0]])
+        #     self.Q = np.zeros((6,6))
+        #     # Process error for the online AR
+        #     self.Q[-2,-2] = 0.01
+        #     self.F = np.array([1,0,0,0,1,1]).reshape(1, -1)
+        elif self.baseline == 'trend + plain_AR':
+            self.A = np.array([[1,1,0,0],[0,1,0,0],[0,0,      0.62,      0],[0,0,0,0]])
+            self.Q = np.zeros((4, 4))
+            self.Q[-2,-2] = 0.05
+            self.F = np.array([1,0,1,1]).reshape(1, -1)
 
 
 def process_input_ssm(
