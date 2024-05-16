@@ -20,15 +20,14 @@ from pytagi import exponential_scheduler
 from pytagi.nn import LSTM, Linear, OutputUpdater, Sequential
 
 from examples.data_loader import TimeSeriesDataloader
-from pytagi.hybrid import SSM
+from pytagi.hybrid import LSTM_SSM
 from pytagi.hybrid import process_input_ssm
 
-
-def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
+def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 3
+    num_features = 1
     input_seq_len = 12
     output_seq_len = 1
     seq_stride = 1
@@ -41,6 +40,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
         output_seq_len=output_seq_len,
         num_features=num_features,
         stride=seq_stride,
+        # time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year', 'month_of_year','quarter_of_year'
     )
     test_dtl = TimeSeriesDataloader(
         x_file="data/toy_time_series_trend/x_val_sin_trend_matlab.csv",
@@ -52,28 +52,24 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
         stride=seq_stride,
         x_mean=train_dtl.x_mean,
         x_std=train_dtl.x_std,
+        # time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year'
     )
-
-    # Viz
-    viz = PredictionViz(task_name="forecasting", data_name="sin_signal")
 
     # Network
     net = Sequential(
-        LSTM(1, 50, input_seq_len),
-        Linear(50 * input_seq_len, 1),
-        # LSTM(1, 5, input_seq_len),
-        # LSTM(5, 5, input_seq_len),
-        # Linear(5 * input_seq_len, 1),
+        LSTM(num_features, 30, input_seq_len),
+        LSTM(30, 30, input_seq_len),
+        Linear(30 * input_seq_len, 1),
     )
-    # net.to_device("cuda")
     net.set_threads(8)
-    out_updater = OutputUpdater(net.device)
+    # #net.to_device("cuda")
 
     # State-space models: for baseline hidden states
-    ssm = SSM(
+    hybrid = LSTM_SSM(
+        neural_network = net,           # LSTM
         baseline = 'trend', # 'level', 'trend', 'acceleration', 'ETS'
-        zB  = np.array([-0.9, 1E-3]).reshape(-1, 1),   # initial mu for baseline hidden states
-        SzB = np.diag([1E-3, 1E-3])     # var
+        zB  = np.array([-0.9, 1E-3]),    # initial mu for baseline hidden states
+        SzB = np.array([1E-3, 1E-3])    # var
     )
 
     # -------------------------------------------------------------------------#
@@ -91,7 +87,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
         var_y = np.full((batch_size * len(output_col),), sigma_v**2, dtype=np.float32)
 
         # Initialize list to save
-        ssm.init_ssm_hs()
+        hybrid.init_ssm_hs()
         mu_preds_lstm = []
         var_preds_lstm = []
         mu_preds_unnorm = []
@@ -103,19 +99,11 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
                 mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
                 input_seq_len = input_seq_len,num_features = num_features,
                 )
+
             # Feed forward
-            m_pred, v_pred = net(mu_x, var_x)
-            m_pred = np.array([m_pred[0]])
-            v_pred = np.array([v_pred[0]])
-
-            y_pred,_,delta_mu_net, delta_var_net  = ssm.filter(mu_lstm=m_pred, var_lstm=v_pred, var_obs=var_y, mu_obs=y)
-            net.input_delta_z_buffer.delta_mu = delta_mu_net
-            net.input_delta_z_buffer.delta_var = delta_var_net
-
-
-            # Feed backward for LSTM network
-            net.backward()
-            net.step()
+            y_pred, _,m_pred, v_pred = hybrid(mu_x, var_x)
+            # Backward
+            hybrid.backward(mu_obs = y, var_obs = var_y)
 
             # Training metric
             pred = normalizer.unstandardize(
@@ -132,35 +120,27 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
             mu_preds_unnorm.extend(y_pred)
 
         # Smoother
-        ssm.smoother()
+        hybrid.smoother()
 
+        # Figures for each epoch
+        mu_smoothed = np.array(hybrid.mu_smoothed)
         plt.switch_backend('Agg')
         plt.figure()
         plt.plot(obs_unnorm, color='r')
-        plt.plot(ssm.mu_smoothed[0,1:],color='k')
+        plt.plot(mu_smoothed[:,0,:],color='k')
         plt.plot(mu_preds_unnorm,color='b')
-        plt.plot(ssm.mu_smoothed[2,1:],color='g')
-
-        # plt.plot(obs_unnorm, color='r')
-        # plt.plot(ssm.mu_smoothed[0,1:],color='k')
-        # plt.plot(ssm.mu_priors[0,1:],color='b')
-        # plt.plot(ssm.mu_posteriors[0,1:],color='g')
-        # plt.show()
-
-        filename = f'data/fig/hybrid_epoch_#{epoch}.png'
+        filename = f'saved_results/ts_toy/ts_toy_epoch_#{epoch}.png'
         plt.savefig(filename)
         plt.close()  # Close the plot to free up memory
 
-
         # Progress bar
         pbar.set_description(
-            f"Epoch {epoch + 1}/{num_epochs}| mse: {sum(mses)/len(mses):>7.2f}",
+            f"Epoch {epoch + 1}/{num_epochs}| mse: {np.nanmean(mses):>7.2f}",
             refresh=True,
         )
 
     # -------------------------------------------------------------------------#
     # Testing
-    # test_batch_iter = test_dtl.create_data_loader(batch_size, shuffle=False)
     test_batch_iter = test_dtl.create_data_loader(batch_size, shuffle=False)
 
     # Initialize list to save
@@ -175,12 +155,8 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
             mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
             input_seq_len = input_seq_len,num_features = num_features,
         )
-        # Predicion
-        m_pred, v_pred = net(mu_x, var_x)
-        m_pred = np.array([m_pred[0]])
-        v_pred = np.array([v_pred[0]])
-
-        y_pred, Sy_red,_,_  = ssm.filter(mu_lstm=m_pred, var_lstm=v_pred)
+        # Feed forward
+        y_pred, Sy_red, m_pred, v_pred = hybrid(mu_x, var_x)
 
         mu_preds.extend(y_pred)
         var_preds.extend(Sy_red + sigma_v**2)
@@ -193,6 +169,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
     y_test = np.array(y_test)
     obs_test_unnorm = y_test
     mu_preds_unnorm_test = mu_preds
+    std_preds_unnorm_test = std_preds
 
     mu_preds = normalizer.unstandardize(
         mu_preds, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
@@ -209,220 +186,28 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 2):
         prediction=mu_preds, observation=y_test, std=std_preds
     )
 
-    # Visualization
-    viz.plot_predictions(
-        x_test=test_dtl.dataset["date_time"][: len(y_test)],
-        y_test=y_test,
-        y_pred=mu_preds,
-        sy_pred=std_preds,
-        std_factor=1,
-        label="time_series_forecasting",
-        title=r"\textbf{Time Series Forecasting}",
-        time_series=True,
-    )
-
-    filename = f'data/fig/test.png'
-    plt.savefig(filename)
-    plt.close()  # Close the plot to free up memory
-
     #
     obs = np.concatenate((obs_unnorm,obs_test_unnorm), axis=0)
     idx_train = range(0,len(obs_unnorm))
     idx_test = range(len(obs_unnorm),len(obs))
     idx = np.concatenate((idx_train,idx_test),axis=0)
+    mu_preds_unnorm_test = mu_preds_unnorm_test.flatten()
+    std_preds_unnorm_test = std_preds_unnorm_test.flatten()
 
+    # figure for final test predictions
     plt.figure()
     plt.plot(idx,obs, color='r',label=r"data")
     plt.plot(idx_test, mu_preds_unnorm_test, color='b',label=r"test prediction")
-    plt.plot(idx_train,ssm.mu_smoothed[0,1:],color='k',label=r"level")
+    plt.fill_between(idx_test, mu_preds_unnorm_test - std_preds_unnorm_test, mu_preds_unnorm_test + std_preds_unnorm_test, color='blue', alpha=0.3, label='±1 SD')
+    plt.plot(idx_train,mu_smoothed[:,0,:],color='k',label=r"level")
     plt.plot(idx_train, mu_preds_unnorm,color='g', label=r"train prediction")
-    filename = f'data/fig/test_prediction.png'
+    filename = f'saved_results/ts_toy/ts_toy_test_prediction.png'
     plt.savefig(filename)
     plt.close()  # Close the plot to free up memory
 
     print("#############")
     print(f"MSE           : {mse: 0.2f}")
     print(f"Log-likelihood: {log_lik: 0.2f}")
-
-
-class PredictionViz:
-    """Visualization of prediction
-    Attributes:
-        task_name: Name of the task such as autoencoder
-        data_name: Name of dataset such as Boston housing or toy example
-        figsize: Size of figure
-        fontsize: Font size for letter in the figure
-        lw: linewidth
-        ms: Marker size
-        ndiv_x: Number of divisions for x-direction
-        ndiv_y: Number of division for y-direciton
-    """
-
-    def __init__(
-        self,
-        task_name: str,
-        data_name: str,
-        figsize: tuple = (12, 12),
-        fontsize: int = 28,
-        lw: int = 3,
-        ms: int = 10,
-        ndiv_x: int = 4,
-        ndiv_y: int = 4,
-    ) -> None:
-        self.task_name = task_name
-        self.data_name = data_name
-        self.figsize = figsize
-        self.fontsize = fontsize
-        self.lw = lw
-        self.ms = ms
-        self.ndiv_x = ndiv_x
-        self.ndiv_y = ndiv_y
-
-    def load_dataset(self, file_path: str, header: bool = False) -> np.ndarray:
-        """Load dataset (*.csv)
-        Args:
-            file_path: File path to the data file
-            header: Ignore hearder ?
-
-        """
-
-        # Load image data from *.csv file
-        if header:
-            df = pd.read_csv(file_path, skiprows=1, delimiter=",", header=None)
-        else:
-            df = pd.read_csv(file_path, skiprows=0, delimiter=",", header=None)
-
-        return df[0].values
-
-    def plot_predictions(
-        self,
-        x_test: np.ndarray,
-        y_test: np.ndarray,
-        y_pred: np.ndarray,
-        sy_pred: np.ndarray,
-        std_factor: int,
-        x_train: Optional[np.ndarray] = None,
-        y_train: Optional[np.ndarray] = None,
-        sy_test: Optional[np.ndarray] = None,
-        label: str = "diag",
-        title: Optional[str] = None,
-        eq: Optional[str] = None,
-        x_eq: Optional[float] = None,
-        y_eq: Optional[float] = None,
-        time_series: bool = False,
-        save_folder: Optional[str] = None,
-    ) -> None:
-        """Compare prediciton distribution with theorical distribution
-
-        x_train: Input train data
-        y_train: Output train data
-        x_test: Input test data
-        y_test: Output test data
-        y_pred: Prediciton of network
-        sy_pred: Standard deviation of the prediction
-        std_factor: Standard deviation factor
-        sy_test: Output test's theorical standard deviation
-        label: Name of file
-        title: Figure title
-        eq: Math equation for data
-        x_eq: x-coordinate for eq
-        y_eq: y-coordinate for eq
-
-        """
-
-        # Get max and min values
-        if sy_test is not None:
-            std_y = max(sy_test)
-        else:
-            std_y = 0
-
-        if x_train is not None:
-            max_y = np.maximum(max(y_test), max(y_train)) + std_y
-            min_y = np.minimum(min(y_test), min(y_train)) - std_y
-            max_x = np.maximum(max(x_test), max(x_train))
-            min_x = np.minimum(min(x_test), min(x_train))
-        else:
-            max_y = max(y_test) + std_y
-            min_y = min(y_test) - std_y
-            max_x = max(x_test)
-            min_x = min(x_test)
-
-        # Plot figure
-        plt.figure(figsize=self.figsize)
-        ax = plt.axes()
-        ax.set_title(title, fontsize=1.1 * self.fontsize, fontweight="bold")
-        if eq is not None:
-            ax.text(x_eq, y_eq, eq, color="k", fontsize=self.fontsize)
-        ax.plot(x_test, y_pred, "r", lw=self.lw, label=r"$\mathbb{E}[Y^{'}]$")
-        ax.plot(x_test, y_test, "k", lw=self.lw, label=r"$y_{true}$")
-
-        ax.fill_between(
-            x_test,
-            y_pred - std_factor * sy_pred,
-            y_pred + std_factor * sy_pred,
-            facecolor="red",
-            alpha=0.3,
-            label=r"$\mathbb{{E}}[Y^{{'}}]\pm{}\sigma$".format(std_factor),
-        )
-        if sy_test is not None:
-            ax.fill_between(
-                x_test,
-                y_test - std_factor * sy_test,
-                y_test + std_factor * sy_test,
-                facecolor="blue",
-                alpha=0.3,
-                label=r"$y_{{test}}\pm{}\sigma$".format(std_factor),
-            )
-        if x_train is not None:
-            if time_series:
-                marker = ""
-                line_style = "-"
-            else:
-                marker = "o"
-                line_style = ""
-            ax.plot(
-                x_train,
-                y_train,
-                "b",
-                marker=marker,
-                mfc="none",
-                lw=self.lw,
-                ms=0.2 * self.ms,
-                linestyle=line_style,
-                label=r"$y_{train}$",
-            )
-
-        ax.set_xlabel(r"$x$", fontsize=self.fontsize)
-        ax.set_ylabel(r"$y$", fontsize=self.fontsize)
-        if time_series:
-            x_ticks = pd.date_range(min_x, max_x, periods=self.ndiv_x).values
-        else:
-            x_ticks = np.linspace(min_x, max_x, self.ndiv_x)
-        y_ticks = np.linspace(min_y, max_y, self.ndiv_y)
-        ax.set_yticks(y_ticks)
-        ax.set_xticks(x_ticks)
-        ax.tick_params(
-            axis="both", which="both", direction="inout", labelsize=self.fontsize
-        )
-        ax.legend(
-            loc="upper right",
-            edgecolor="black",
-            fontsize=1 * self.fontsize,
-            ncol=1,
-            framealpha=0.3,
-            frameon=False,
-        )
-
-        ax.set_ylim([min_y, max_y])
-        ax.set_xlim([min_x, max_x])
-
-        # Save figure
-        if save_folder is None:
-            plt.show()
-        else:
-            saving_path = f"saved_results/pred_{label}_{self.data_name}.png"
-            plt.savefig(saving_path, bbox_inches="tight")
-            plt.close()
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 5
+    num_features = 4
     input_seq_len = 26
     output_seq_len = 1
     seq_stride = 1
@@ -40,7 +40,7 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
         output_seq_len=output_seq_len,
         num_features=num_features,
         stride=seq_stride,
-        time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year', 'month_of_year','quarter_of_year'
+        # time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year', 'month_of_year','quarter_of_year'
     )
     test_dtl = TimeSeriesDataloader(
         x_file="data/HQ/LGA007PIAP-E010_Y_val.csv",
@@ -52,15 +52,21 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
         stride=seq_stride,
         x_mean=train_dtl.x_mean,
         x_std=train_dtl.x_std,
-        time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year'
+        # time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year'
     )
 
     # Network
     net = Sequential(
-        LSTM(num_features, 30, input_seq_len),
-        LSTM(30, 30, input_seq_len),
-        Linear(30 * input_seq_len, 1),
+        LSTM(num_features*input_seq_len, 30,1),
+        LSTM(30, 30, 1),
+        Linear(30, 1),
     )
+
+    # net = Sequential(
+    #     LSTM(num_features, 30, input_seq_len),
+    #     LSTM(30, 30, input_seq_len),
+    #     Linear(30 * input_seq_len, 1),
+    # )
     net.set_threads(8)
     # #net.to_device("cuda")
 
@@ -94,7 +100,15 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
         obs_unnorm = []
         #
 
+
         for x, y in batch_iter:
+            # mu_x = x.reshape((input_seq_len,num_features))
+            # mu_x_mean = np.nanmean(mu_x,axis=0)
+            # mu_x[:,0] = mu_x[:,0] - mu_x_mean[0]
+            # mu_x = mu_x.flatten()
+            # mu_x = np.nan_to_num(mu_x, nan=0)
+            # y_pred, _,m_pred, v_pred = hybrid(mu_x)
+
             mu_x, var_x = process_input_ssm(
                 mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
                 input_seq_len = input_seq_len,num_features = num_features,
@@ -102,6 +116,7 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
 
             # Feed forward
             y_pred, _,m_pred, v_pred = hybrid(mu_x, var_x)
+
             # Backward
             hybrid.backward(mu_obs = y, var_obs = var_y)
 
@@ -151,6 +166,13 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
     #
 
     for x, y in test_batch_iter:
+        # mu_x = x.reshape((input_seq_len,num_features))
+        # mu_x_mean = np.nanmean(mu_x,axis=0)
+        # mu_x[:,0] = mu_x[:,0] - mu_x_mean[0]
+        # mu_x = mu_x.flatten()
+        # mu_x = np.nan_to_num(mu_x, nan=0)
+        # y_pred, Sy_red,m_pred, v_pred = hybrid(mu_x)
+
         mu_x, var_x = process_input_ssm(
             mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
             input_seq_len = input_seq_len,num_features = num_features,

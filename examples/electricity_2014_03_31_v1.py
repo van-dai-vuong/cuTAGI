@@ -26,7 +26,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 3
+    num_features = 1
     input_seq_len = 24
     output_seq_len = 1
     seq_stride = 1
@@ -36,6 +36,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
 
     # Loop over each time series in the benchmark
     nb_ts = 370
+    # ts_idx = np.arange(nb_ts-1, nb_ts)   # time series no.
     ts_idx = np.arange(0, nb_ts)   # time series no.
     ytestPd  = np.full((168, nb_ts), np.nan)
     SytestPd = np.full((168, nb_ts), np.nan)
@@ -55,7 +56,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             num_features=num_features,
             stride=seq_stride,
             ts_idx=ts,
-            time_covariates = ['hour_of_day','day_of_week'],
+            # time_covariates = ['hour_of_day','day_of_week'],
         )
         val_dtl = TimeSeriesDataloader(
             x_file="data/electricity/electricity_2014_03_31_val.csv",
@@ -68,7 +69,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             x_mean=train_dtl.x_mean,
             x_std=train_dtl.x_std,
             ts_idx=ts,
-            time_covariates = ['hour_of_day','day_of_week'],
+            # time_covariates = ['hour_of_day','day_of_week'],
         )
         test_dtl = TimeSeriesDataloader(
             x_file="data/electricity/electricity_2014_03_31_test.csv",
@@ -81,7 +82,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
             x_mean=train_dtl.x_mean,
             x_std=train_dtl.x_std,
             ts_idx=ts,
-            time_covariates = ['hour_of_day','day_of_week'],
+            # time_covariates = ['hour_of_day','day_of_week'],
         )
 
         # Viz
@@ -89,13 +90,20 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
 
         # Network
         net = Sequential(
-            LSTM(num_features, 40, input_seq_len),
-            LSTM(40, 40, input_seq_len),
-            LSTM(40, 40, input_seq_len),
-            Linear(40 * input_seq_len, 1),
+            LSTM(num_features*input_seq_len, 40, 1),
+            LSTM(40, 40, 1),
+            LSTM(40, 40, 1),
+            Linear(40 * 1, 1),
         )
+
+        # net = Sequential(
+        #     LSTM(num_features, 40, input_seq_len),
+        #     LSTM(40, 40, input_seq_len),
+        #     LSTM(40, 40, input_seq_len),
+        #     Linear(40 * input_seq_len, 1),
+        # )
         # net.to_device("cuda")
-        # net.set_threads(8)
+        net.set_threads(8)
         out_updater = OutputUpdater(net.device)
 
         # -------------------------------------------------------------------------#
@@ -243,29 +251,31 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 2):
     # np.savetxt("electricity_2014_03_31_ytestPd_pyTAGI.csv", ytestPd, delimiter=",")
     # np.savetxt("electricity_2014_03_31_SytestPd_pyTAGI.csv", SytestPd, delimiter=",")
 
-        # Compute log-likelihood
-        mse = metric.mse(mu_preds, y_test)
-        log_lik = metric.log_likelihood(
-            prediction=mu_preds, observation=y_test, std=std_preds
-        )
+        # # Compute log-likelihood
+        # mse = metric.mse(mu_preds, y_test)
+        # log_lik = metric.log_likelihood(
+        #     prediction=mu_preds, observation=y_test, std=std_preds
+        # )
 
-        # Visualization
-        viz.plot_predictions(
-            x_test=test_dtl.dataset["date_time"][: len(y_test)],
-            y_test=y_test,
-            y_pred=mu_preds,
-            sy_pred=std_preds,
-            std_factor=1,
-            label="time_series_forecasting",
-            title=r"\textbf{Time Series Forecasting}",
-            time_series=True,
-        )
+        # # Visualization
+        # viz.plot_predictions(
+        #     x_test=test_dtl.dataset["date_time"][: len(y_test)],
+        #     y_test=y_test,
+        #     y_pred=mu_preds,
+        #     sy_pred=std_preds,
+        #     std_factor=1,
+        #     label="time_series_forecasting",
+        #     title=r"\textbf{Time Series Forecasting}",
+        #     time_series=True,
+        # )
 
-        print("#############")
-        print(f"Val MSE           : {mse_optim: 0.2f}")
-        print(f"Val Log-likelihood: {log_lik_optim: 0.2f}")
-        print(f"Test MSE           : {mse: 0.2f}")
-        print(f"Test Log-likelihood: {log_lik: 0.2f}")
+        # print("#############")
+        # print(f"Val MSE           : {mse_optim: 0.2f}")
+        # print(f"Val Log-likelihood: {log_lik_optim: 0.2f}")
+        # print(f"Test MSE           : {mse: 0.2f}")
+        # print(f"Test Log-likelihood: {log_lik: 0.2f}")
+
+        del net
 
 
 class PredictionViz:

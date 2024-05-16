@@ -32,7 +32,7 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
     output_seq_len = 1
     seq_stride = 1
     # options for early stopping
-    early_stopping_criteria = 'mse' # 'log_lik' or 'mse'
+    early_stopping_criteria = 'log_lik' # 'log_lik' or 'mse'
     patience = 10
     log_lik_optim = -1E100
     mse_optim = 1E100
@@ -63,7 +63,7 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
 
     # Network
     net = Sequential(
-        LSTM(1, 30, input_seq_len),
+        LSTM(num_features, 30, input_seq_len),
         LSTM(30, 30, input_seq_len),
         Linear(30 * input_seq_len, 1),
     )

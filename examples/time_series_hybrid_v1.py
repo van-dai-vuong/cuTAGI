@@ -19,7 +19,7 @@ from pytagi import Normalizer as normalizer
 from pytagi import exponential_scheduler
 from pytagi.nn import LSTM, Linear, OutputUpdater, Sequential
 
-from examples.data_loader import TimeSeriesDataloader
+from examples.data_loader import TimeSeriesDataloader, TimeSeriesDataloader_v1
 from pytagi.hybrid import LSTM_SSM
 from pytagi.hybrid import process_input_ssm
 
@@ -27,24 +27,24 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 5
-    input_seq_len = 26
+    num_features = 1
+    input_seq_len = 12
     output_seq_len = 1
     seq_stride = 1
 
-    train_dtl = TimeSeriesDataloader(
-        x_file="data/HQ/LGA007PIAP-E010_Y_train.csv",
-        date_time_file="data/HQ/LGA007PIAP-E010_Y_train_datetime.csv",
+    train_dtl = TimeSeriesDataloader_v1(
+        x_file="data/toy_time_series_trend/x_train_sin_trend_matlab.csv",
+        date_time_file="data/toy_time_series_trend/x_train_sin_trend_matlab_datetime.csv",
         output_col=output_col,
         input_seq_len=input_seq_len,
         output_seq_len=output_seq_len,
         num_features=num_features,
         stride=seq_stride,
-        time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year', 'month_of_year','quarter_of_year'
+        # time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year', 'month_of_year','quarter_of_year'
     )
-    test_dtl = TimeSeriesDataloader(
-        x_file="data/HQ/LGA007PIAP-E010_Y_val.csv",
-        date_time_file="data/HQ/LGA007PIAP-E010_Y_val_datetime.csv",
+    test_dtl = TimeSeriesDataloader_v1(
+        x_file="data/toy_time_series_trend/x_val_sin_trend_matlab.csv",
+        date_time_file="data/toy_time_series_trend/x_val_sin_trend_matlab_datetime.csv",
         output_col=output_col,
         input_seq_len=input_seq_len,
         output_seq_len=output_seq_len,
@@ -52,14 +52,20 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
         stride=seq_stride,
         x_mean=train_dtl.x_mean,
         x_std=train_dtl.x_std,
-        time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year'
+        # time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year'
     )
 
     # Network
+    # net = Sequential(
+    #     LSTM(num_features, 30, input_seq_len),
+    #     LSTM(30, 30, input_seq_len),
+    #     Linear(30 * input_seq_len, 1),
+    # )
+
     net = Sequential(
-        LSTM(num_features, 30, input_seq_len),
-        LSTM(30, 30, input_seq_len),
-        Linear(30 * input_seq_len, 1),
+        LSTM(num_features*input_seq_len, 30, 1),
+        LSTM(30, 30, 1),
+        Linear(30 * 1, 1),
     )
     net.set_threads(8)
     # #net.to_device("cuda")
@@ -68,8 +74,8 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
     hybrid = LSTM_SSM(
         neural_network = net,           # LSTM
         baseline = 'trend', # 'level', 'trend', 'acceleration', 'ETS'
-        zB  = np.array([0.1, 1E-4]),    # initial mu for baseline hidden states
-        SzB = np.array([1E-5, 1E-5])    # var
+        zB  = np.array([-0.9, 1E-3]),    # initial mu for baseline hidden states
+        SzB = np.array([1E-3, 1E-3])    # var
     )
 
     # -------------------------------------------------------------------------#
@@ -95,6 +101,13 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
         #
 
         for x, y in batch_iter:
+            # mu_x = x.reshape((input_seq_len,num_features))
+            # mu_x_mean = np.nanmean(mu_x,axis=0)
+            # mu_x[:,0] = mu_x[:,0] - mu_x_mean[0]
+            # mu_x = mu_x.flatten()
+            # mu_x = np.nan_to_num(mu_x, nan=0)
+            # y_pred, _,m_pred, v_pred = hybrid(mu_x)
+
             mu_x, var_x = process_input_ssm(
                 mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
                 input_seq_len = input_seq_len,num_features = num_features,
@@ -102,6 +115,7 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
 
             # Feed forward
             y_pred, _,m_pred, v_pred = hybrid(mu_x, var_x)
+
             # Backward
             hybrid.backward(mu_obs = y, var_obs = var_y)
 
@@ -129,7 +143,7 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
         plt.plot(obs_unnorm, color='r')
         plt.plot(mu_smoothed[:,0,:],color='k')
         plt.plot(mu_preds_unnorm,color='b')
-        filename = f'saved_results/hq/hybrid_epoch_#{epoch}.png'
+        filename = f'saved_results/ts_toy/ts_toy_epoch_#{epoch}.png'
         plt.savefig(filename)
         plt.close()  # Close the plot to free up memory
 
@@ -151,6 +165,13 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
     #
 
     for x, y in test_batch_iter:
+        # mu_x = x.reshape((input_seq_len,num_features))
+        # mu_x_mean = np.nanmean(mu_x,axis=0)
+        # mu_x[:,0] = mu_x[:,0] - mu_x_mean[0]
+        # mu_x = mu_x.flatten()
+        # mu_x = np.nan_to_num(mu_x, nan=0)
+        # y_pred, Sy_red,m_pred, v_pred = hybrid(mu_x)
+
         mu_x, var_x = process_input_ssm(
             mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
             input_seq_len = input_seq_len,num_features = num_features,
@@ -201,7 +222,7 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
     plt.fill_between(idx_test, mu_preds_unnorm_test - std_preds_unnorm_test, mu_preds_unnorm_test + std_preds_unnorm_test, color='blue', alpha=0.3, label='±1 SD')
     plt.plot(idx_train,mu_smoothed[:,0,:],color='k',label=r"level")
     plt.plot(idx_train, mu_preds_unnorm,color='g', label=r"train prediction")
-    filename = f'saved_results/hq/test_prediction.png'
+    filename = f'saved_results/ts_toy/ts_toy_test_prediction.png'
     plt.savefig(filename)
     plt.close()  # Close the plot to free up memory
 

@@ -32,8 +32,6 @@ class LSTM_SSM:
     ) -> Tuple[np.ndarray, np.ndarray]:
         # lstm forward
         m_pred_lstm, v_pred_lstm = self.net(mu_x, var_x)
-        m_pred_lstm = np.array([m_pred_lstm[0]])  # check with Ha why?
-        v_pred_lstm = np.array([v_pred_lstm[0]])  # check with Ha why?
         # hybrid forward
         m_pred, v_pred  = self.forward(mu_lstm=m_pred_lstm, var_lstm=v_pred_lstm)
 
