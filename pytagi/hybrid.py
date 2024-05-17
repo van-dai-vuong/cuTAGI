@@ -23,6 +23,7 @@ class LSTM_SSM:
         SzB: Optional[np.ndarray] = None,
         phi_AA: Optional[float] = 0.999,
         Sigma_AR: Optional[float] = 0.05,
+        Sigma_AA: Optional[float] = 1e-16,
     ) -> None:
         self.net = neural_network
         self.baseline = baseline
@@ -32,6 +33,7 @@ class LSTM_SSM:
         self.init_Sz = self.Sz.copy()
         self.nb_hs = len(self.z)
         self.phi_AA = phi_AA
+        self.Sigma_AA = Sigma_AA
         self.Sigma_AR = Sigma_AR
         self.define_matrices()
 
@@ -81,6 +83,7 @@ class LSTM_SSM:
         self,
         mu_obs: Optional[np.ndarray] = None,
         var_obs: Optional[np.ndarray] = None,
+        train_LSTM: bool = True,
     ):
         # load variables
         z_prior  = self.mu_priors[-1]
@@ -105,10 +108,13 @@ class LSTM_SSM:
             delta_var_lstm  = delta_var[-1,-1]/var_lstm**2
 
             # # update lstm network
-            self.net.input_delta_z_buffer.delta_mu = np.array([delta_mean_lstm]).flatten()
-            self.net.input_delta_z_buffer.delta_var = np.array([delta_var_lstm]).flatten()
-            self.net.backward()
-            self.net.step()
+            if train_LSTM:
+                self.net.input_delta_z_buffer.delta_mu = np.array([delta_mean_lstm]).flatten()
+                self.net.input_delta_z_buffer.delta_var = np.array([delta_var_lstm]).flatten()
+                self.net.backward()
+                self.net.step()
+            else:
+                pass
         else:
             z_posterior  = z_prior
             Sz_posterior = Sz_prior
@@ -192,7 +198,7 @@ class LSTM_SSM:
             # self.A = np.array([[1,1,0,0,0,0], [0,1,0,0,0,0], [0,0,0,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,0], [0,0,0,0,0,0]])
             self.Q = np.zeros((6,6))
             self.Q[-2,-2] = self.Sigma_AR
-            self.Q[2, 2] = self.Sigma_AR * 1e-17
+            self.Q[2, 2] = self.Sigma_AA
             self.F = np.array([1,0,0,0,1,1]).reshape(1, -1)
         elif self.baseline == 'AA + plain_AR':
             self.A = np.array([[1,1,self.phi_AA,0,0], [0,1,self.phi_AA,0,0], [0,0,self.phi_AA,0,0], [0,0,0,0.62,0], [0,0,0,0,0]])

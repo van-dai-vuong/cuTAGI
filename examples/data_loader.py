@@ -351,6 +351,10 @@ class TimeSeriesDataloader:
 
         # Load data
         x = self.load_data_from_csv(self.x_file)
+
+        # Remove all the columns except the first one
+        x = x[:, 0].reshape(-1, 1)
+
         if self.ts_idx is not None:
             x = x[:,self.ts_idx:self.ts_idx+1]   # choose time series column
         date_time = self.load_data_from_csv(self.date_time_file)
