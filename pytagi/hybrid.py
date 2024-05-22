@@ -52,6 +52,12 @@ class LSTM_SSM:
     def forward(
         self, mu_lstm: np.ndarray, var_lstm: np.ndarray,
     ):
+        # if action == 1:
+        #     self.z[2] = self.init_z[2]
+        #     self.Sz[2, :] = self.init_Sz[2, :]
+        #     self.Sz[:, 2] = self.init_Sz[:, 2]
+        #     self.Sz[1, 1] += 1e2
+
         # Prediction step:
         z_prior  = self.A @ self.z
         Sz_prior = self.A @ self.Sz @ self.A.T + self.Q
@@ -124,6 +130,7 @@ class LSTM_SSM:
         self.Sz = Sz_posterior
         self.mu_posteriors.append(z_posterior)
         self.cov_posteriors.append(Sz_posterior)
+        return z_posterior, Sz_posterior
 
     def smoother(self):
         nb_obs = len(self.mu_priors)
