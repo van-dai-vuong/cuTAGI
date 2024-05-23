@@ -2,6 +2,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from pytagi.hybrid import process_input_ssm
+from scipy.stats import norm
 
 class LSTM_KF_Env(gym.Env):
     metadata = {"render_modes": []}
@@ -152,12 +153,39 @@ class LSTM_KF_Env(gym.Env):
         info = self._get_info()
 
         # Reward
-        # TODO
-        reward = 0
+        AR_var_stationary = self.ts_model.Sigma_AR / (1 - self.ts_model.phi_AR**2)
+        clip_value_ar = np.log(self._evaluate_standard_gaussian_probability(x = 3*np.sqrt(Sz_update[-2, -2]+AR_var_stationary), \
+                                                                            mu = 0, std=np.sqrt(Sz_update[-2, -2]+AR_var_stationary)))
+        clip_value_la = np.log(self._evaluate_standard_gaussian_probability(x = 1*np.sqrt(Sz_update[2, 2]+self.ts_model.init_Sz[2, 2]), \
+                                                                            mu = 0, std=np.sqrt(Sz_update[2, 2]+self.ts_model.init_Sz[2, 2])))
+
+        if np.isnan(y):
+            likelihood = norm.pdf(y_pred, loc=y_pred, scale=np.sqrt(Sy_pred))
+        else:
+            likelihood = norm.pdf(y, loc=y_pred, scale=np.sqrt(Sy_pred))
+
+        reward = float(
+                # likelihood
+                # np.log(likelihood)
+                np.clip(np.log(likelihood),-1e3, np.inf)
+                + np.clip(np.log(self._evaluate_standard_gaussian_probability(z_updata[-2], 0, np.sqrt(Sz_update[-2, -2]+AR_var_stationary))),\
+                            -1e3, clip_value_ar) - clip_value_ar\
+                + np.clip(np.log(self._evaluate_standard_gaussian_probability(z_updata[2], 0, np.sqrt(Sz_update[2, 2]+self.ts_model.init_Sz[2, 2]))),\
+                            -1e3, clip_value_la) - clip_value_la\
+                )
 
         if i == self.time_series_len - 1:
             terminated = True
 
         return observation, reward, terminated, False, info
+
+    def _evaluate_standard_gaussian_probability(self, x, mu, std):
+        # Calculate the z-score (standardized value)
+        z = (x - mu) / std
+
+        # Evaluate the probability in the standard normal distribution
+        probability = norm.pdf(z)
+
+        return probability
 
 
