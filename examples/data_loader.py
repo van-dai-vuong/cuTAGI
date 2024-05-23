@@ -383,8 +383,6 @@ class TimeSeriesDataloader:
         # Normalizer
         if self.x_mean is None and self.x_std is None:
             self.x_mean, self.x_std = Normalizer.compute_mean_std(x)
-
-        print(self.x_mean, self.x_std)
         x = Normalizer.standardize(data=x, mu=self.x_mean, std=self.x_std)
 
         # Create rolling windows
