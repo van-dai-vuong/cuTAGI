@@ -6,11 +6,9 @@ from pytagi.hybrid import process_input_ssm
 class LSTM_KF_Env(gym.Env):
     metadata = {"render_modes": []}
 
-    def __init__(self, render_mode=None, data_loader = None, train_x_mean = 0, train_x_std = 1,
+    def __init__(self, render_mode=None, data_loader = None,
                  ts_model = None, step_look_back = 8):
         self.data_loader = data_loader
-        self.train_x_mean = train_x_mean
-        self.train_x_std = train_x_std
         self.ts_model = ts_model
         self.step_look_back = step_look_back
         # Observations are dictionaries with the hidden states values
@@ -60,7 +58,7 @@ class LSTM_KF_Env(gym.Env):
                                     'var': hidden_states_all_step_numpy['var'][look_back_steps_list, :, :]}
         return hidden_states_collected
 
-    def reset(self, seed=None):
+    def reset(self, seed=None, z=None, Sz=None):
         super().reset(seed=seed)
 
         sigma_v = 1E-12
@@ -69,7 +67,10 @@ class LSTM_KF_Env(gym.Env):
         self.mu_preds_lstm = []
         self.var_preds_lstm = []
         self.obs_unnorm = []
-        self.ts_model.init_ssm_hs()
+        if z is not None and Sz is not None:
+            self.ts_model.init_ssm_hs(z = z, Sz = Sz)
+        else:
+            self.ts_model.init_ssm_hs()
 
         self.hidden_state_one_episode = {'mu': [], \
                                          'var': []}
@@ -111,7 +112,11 @@ class LSTM_KF_Env(gym.Env):
 
     def step(self, action):
         # Action
-        # TODO
+        if action == 1:
+            self.ts_model.z[2] = self.ts_model.init_z[2]
+            self.ts_model.Sz[2, :] = self.ts_model.init_Sz[2, :]
+            self.ts_model.Sz[:, 2] = self.ts_model.init_Sz[:, 2]
+            self.ts_model.Sz[1, 1] += 1e2
 
         # Run Kalman filter
         self.current_step += 1

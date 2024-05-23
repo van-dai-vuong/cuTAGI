@@ -423,6 +423,10 @@ class SyntheticTimeSeriesDataloader:
         x_mean: Optional[np.ndarray] = None,
         x_std: Optional[np.ndarray] = None,
         ts_idx: Optional[int] = None,
+        select_column: Optional[int] = 0,
+        add_anomaly: Optional[bool] = False,
+        anomaly_magnitude: Optional[float] = 0.1,
+        anomaly_start: Optional[int] = 0,
         time_covariates: Optional[str] = None,
     ) -> None:
         self.x_file = x_file
@@ -435,6 +439,10 @@ class SyntheticTimeSeriesDataloader:
         self.x_mean = x_mean
         self.x_std = x_std
         self.ts_idx = ts_idx # add time series index when data having multiple ts
+        self.select_column = select_column
+        self.add_anomaly = add_anomaly
+        self.anomaly_magnitude = anomaly_magnitude
+        self.anomaly_start = anomaly_start
         self.time_covariates = time_covariates # for adding time covariates
         self.dataset = self.process_data()
 
@@ -478,7 +486,12 @@ class SyntheticTimeSeriesDataloader:
         utils = Utils()
 
         # Load data
-        x = self.load_data_from_csv(self.x_file, select_column=0)
+        x = self.load_data_from_csv(self.x_file, select_column=self.select_column)
+
+        # Add anomaly
+        if self.add_anomaly:
+            for i in range(self.anomaly_start, x.shape[0]):
+                x[i] += self.anomaly_magnitude * (i - self.anomaly_start)
 
         # # Remove all the columns except the first one, no explanatory variable is used
         # x = x[:, 0].reshape(-1, 1)

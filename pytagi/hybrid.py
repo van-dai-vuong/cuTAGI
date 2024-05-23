@@ -22,8 +22,10 @@ class LSTM_SSM:
         zB: Optional[np.ndarray] = None,
         SzB: Optional[np.ndarray] = None,
         phi_AA: Optional[float] = 0.999,
+        phi_AR: Optional[float] = 0.75,
         Sigma_AR: Optional[float] = 0.05,
         Sigma_AA: Optional[float] = 1e-16,
+        use_online_AR: Optional[bool] = True,
     ) -> None:
         self.net = neural_network
         self.baseline = baseline
@@ -33,8 +35,10 @@ class LSTM_SSM:
         self.init_Sz = self.Sz.copy()
         self.nb_hs = len(self.z)
         self.phi_AA = phi_AA
+        self.phi_AR = phi_AR
         self.Sigma_AA = Sigma_AA
         self.Sigma_AR = Sigma_AR
+        self.use_online_AR = use_online_AR
         self.define_matrices()
 
     def __call__(
@@ -52,12 +56,6 @@ class LSTM_SSM:
     def forward(
         self, mu_lstm: np.ndarray, var_lstm: np.ndarray,
     ):
-        # if action == 1:
-        #     self.z[2] = self.init_z[2]
-        #     self.Sz[2, :] = self.init_Sz[2, :]
-        #     self.Sz[:, 2] = self.init_Sz[:, 2]
-        #     self.Sz[1, 1] += 1e2
-
         # Prediction step:
         z_prior  = self.A @ self.z
         Sz_prior = self.A @ self.Sz @ self.A.T + self.Q
@@ -67,11 +65,12 @@ class LSTM_SSM:
         Sz_prior[-1,-1] = var_lstm[0]
 
         # Perform GMA on x^phi and x^AR to get the prediction IF ONLINE AR IS USED
-        GMA_z = GMA(z_prior, Sz_prior)
-        GMA_z.multiplicate_elements(-3, -2)
-        GMA_z.remove_element(-3)
-        GMA_z.swap_elements(-2, -1)
-        z_prior, Sz_prior = GMA_z.get_results()
+        if self.use_online_AR:
+            GMA_z = GMA(z_prior, Sz_prior)
+            GMA_z.multiplicate_elements(-3, -2)
+            GMA_z.remove_element(-3)
+            GMA_z.swap_elements(-2, -1)
+            z_prior, Sz_prior = GMA_z.get_results()
 
         # Predicted mean and var
         m_pred = self.F @ z_prior
@@ -153,7 +152,7 @@ class LSTM_SSM:
         self.mu_smoothed  = mu_smoothed
         self.cov_smoothed = cov_smoothed
 
-    def init_ssm_hs(self):
+    def init_ssm_hs(self, z=None, Sz=None):
         self.mu_y_pred  = list()
         self.var_y_pred = list()
         self.mu_priors  = list()
@@ -166,9 +165,15 @@ class LSTM_SSM:
             Sz_ = np.diag(np.diag(Sz_))
             self.Sz = Sz_
 
+            # Allow the model to learn the phi_AR from the global initialization
             self.z[-3] = self.init_z[-3]
             self.Sz[-3, :] = self.init_Sz[-3, :]
             self.Sz[:, -3] = self.init_Sz[:, -3]
+
+        if z is not None and Sz is not None:
+            # Use the user defined initial hidden states
+            self.z = z
+            self.Sz = Sz
 
     def define_matrices(self):
         if self.baseline == 'level':
@@ -208,11 +213,11 @@ class LSTM_SSM:
             self.Q[2, 2] = self.Sigma_AA
             self.F = np.array([1,0,0,0,1,1]).reshape(1, -1)
         elif self.baseline == 'AA + plain_AR':
-            self.A = np.array([[1,1,self.phi_AA,0,0], [0,1,self.phi_AA,0,0], [0,0,self.phi_AA,0,0], [0,0,0,0.62,0], [0,0,0,0,0]])
+            self.A = np.array([[1,1,self.phi_AA,0,0], [0,1,self.phi_AA,0,0], [0,0,self.phi_AA,0,0], [0,0,0,self.phi_AR,0], [0,0,0,0,0]])
             self.Q = np.zeros((5,5))
             self.Q[-2,-2] = self.Sigma_AR
-            self.Q[2, 2] = self.Sigma_AR * 1e-17
-            self.F = np.array([1,0,0,1,1]).reshape(1, -1)
+            self.Q[2, 2] = self.Sigma_AA
+            self.F = np.array([1.,0.,0.,1.,1.]).reshape(1, -1)
         elif self.baseline == 'trend + plain_AR':
             self.A = np.array([[1,1,0,0],[0,1,0,0],[0,0,      0.62,      0],[0,0,0,0]])
             self.Q = np.zeros((4, 4))
