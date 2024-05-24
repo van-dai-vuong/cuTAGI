@@ -103,7 +103,8 @@ class DQN_lstm_agent():
         plt.xlabel('Episode')
         plt.ylabel('Rewards')
         plt.plot(durations_t.numpy())
-        plt.ylim(ylim[0], ylim[1])
+        if ylim is not None:
+            plt.ylim(ylim[0], ylim[1])
 
         # Take 100 episode averages and plot them too
         if len(durations_t) >= 100:
@@ -168,9 +169,10 @@ class DQN_lstm_agent():
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
 
-    def train(self, num_episodes, step_look_back, num_steps_per_episode, \
+    def train(self, num_episodes, step_look_back, lstm_input_seq_len, num_steps_per_episode, \
               data_file_path, date_time_file_path, ts_model, ts_mean, ts_std,\
               abnormal_ts_percentage, anomaly_range, \
+              init_z, init_Sz,\
               batchsize, TAU, plot_samples=False, learning_curve_ylim = None):
         if torch.cuda.is_available():
             num_episodes = num_episodes
@@ -182,13 +184,13 @@ class DQN_lstm_agent():
         # LSTM set up
         output_col = [0]
         num_features = 2
-        input_seq_len = 26
+        input_seq_len = lstm_input_seq_len
         output_seq_len = 1
         seq_stride = 1
 
         for i_episode in range(num_episodes):
 
-            anm_pos = np.random.randint(step_look_back, num_steps_per_episode)
+            anm_pos = np.random.randint(step_look_back+lstm_input_seq_len, num_steps_per_episode)
 
             sample = random.random()
             if sample < abnormal_ts_percentage:
@@ -229,15 +231,15 @@ class DQN_lstm_agent():
             env = LSTM_KF_Env(render_mode=None, data_loader=train_dtl, \
                             ts_model=ts_model, step_look_back=step_look_back)
 
-            state, info = env.reset(mode = 'train')
+            state, info = env.reset(z=init_z, Sz=init_Sz)
             # state = np.hstack((state['KF_hidden_states'], intervention_taken))
-            state = state['KF_hidden_states']
+            state = state['hidden_states']
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
 
             # Nomalize the state
             # Compute the stationary standard deviation for AR
-            AR_std_stationary = np.sqrt(self.ts_model.Sigma_AR/(1 - self.ts_model.phi_AR**2))
-            LA_var_stationary = self.ts_model.Sigma_AA/(1 - self.ts_model.phi_AA**2)
+            AR_std_stationary = np.sqrt(ts_model.Sigma_AR/(1 - ts_model.phi_AR**2))
+            LA_var_stationary = ts_model.Sigma_AA/(1 - ts_model.phi_AA**2)
             if step_look_back == 64:
                 seg_len = 8
             state = normalize_tensor_two_parts(state, 0, np.sqrt(LA_var_stationary), \
@@ -260,7 +262,7 @@ class DQN_lstm_agent():
                 if terminated:
                     next_state = None
                 else:
-                    next_state = torch.tensor(observation['KF_hidden_states'],\
+                    next_state = torch.tensor(observation['hidden_states'],\
                             dtype=torch.float32, device=self.device).unsqueeze(0)
                     next_state = normalize_tensor_two_parts(next_state, 0, np.sqrt(LA_var_stationary),\
                                                             0, AR_std_stationary, seg_len)
@@ -288,12 +290,12 @@ class DQN_lstm_agent():
                     break
 
             if plot_samples:
-                timesteps = np.arange(0, num_steps_per_episode, 1)
+                timesteps = np.arange(0, len(info['measurement_one_episode']), 1)
                 mu_hidden_states_one_episode = np.array(info['hidden_state_one_episode']['mu'])
                 var_hidden_states_one_episode = np.array(info['hidden_state_one_episode']['var'])
                 mu_prediction_one_episode = np.array(info['prediction_one_episode']['mu']).flatten()
                 var_prediction_one_episode = np.array(info['prediction_one_episode']['var']).flatten()
-                if track_intervention_taken_times[i_episode] == 2:
+                if track_intervention_taken_times[i_episode] == 1:
                     # Plot prediction
                     fig = plt.figure(figsize=(20, 9))
                     gs = gridspec.GridSpec(4, 1)
@@ -308,7 +310,7 @@ class DQN_lstm_agent():
                     ax0.set_title('Predicted vs True')
                     ax0.set_ylabel('y')
                     if anomaly_injected:
-                        anomaly_pos = timesteps[anm_pos]
+                        anomaly_pos = timesteps[anm_pos-step_look_back-lstm_input_seq_len]
                         ax0.axvline(x=anomaly_pos, color='gray', linestyle='--')
                     ax0.legend()
 

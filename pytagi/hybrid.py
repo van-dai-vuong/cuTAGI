@@ -166,9 +166,10 @@ class LSTM_SSM:
             self.Sz = Sz_
 
             # Allow the model to learn the phi_AR from the global initialization
-            self.z[-3] = self.init_z[-3]
-            self.Sz[-3, :] = self.init_Sz[-3, :]
-            self.Sz[:, -3] = self.init_Sz[:, -3]
+            if self.use_online_AR:
+                self.z[-3] = self.init_z[-3]
+                self.Sz[-3, :] = self.init_Sz[-3, :]
+                self.Sz[:, -3] = self.init_Sz[:, -3]
 
         if z is not None and Sz is not None:
             # Use the user defined initial hidden states
