@@ -175,6 +175,8 @@ class LSTM_SSM:
             # Use the user defined initial hidden states
             self.z = z
             self.Sz = Sz
+            self.init_z = z
+            self.init_Sz = Sz
 
     def define_matrices(self):
         if self.baseline == 'level':
