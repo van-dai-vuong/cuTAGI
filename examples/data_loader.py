@@ -379,6 +379,9 @@ class TimeSeriesDataloader:
                     month_of_year = date_time.astype('datetime64[M]').astype(int) % 12 + 1
                     quarter_of_year = (month_of_year - 1) // 3 + 1
                     x = np.concatenate((x,quarter_of_year),axis=1)
+                elif time_cov == 'day_of_year':
+                    day_of_year = date_time.astype('datetime64[D]').astype(int) % 365
+                    x = np.concatenate((x,day_of_year),axis=1)
 
         # Normalizer
         if self.x_mean is None and self.x_std is None:

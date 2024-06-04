@@ -221,6 +221,11 @@ class LSTM_SSM:
             self.Q[-2,-2] = self.Sigma_AR
             self.Q[2, 2] = self.Sigma_AA
             self.F = np.array([1.,0.,0.,1.,1.]).reshape(1, -1)
+        elif self.baseline == 'LT + plain_AR':
+            self.A = np.array([[1,1,0,0], [0,1,0,0], [0,0,self.phi_AR,0], [0,0,0,0]])
+            self.Q = np.zeros((4,4))
+            self.Q[-2,-2] = self.Sigma_AR
+            self.F = np.array([1.,0.,1.,1.]).reshape(1, -1)
         elif self.baseline == 'trend + plain_AR':
             self.A = np.array([[1,1,0,0],[0,1,0,0],[0,0,      0.62,      0],[0,0,0,0]])
             self.Q = np.zeros((4, 4))
