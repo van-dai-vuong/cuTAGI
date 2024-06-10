@@ -57,6 +57,8 @@ class LSTM_SSM:
         self.cov_priors.append(Sz_prior)
         self.mu_y_pred.append(m_pred)
         self.var_y_pred.append(var_pred)
+        self.z  = z_prior
+        self.Sz = Sz_prior
 
         return m_pred, var_pred
 
