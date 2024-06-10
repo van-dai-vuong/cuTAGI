@@ -10,6 +10,8 @@ from pytagi.LSTM_KF_RL_Env import LSTM_KF_Env
 
 from examples.data_loader import TimeSeriesDataloader, SyntheticTimeSeriesDataloader
 
+import copy
+
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
@@ -172,7 +174,7 @@ class DQN_lstm_agent():
     def train(self, num_episodes, step_look_back, lstm_input_seq_len, num_steps_per_episode, \
               data_file_path, date_time_file_path, ts_model, ts_mean, ts_std,\
               abnormal_ts_percentage, anomaly_range, \
-              init_z, init_Sz,\
+              init_z, init_Sz, init_mu_preds_lstm, init_var_preds_lstm , time_covariates,\
               batchsize, TAU, plot_samples=False, learning_curve_ylim = None):
         if torch.cuda.is_available():
             num_episodes = num_episodes
@@ -208,7 +210,7 @@ class DQN_lstm_agent():
                     output_seq_len=output_seq_len,
                     num_features=num_features,
                     stride=seq_stride,
-                    time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year', 'month_of_year','quarter_of_year'
+                    time_covariates = time_covariates,  # 'hour_of_day','day_of_week', 'week_of_year', 'month_of_year','quarter_of_year'
                 )
                 anomaly_injected = True
             else:
@@ -223,7 +225,7 @@ class DQN_lstm_agent():
                     output_seq_len=output_seq_len,
                     num_features=num_features,
                     stride=seq_stride,
-                    time_covariates = ['week_of_year'],  # 'hour_of_day','day_of_week', 'week_of_year', 'month_of_year','quarter_of_year'
+                    time_covariates = time_covariates,  # 'hour_of_day','day_of_week', 'week_of_year', 'month_of_year','quarter_of_year'
                 )
                 anomaly_injected = False
 
@@ -231,7 +233,7 @@ class DQN_lstm_agent():
             env = LSTM_KF_Env(render_mode=None, data_loader=train_dtl, \
                             ts_model=ts_model, step_look_back=step_look_back)
 
-            state, info = env.reset(z=init_z, Sz=init_Sz)
+            state, info = env.reset(z=init_z, Sz=init_Sz, mu_preds_lstm = copy.deepcopy(init_mu_preds_lstm), var_preds_lstm = copy.deepcopy(init_var_preds_lstm))
             # state = np.hstack((state['KF_hidden_states'], intervention_taken))
             state = state['hidden_states']
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)

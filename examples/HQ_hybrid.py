@@ -68,7 +68,8 @@ def main(num_epochs: int = 30, batch_size: int = 1, sigma_v: float = 1):
     hybrid = LSTM_SSM(
         neural_network = net,           # LSTM
         baseline = 'trend', # 'level', 'trend', 'acceleration', 'ETS'
-        zB  = np.array([0.1, 1E-4]),    # initial mu for baseline hidden states
+        # zB  = np.array([0.1, 1E-4]),    # initial mu for baseline hidden states
+        zB  = np.array([1, 1E-2]),    # initial mu for baseline hidden states
         SzB = np.array([1E-5, 1E-5])    # var
     )
 

@@ -59,14 +59,14 @@ class LSTM_KF_Env(gym.Env):
                                     'var': hidden_states_all_step_numpy['var'][look_back_steps_list, :, :]}
         return hidden_states_collected
 
-    def reset(self, seed=None, z=None, Sz=None):
+    def reset(self, seed=None, z=None, Sz=None, mu_preds_lstm = [], var_preds_lstm = []):
         super().reset(seed=seed)
 
         sigma_v = 1E-12
         self.var_y = np.full((len(self.data_loader.output_col),), sigma_v**2, dtype=np.float32)
 
-        self.mu_preds_lstm = []
-        self.var_preds_lstm = []
+        self.mu_preds_lstm = mu_preds_lstm
+        self.var_preds_lstm = var_preds_lstm
         self.obs_unnorm = []
         if z is not None and Sz is not None:
             self.ts_model.init_ssm_hs(z = z, Sz = Sz)

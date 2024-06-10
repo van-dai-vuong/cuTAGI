@@ -301,6 +301,9 @@ class TimeSeriesDataloader:
         x_std: Optional[np.ndarray] = None,
         ts_idx: Optional[int] = None,
         time_covariates: Optional[str] = None,
+        add_anomaly: Optional[bool] = False,
+        anomaly_magnitude: Optional[float] = 0.1,
+        anomaly_start: Optional[int] = 0,
     ) -> None:
         self.x_file = x_file
         self.date_time_file = date_time_file
@@ -313,6 +316,9 @@ class TimeSeriesDataloader:
         self.x_std = x_std
         self.ts_idx = ts_idx # add time series index when data having multiple ts
         self.time_covariates = time_covariates # for adding time covariates
+        self.add_anomaly = add_anomaly
+        self.anomaly_magnitude = anomaly_magnitude
+        self.anomaly_start = anomaly_start
         self.dataset = self.process_data()
 
     def load_data_from_csv(self, data_file: str) -> pd.DataFrame:
@@ -351,6 +357,11 @@ class TimeSeriesDataloader:
 
         # Load data
         x = self.load_data_from_csv(self.x_file)
+
+        # Add anomaly
+        if self.add_anomaly:
+            for i in range(self.anomaly_start, x.shape[0]):
+                x[i] += self.anomaly_magnitude * (i - self.anomaly_start)
 
         # Remove all the columns except the first one, no explanatory variable is used
         x = x[:, 0].reshape(-1, 1)
@@ -523,6 +534,9 @@ class SyntheticTimeSeriesDataloader:
                     month_of_year = date_time.astype('datetime64[M]').astype(int) % 12 + 1
                     quarter_of_year = (month_of_year - 1) // 3 + 1
                     x = np.concatenate((x,quarter_of_year),axis=1)
+                elif time_cov == 'day_of_year':
+                    day_of_year = date_time.astype('datetime64[D]').astype(int) % 365
+                    x = np.concatenate((x,day_of_year),axis=1)
 
         # Normalizer
         if self.x_mean is None and self.x_std is None:
