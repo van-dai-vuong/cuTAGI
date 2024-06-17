@@ -298,6 +298,7 @@ class DQN_lstm_agent():
                 mu_prediction_one_episode = np.array(info['prediction_one_episode']['mu']).flatten()
                 var_prediction_one_episode = np.array(info['prediction_one_episode']['var']).flatten()
                 if track_intervention_taken_times[i_episode] == 1:
+                # if True:
                     # Plot prediction
                     fig = plt.figure(figsize=(20, 9))
                     gs = gridspec.GridSpec(4, 1)
