@@ -313,7 +313,7 @@ class DQN_lstm_agent():
                     ax0.set_title('Predicted vs True')
                     ax0.set_ylabel('y')
                     if anomaly_injected:
-                        anomaly_pos = timesteps[anm_pos-step_look_back-lstm_input_seq_len]
+                        anomaly_pos = timesteps[anm_pos-step_look_back]
                         ax0.axvline(x=anomaly_pos, color='gray', linestyle='--')
                     ax0.legend()
 

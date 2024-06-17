@@ -111,13 +111,13 @@ class LSTM_KF_Env(gym.Env):
 
         return observation, info
 
-    def step(self, action):
+    def step(self, action, interv_LT_scale = 1e2):
         # Action
         if action == 1:
             self.ts_model.z[2] = self.ts_model.init_z[2]
-            self.ts_model.Sz[2, :] = self.ts_model.init_Sz[2, :]
-            self.ts_model.Sz[:, 2] = self.ts_model.init_Sz[:, 2]
-            self.ts_model.Sz[1, 1] += 1e2
+            # self.ts_model.Sz[2, :] = self.ts_model.init_Sz[2, :]
+            # self.ts_model.Sz[:, 2] = self.ts_model.init_Sz[:, 2]
+            self.ts_model.Sz[1, 1] += interv_LT_scale
 
         # Run Kalman filter
         self.current_step += 1
