@@ -1269,6 +1269,12 @@ void LSTM::forward(BaseHiddenStates &input_states,
             this->seq_len, batch_size, output_states.mu_a, output_states.var_a);
     }
 
+    // save the priors of h and c states: -> propagate to the next time step
+    lstm_states.mu_h_prior = output_states.mu_a;
+    lstm_states.var_h_prior = output_states.var_a;
+    lstm_states.mu_c_prior = lstm_states.mu_c;
+    lstm_states.var_c_prior = lstm_states.var_c;
+
     if (this->training) {
         this->storing_states_for_training(input_states, output_states);
     }
@@ -1467,6 +1473,32 @@ void LSTM::backward(BaseDeltaStates &input_delta_states,
                     this->output_size, this->delta_mu_b, this->delta_var_b);
             }
         }
+    }
+
+    // Estimate the posteriors for h and c
+    std::vector<float> Cc_h(lstm_states.mu_c_prev.size(), 0);
+    for (size_t i = 0; i < lstm_states.mu_h_prev.size(); ++i) {
+        // hidden states
+        lstm_states.mu_h_prev[i] =
+            lstm_states.mu_h_prior[i] +
+            input_delta_states.delta_mu[i] * lstm_states.var_h_prior[i];
+
+        lstm_states.var_h_prev[i] =
+            lstm_states.var_h_prior[i] + input_delta_states.delta_var[i] *
+                                             lstm_states.var_h_prior[i] *
+                                             lstm_states.var_h_prior[i];
+
+        // cell states
+        // cov(c,h)
+        Cc_h[i] = lstm_states.var_c_prior[i] * lstm_states.jcb_ca[i] *
+                  lstm_states.mu_o_ga[i];
+
+        lstm_states.mu_c_prev[i] = lstm_states.mu_c_prior[i] +
+                                   Cc_h[i] * input_delta_states.delta_mu[i];
+
+        lstm_states.var_c_prev[i] =
+            lstm_states.var_c_prior[i] +
+            Cc_h[i] * input_delta_states.delta_var[i] * Cc_h[i];
     }
 }
 

@@ -275,4 +275,8 @@ void BaseLSTMStates::reset_zeros()
     var_h_prev.resize(num_states, 0);
     cov_i_c.resize(num_states, 0);
     cov_o_tanh_c.resize(num_states, 0);
+    mu_h_prior.resize(num_states, 0);
+    var_h_prior.resize(num_states, 0);
+    mu_c_prior.resize(num_states, 0);
+    var_c_prior.resize(num_states, 0);
 }

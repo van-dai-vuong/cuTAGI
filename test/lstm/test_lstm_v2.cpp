@@ -221,7 +221,7 @@ void lstm_v2()
     std::vector<std::string> x_test_path{
         "data/toy_time_series/x_test_sin_data.csv"};
 
-    int input_seq_len = 5;
+    int input_seq_len = 1;
     int output_seq_len = 1;
     int seq_stride = 1;
     std::vector<float> mu_x, sigma_x;
@@ -238,8 +238,8 @@ void lstm_v2()
     // Model
     Sequential model(LSTM(1, 5, input_seq_len), LSTM(5, 5, input_seq_len),
                      Linear(5 * input_seq_len, 1));
-    model.to_device("cuda");
-    // model.set_threads(8);
+    // model.to_device("cuda");
+    model.set_threads(8);
 
     OutputUpdater output_updater(model.device);
 
@@ -249,10 +249,11 @@ void lstm_v2()
     unsigned seed = 0;
     std::default_random_engine seed_e(seed);
     int n_epochs = 1;
-    int batch_size = 10;
+    int batch_size = 1;
     float sigma_obs = 2.0;
 
-    int iters = train_db.num_data / batch_size;
+    // int iters = train_db.num_data / batch_size;
+    int iters = 30;
     std::cout << "num_iter: " << iters << "\n";
     std::vector<float> x_batch(batch_size * train_db.nx, 0.0f);
     std::vector<float> var_obs(batch_size * train_db.ny, pow(sigma_obs, 2));
@@ -267,7 +268,7 @@ void lstm_v2()
     for (int e = 0; e < n_epochs; e++) {
         if (e > 0) {
             // Shuffle data
-            std::shuffle(data_idx.begin(), data_idx.end(), seed_e);
+            // std::shuffle(data_idx.begin(), data_idx.end(), seed_e);
             // Decay observation noise
             decay_obs_noise(sigma_obs, decay_factor, min_sigma_obs);
             std::vector<float> var_obs(batch_size * train_db.ny,
@@ -277,7 +278,7 @@ void lstm_v2()
         std::cout << "Epoch #" << e + 1 << "/" << n_epochs << "\n";
         std::cout << "Training...\n";
         auto start = std::chrono::steady_clock::now();
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < iters; i++) {
             // Load data
             get_batch_idx(data_idx, i * batch_size, batch_size, batch_idx);
             get_batch_data(train_db.x, batch_idx, train_db.nx, x_batch);
