@@ -1,5 +1,4 @@
 import numpy as np
-import numpy as np
 import scipy.linalg
 from scipy.stats import norm
 import torch
