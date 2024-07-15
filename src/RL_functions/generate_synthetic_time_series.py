@@ -12,6 +12,11 @@ def build_matrices(components, time_step, hyperparameters, current_time_stamp = 
     F = np.array([])
     Q = np.array([])
     for i, component in enumerate(components):
+        if component == 'level':
+            A = scipy.linalg.block_diag(A, np.array([[1.]]))
+            F = np.hstack((F, np.array([1.])))
+            Q = scipy.linalg.block_diag(Q, hyperparameters['level']['process_error_var'] * \
+                                                  np.array([[time_step]]))
         if component == 'trend':
             A = scipy.linalg.block_diag(A, np.array([[1.,time_step],[0.,1.]]))
             F = np.hstack((F, np.array([1.,0.])))

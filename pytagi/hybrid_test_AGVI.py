@@ -7,7 +7,7 @@ import pandas as pd
 from pytagi.gma_utils import GMA
 from pytagi.cdf_activate import cdf_activate
 
-class LSTM_SSM:
+class AGVI_SSM:
     """State-space models for modeling baselines:
     Define model matrices [A,Q,F] and initial hidden states zB and SzB
 
@@ -17,7 +17,6 @@ class LSTM_SSM:
 
     def __init__(
         self,
-        neural_network,
         baseline: str,
         zB: Optional[np.ndarray] = None,
         SzB: Optional[np.ndarray] = None,
@@ -30,10 +29,9 @@ class LSTM_SSM:
         mu_W2b_init: Optional[float] = 0,
         var_W2b_init: Optional[float] = 0,
     ) -> None:
-        self.net = neural_network
         self.baseline = baseline
-        self.z = np.concatenate((zB, np.array([0])), axis=0).reshape(-1,1)
-        self.Sz = np.diag(np.concatenate((SzB, np.array([0])), axis=0))
+        self.z = zB.reshape(-1, 1)
+        self.Sz = np.diag(SzB)
         self.init_z = self.z.copy()
         self.init_Sz = self.Sz.copy()
         self.nb_hs = len(self.z)
@@ -54,43 +52,37 @@ class LSTM_SSM:
     def __call__(
         self, mu_x: np.ndarray, var_x: np.ndarray = None
     ) -> Tuple[np.ndarray, np.ndarray]:
-        # lstm forward
-        m_pred_lstm, v_pred_lstm = self.net(mu_x, var_x)
-        m_pred_lstm = np.array([m_pred_lstm[0]])  # check with Ha why?
-        v_pred_lstm = np.array([v_pred_lstm[0]])  # check with Ha why?
         # hybrid forward
-        m_pred, v_pred, z_prior, Sz_prior  = self.forward(mu_lstm=m_pred_lstm, var_lstm=v_pred_lstm)
+        m_pred, v_pred, z_prior, Sz_prior  = self.forward()
 
-        return m_pred, v_pred, z_prior, Sz_prior, m_pred_lstm, v_pred_lstm
+        return m_pred, v_pred, z_prior, Sz_prior
 
     def forward(
-        self, mu_lstm: np.ndarray, var_lstm: np.ndarray,
+        self
     ):
         # Prediction step:
         z_prior  = self.A @ self.z
-        Sz_prior = self.A @ self.Sz @ self.A.T + self.Q
-
-        # Replace lstm prediction (mu_lstm and var_lstm) to the hidden state
-        z_prior[-1,-1]  = mu_lstm[0]
-        Sz_prior[-1,-1] = var_lstm[0]
+        Sz_prior = self.A @ self.Sz @ self.A.T
 
         # Perform GMA on x^phi and x^AR to get the prediction IF ONLINE AR IS USED
         if self.use_online_AR:
             GMA_z = GMA(z_prior, Sz_prior)
             GMA_z.multiplicate_elements(-3, -2)
             GMA_z.remove_element(-3)
-            GMA_z.swap_elements(-2, -1)
             z_prior, Sz_prior = GMA_z.get_results()
 
         if self.use_auto_AR:
-            # Learn phi_AR
+            # phi_AR
             GMA_z = GMA(z_prior, Sz_prior)
-            GMA_z.multiplicate_elements(-3, -2)
-            GMA_z.remove_element(-3)
-            GMA_z.swap_elements(-2, -1)
+            GMA_z.multiplicate_elements(-2, -1)
+            GMA_z.remove_element(-2)
             z_prior, Sz_prior = GMA_z.get_results()
 
-            # Learn sigma_AR
+            # You have to add Q after multiply phi_AR with x_AR from last time step!
+            # Otherwise it will not learn!!
+            Sz_prior = Sz_prior + self.Q
+
+            # sigma_AR
             self.mu_W2b_prior = self.mu_W2b_posterior
             self.var_W2b_prior = self.var_W2b_posterior
             self.mu_h_prior = np.append(z_prior, np.array([[0]]), axis=0)
@@ -98,12 +90,11 @@ class LSTM_SSM:
             self.cov_h_prior = np.zeros((h_size, h_size))
             self.cov_h_prior[:-1, :-1] = Sz_prior
             self.cov_h_prior[-1, -1] = self.mu_W2b_posterior
-            self.cov_h_prior[-1, -3] = self.mu_W2b_posterior # Check with James
-            self.cov_h_prior[-3, -1] = self.mu_W2b_posterior # Check with James
+            self.cov_h_prior[-1, -2] = self.mu_W2b_posterior # Check with James
+            self.cov_h_prior[-2, -1] = self.mu_W2b_posterior # Check with James
             # Use Lemma 2. to compute the prior for W2
             self.mu_W2_prior = self.mu_W2b_posterior
             self.var_W2_prior = 3 * self.var_W2b_posterior + 2 * self.mu_W2b_posterior**2
-
         # Predicted mean and var
         m_pred = self.F @ z_prior
         var_pred = self.F @ Sz_prior @ self.F.T
@@ -120,14 +111,12 @@ class LSTM_SSM:
         self,
         mu_obs: Optional[np.ndarray] = None,
         var_obs: Optional[np.ndarray] = None,
-        train_LSTM: bool = True,
     ):
         # load variables
         z_prior  = self.mu_priors[-1]
         Sz_prior = self.cov_priors[-1]
         y_pred   = self.mu_y_pred[-1]
         Sy_pred  = self.var_y_pred[-1]
-        var_lstm = Sz_prior[-1,-1]
 
         if self.use_auto_AR is not True:
             if ~np.isnan(mu_obs):
@@ -141,18 +130,6 @@ class LSTM_SSM:
                 # update mean for mean z and var Sz
                 z_posterior = z_prior + delta_mean
                 Sz_posterior = Sz_prior + delta_var
-                # detla for mean and var to update LSTM (parameters in net)
-                delta_mean_lstm = delta_mean[-1,-1]/var_lstm
-                delta_var_lstm  = delta_var[-1,-1]/var_lstm**2
-
-                # # update lstm network
-                if train_LSTM:
-                    self.net.input_delta_z_buffer.delta_mu = np.array([delta_mean_lstm]).flatten()
-                    self.net.input_delta_z_buffer.delta_var = np.array([delta_var_lstm]).flatten()
-                    self.net.backward()
-                    self.net.step()
-                else:
-                    pass
             else:
                 z_posterior  = z_prior
                 Sz_posterior = Sz_prior
@@ -167,9 +144,9 @@ class LSTM_SSM:
                 delta_var = - cov_ @ cov_h_Y.T
                 mu_h_posterior = self.mu_h_prior + delta_mean
                 cov_h_posterior = self.cov_h_prior + delta_var
-                # Posterior moments for W2
                 mu_W2_posterior = mu_h_posterior[-1]**2 + cov_h_posterior[-1, -1]
                 var_W2_posterior = 2 * cov_h_posterior[-1, -1]**2 + 4 * cov_h_posterior[-1, -1] * mu_h_posterior[-1]**2
+
                 # Second update
                 K = self.var_W2b_posterior / self.var_W2_prior
                 self.mu_W2b_posterior = self.mu_W2b_prior + K * (mu_W2_posterior - self.mu_W2_prior)
@@ -178,16 +155,6 @@ class LSTM_SSM:
                 self.var_W2b_posterior = self.var_W2b_posterior[0]
                 z_posterior = mu_h_posterior[:-1]
                 Sz_posterior = cov_h_posterior[:-1, :-1]
-                # detla for mean and var to update LSTM (parameters in net)
-                delta_mean_lstm = delta_mean[-2,-1]/var_lstm
-                delta_var_lstm  = delta_var[-2,-2]/var_lstm**2
-                if train_LSTM:
-                    self.net.input_delta_z_buffer.delta_mu = np.array([delta_mean_lstm]).flatten()
-                    self.net.input_delta_z_buffer.delta_var = np.array([delta_var_lstm]).flatten()
-                    self.net.backward()
-                    self.net.step()
-                else:
-                    pass
             else:
                 z_posterior  = z_prior
                 Sz_posterior = Sz_prior
@@ -246,9 +213,9 @@ class LSTM_SSM:
                 self.Sz[:, -3] = self.init_Sz[:, -3]
 
             if self.use_auto_AR:
-                self.z[-3] = self.init_z[-3]
-                self.Sz[-3, :] = self.init_Sz[-3, :]
-                self.Sz[:, -3] = self.init_Sz[:, -3]
+                self.z[-2] = self.init_z[-2]
+                self.Sz[-2, :] = self.init_Sz[-2, :]
+                self.Sz[:, -2] = self.init_Sz[:, -2]
                 self.mu_W2b_posterior = self.mu_W2b_init
                 self.var_W2b_posterior = self.var_W2b_init
                 self.Sigma_AR = self.mu_W2b_posterior
@@ -291,6 +258,21 @@ class LSTM_SSM:
         #     # Process error for the online AR
         #     self.Q[-2,-2] = 0.01
         #     self.F = np.array([1,0,0,0,1,1]).reshape(1, -1)
+        elif self.baseline == 'level + AR_AGVI':
+            self.A = np.array([[1,0], [0,self.phi_AR]])
+            self.Q = np.zeros((2,2))
+            self.Q[-1,-1] = self.Sigma_AR
+            self.F = np.array([1,1]).reshape(1, -1)
+        elif self.baseline == 'level + AR':
+            self.A = np.array([[1,0,0],[0,1,0],[0,0,1]])
+            self.Q = np.zeros((3,3))
+            self.Q[-1,-1] = self.Sigma_AR
+            self.F = np.array([1,0,1]).reshape(1, -1)
+        elif self.baseline == 'AR_AGVI':
+            self.A = np.array([[self.phi_AR]])
+            self.Q = np.zeros((1,1))
+            self.Q[-1,-1] = self.Sigma_AR
+            self.F = np.array([1]).reshape(1, -1)
         elif self.baseline == 'AA + AR':
             self.A = np.array([[1,1,self.phi_AA,0,0,0], [0,1,self.phi_AA,0,0,0], [0,0,self.phi_AA,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,0], [0,0,0,0,0,0]])
             # self.A = np.array([[1,1,0,0,0,0], [0,1,0,0,0,0], [0,0,0,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,0], [0,0,0,0,0,0]])
