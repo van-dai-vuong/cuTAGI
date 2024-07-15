@@ -68,7 +68,7 @@ class LSTM_SSM:
     ):
         # Prediction step:
         z_prior  = self.A @ self.z
-        Sz_prior = self.A @ self.Sz @ self.A.T + self.Q
+        Sz_prior = self.A @ self.Sz @ self.A.T
 
         # Replace lstm prediction (mu_lstm and var_lstm) to the hidden state
         z_prior[-1,-1]  = mu_lstm[0]
@@ -81,16 +81,21 @@ class LSTM_SSM:
             GMA_z.remove_element(-3)
             GMA_z.swap_elements(-2, -1)
             z_prior, Sz_prior = GMA_z.get_results()
+            Sz_prior = Sz_prior + self.Q
 
         if self.use_auto_AR:
-            # Learn phi_AR
+            # phi_AR
             GMA_z = GMA(z_prior, Sz_prior)
             GMA_z.multiplicate_elements(-3, -2)
             GMA_z.remove_element(-3)
             GMA_z.swap_elements(-2, -1)
             z_prior, Sz_prior = GMA_z.get_results()
 
-            # Learn sigma_AR
+            # You have to add Q after multiply phi_AR with x_AR from last time step.
+            # Otherwise it will not learn.
+            Sz_prior = Sz_prior + self.Q
+
+            # sigma_AR
             self.mu_W2b_prior = self.mu_W2b_posterior
             self.var_W2b_prior = self.var_W2b_posterior
             self.mu_h_prior = np.append(z_prior, np.array([[0]]), axis=0)
@@ -98,8 +103,8 @@ class LSTM_SSM:
             self.cov_h_prior = np.zeros((h_size, h_size))
             self.cov_h_prior[:-1, :-1] = Sz_prior
             self.cov_h_prior[-1, -1] = self.mu_W2b_posterior
-            self.cov_h_prior[-1, -3] = self.mu_W2b_posterior # Check with James
-            self.cov_h_prior[-3, -1] = self.mu_W2b_posterior # Check with James
+            self.cov_h_prior[-1, -3] = self.mu_W2b_posterior
+            self.cov_h_prior[-3, -1] = self.mu_W2b_posterior
             # Use Lemma 2. to compute the prior for W2
             self.mu_W2_prior = self.mu_W2b_posterior
             self.var_W2_prior = 3 * self.var_W2b_posterior + 2 * self.mu_W2b_posterior**2
@@ -298,6 +303,13 @@ class LSTM_SSM:
             self.Q[-2,-2] = self.Sigma_AR
             self.Q[2, 2] = self.Sigma_AA
             self.F = np.array([1,0,0,0,1,1]).reshape(1, -1)
+        # elif self.baseline == 'AA + AR':
+        #     self.A = np.array([[1,1,self.phi_AA,0,0,0], [0,1,self.phi_AA,0,0,0], [0,0,self.phi_AA,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,0], [0,0,0,0,0,0]])
+        #     # self.A = np.array([[1,1,0,0,0,0], [0,1,0,0,0,0], [0,0,0,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,0], [0,0,0,0,0,0]])
+        #     self.Q = np.zeros((6,6))
+        #     self.Q[-2,-2] = self.Sigma_AR
+        #     self.Q[2, 2] = self.Sigma_AA
+        #     self.F = np.array([1,0,0,0,1,1]).reshape(1, -1)
         elif self.baseline == 'AA + plain_AR':
             self.A = np.array([[1,1,self.phi_AA,0,0], [0,1,self.phi_AA,0,0], [0,0,self.phi_AA,0,0], [0,0,0,self.phi_AR,0], [0,0,0,0,0]])
             self.Q = np.zeros((5,5))
