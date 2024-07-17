@@ -11,7 +11,9 @@ __pycache__/
 pytagi.egg-info
 dist
 data/cifar
-data/cifar_torch
+data/mnist/MNIST
+data/traffic
+test_model/
 *ncu-rep
 *sys-rep
 *sqlite

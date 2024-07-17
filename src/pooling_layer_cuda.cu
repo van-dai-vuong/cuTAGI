@@ -3,7 +3,7 @@
 // Description:  ...
 // Authors:      Luong-Ha Nguyen & James-A. Goulet
 // Created:      January 08, 2024
-// Updated:      January 23, 2024
+// Updated:      July 12, 2024
 // Contact:      luongha.nguyen@gmail.com & james.goulet@polymtl.ca
 // License:      This code is released under the MIT License.
 ////////////////////////////////////////////////////////////////////////////////
@@ -12,6 +12,7 @@
 #include <cuda_runtime.h>
 
 #include "../include/conv2d_layer.h"
+#include "../include/cuda_error_checking.cuh"
 #include "../include/pooling_layer.h"
 #include "../include/pooling_layer_cuda.cuh"
 
@@ -105,72 +106,10 @@ void AvgPool2dCuda::forward(BaseHiddenStates &input_states,
 
     // Update backward state for inferring parameters
     if (this->training) {
-        BackwardStateCuda *cu_bwd_states =
-            dynamic_cast<BackwardStateCuda *>(this->bwd_states.get());
-
         this->store_states_for_training_cuda(*cu_input_states,
-                                             *cu_output_states, *cu_bwd_states);
+                                             *cu_output_states);
     }
 }
-
-void AvgPool2dCuda::state_backward(BaseBackwardStates &next_bwd_states,
-                                   BaseDeltaStates &input_delta_states,
-                                   BaseDeltaStates &output_delta_states,
-                                   BaseTempStates &temp_states)
-/*
- */
-{
-    // New poitner will point to the same memory location when casting
-    BackwardStateCuda *cu_next_bwd_states =
-        dynamic_cast<BackwardStateCuda *>(&next_bwd_states);
-    DeltaStateCuda *cu_input_delta_states =
-        dynamic_cast<DeltaStateCuda *>(&input_delta_states);
-    DeltaStateCuda *cu_output_delta_states =
-        dynamic_cast<DeltaStateCuda *>(&output_delta_states);
-
-    // Initialization
-    int batch_size = input_delta_states.block_size;
-    unsigned int num_threads = this->num_cuda_threads;
-
-    // Launch kernel
-    int woho = this->out_width * this->out_height;
-    int wihi = this->in_width * this->in_height;
-    int pad_out_idx = woho * this->out_channels * batch_size + 1;
-    if (overlap) {
-        int num_in_states =
-            this->in_width * this->in_height * this->in_channels * batch_size;
-        unsigned int grid_size =
-            (num_in_states + num_threads - 1) / num_threads;
-
-        avgpool2d_bwd_overlapped_delta_z_cuda<<<grid_size, num_threads>>>(
-            cu_next_bwd_states->d_jcb, cu_input_delta_states->d_delta_mu,
-            cu_input_delta_states->d_delta_var, this->d_z_ud_idx, woho, wihi,
-            this->kernel_size, this->col_z_ud, num_in_states, pad_out_idx,
-            cu_output_delta_states->d_delta_mu,
-            cu_output_delta_states->d_delta_var);
-
-    } else {
-        int kiwo = this->kernel_size * this->out_width;
-        int nums = wihi * this->in_channels * batch_size / kiwo;
-        unsigned int grid_row = (kiwo + num_threads - 1) / num_threads;
-        unsigned int grid_col = (nums + num_threads - 1) / num_threads;
-        dim3 dim_grid(grid_col, grid_row);
-        dim3 dim_block(num_threads, num_threads);
-
-        avgpool2d_bwd_delta_z_cuda<<<dim_grid, grid_row>>>(
-            cu_next_bwd_states->d_jcb, cu_input_delta_states->d_delta_mu,
-            cu_input_delta_states->d_delta_var, this->out_width,
-            this->kernel_size, nums, cu_output_delta_states->d_delta_mu,
-            cu_output_delta_states->d_delta_var);
-    }
-}
-
-void AvgPool2dCuda::param_backward(BaseBackwardStates &next_bwd_states,
-                                   BaseDeltaStates &delta_states,
-                                   BaseTempStates &temp_states)
-/*
- */
-{}
 
 void AvgPool2dCuda::backward(BaseDeltaStates &input_delta_states,
                              BaseDeltaStates &output_delta_states,
@@ -257,12 +196,7 @@ void AvgPool2dCuda::allocate_avgpool2d_index()
 {
     cudaMalloc(&this->d_pool_idx, this->pool_idx.size() * sizeof(int));
     cudaMalloc(&this->d_z_ud_idx, this->z_ud_idx.size() * sizeof(int));
-    cudaError_t error = cudaGetLastError();
-    if (error != cudaSuccess) {
-        throw std::invalid_argument("Error in file: " + std::string(__FILE__) +
-                                    " at line: " + std::to_string(__LINE__) +
-                                    ". Device memory allocation.");
-    }
+    CHECK_LAST_CUDA_ERROR();
 }
 
 void AvgPool2dCuda::avgpool2d_index_to_device()
@@ -275,12 +209,7 @@ void AvgPool2dCuda::avgpool2d_index_to_device()
                this->z_ud_idx.size() * sizeof(int), cudaMemcpyHostToDevice);
 
     cudaError_t error = cudaGetLastError();
-    if (error != cudaSuccess) {
-        fprintf(stderr, "CUDA Error: %s\n", cudaGetErrorString(error));
-        throw std::invalid_argument("Error in file: " + std::string(__FILE__) +
-                                    " at line: " + std::to_string(__LINE__) +
-                                    ". Host to device.");
-    }
+    CHECK_LAST_CUDA_ERROR();
 }
 
 void AvgPool2dCuda::preinit_layer() {

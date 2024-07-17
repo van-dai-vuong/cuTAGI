@@ -1,5 +1,4 @@
 # CMAKE VERSION
-# NOTE: We only test this file using CUDA toolkit >=10.2
 cmake_minimum_required(VERSION 3.23)
 
 # ###########################################################################################
@@ -89,6 +88,7 @@ endif()
 # NOTE: This might need to change for higher CUDA version
 list(APPEND CUDA_NVCC_FLAGS "--expt-extended-lambda")
 list(APPEND CUDA_NVCC_FLAGS "--expt-relaxed-constexpr")
+# list(APPEND CUDA_NVCC_FLAGS "--use_fast_math")
 # list(APPEND CUDA_NVCC_FLAGS "-lineinfo")
 
 if(APPLE)

@@ -60,15 +60,15 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-11
+          - os: macos-13
             python_version: "3.9"
             cibuildwheel_python: "cp39-*"
 
-          - os: macos-11
+          - os: macos-13
             python_version: "3.10"
             cibuildwheel_python: "cp310-*"
 
-          - os: macos-11
+          - os: macos-13
             python_version: "3.11"
             cibuildwheel_python: "cp311-*"
     if: ${{ github.event.pull_request.draft == false }}
@@ -141,26 +141,6 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
-
-      # - name: Setup cmake
-      #   uses: jwlawson/actions-setup-cmake@v1.13
-      #   with:
-      #     cmake-version: "3.23.x"
-
-      # - name: cmake version
-      #   run: cmake --version
-
-      # - name: Configure build
-      #   run: |
-      #     cmake . -B build
-
-      # - name: Build binary
-      #   run: |
-      #     cmake --build build --config RelWithDebInfo -j 16
-
-      # - name: Run tests
-      #   run: |
-      #     build/main test
 
   upload_pypi:
     name: PyPI Upload

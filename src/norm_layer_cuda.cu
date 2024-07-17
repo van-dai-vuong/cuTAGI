@@ -3,7 +3,7 @@
 // Description:  ...
 // Authors:      Luong-Ha Nguyen & James-A. Goulet
 // Created:      January 24, 2024
-// Updated:      March 12, 2024
+// Updated:      July 12, 2024
 // Contact:      luongha.nguyen@gmail.com & james.goulet@polymtl.ca
 // License:      This code is released under the MIT License.
 ////////////////////////////////////////////////////////////////////////////////
@@ -1029,14 +1029,8 @@ void LayerNormCuda::allocate_running_mean_var()
     this->var_ra.resize(this->_batch_size, 1.0f);
     cudaMalloc(&this->d_mu_ra, this->_batch_size * sizeof(float));
     cudaMalloc(&this->d_var_ra, this->_batch_size * sizeof(float));
-
-    cudaError_t error = cudaGetLastError();
-    if (error != cudaSuccess) {
-        throw std::invalid_argument("Error in file: " + std::string(__FILE__) +
-                                    " at line: " + std::to_string(__LINE__) +
-                                    ". Running mean var memory allocation.");
-    }
     this->running_mean_var_to_device();
+    CHECK_LAST_CUDA_ERROR();
 }
 
 void LayerNormCuda::running_mean_var_to_device()
@@ -1048,13 +1042,7 @@ void LayerNormCuda::running_mean_var_to_device()
     cudaMemcpy(this->d_var_ra, this->var_ra.data(),
                this->var_ra.size() * sizeof(float), cudaMemcpyHostToDevice);
 
-    cudaError_t error = cudaGetLastError();
-    if (error != cudaSuccess) {
-        fprintf(stderr, "CUDA Error: %s\n", cudaGetErrorString(error));
-        throw std::invalid_argument("Error in file: " + std::string(__FILE__) +
-                                    " at line: " + std::to_string(__LINE__) +
-                                    ". Running mean var host to device.");
-    }
+    CHECK_LAST_CUDA_ERROR();
 }
 
 void LayerNormCuda::running_mean_var_to_host()
@@ -1066,13 +1054,7 @@ void LayerNormCuda::running_mean_var_to_host()
     cudaMemcpy(this->var_ra.data(), this->d_var_ra,
                this->var_ra.size() * sizeof(float), cudaMemcpyDeviceToHost);
 
-    cudaError_t error = cudaGetLastError();
-    if (error != cudaSuccess) {
-        fprintf(stderr, "CUDA Error: %s\n", cudaGetErrorString(error));
-        throw std::invalid_argument("Error in file: " + std::string(__FILE__) +
-                                    " at line: " + std::to_string(__LINE__) +
-                                    ". Running mean var device to host.");
-    }
+    CHECK_LAST_CUDA_ERROR();
 }
 
 void LayerNormCuda::forward(BaseHiddenStates &input_states,
@@ -1135,125 +1117,8 @@ void LayerNormCuda::forward(BaseHiddenStates &input_states,
 
     // Update backward state for inferring parameters
     if (this->training) {
-        BackwardStateCuda *cu_bwd_states =
-            dynamic_cast<BackwardStateCuda *>(this->bwd_states.get());
-
         this->store_states_for_training_cuda(*cu_input_states,
-                                             *cu_output_states, *cu_bwd_states);
-    }
-}
-
-void LayerNormCuda::state_backward(BaseBackwardStates &next_bwd_states,
-                                   BaseDeltaStates &input_delta_states,
-                                   BaseDeltaStates &output_delta_states,
-                                   BaseTempStates &temp_states)
-/*
- */
-{
-    // New poitner will point to the same memory location when casting
-    BackwardStateCuda *cu_next_bwd_states =
-        dynamic_cast<BackwardStateCuda *>(&next_bwd_states);
-    DeltaStateCuda *cu_input_delta_states =
-        dynamic_cast<DeltaStateCuda *>(&input_delta_states);
-    DeltaStateCuda *cu_output_delta_states =
-        dynamic_cast<DeltaStateCuda *>(&output_delta_states);
-
-    // Initialization
-    int batch_size = input_delta_states.block_size;
-    int num_threads = this->num_cuda_threads;
-    dim3 block_dim(num_threads, num_threads);
-
-    unsigned int grid_row = (batch_size + num_threads - 1) / num_threads;
-    unsigned int grid_col = (this->input_size + num_threads - 1) / num_threads;
-    dim3 grid_size(grid_col, grid_row);
-
-    if (this->normalized_shape.size() == 1) {
-        layernorm_bwd_delta_z_cuda<<<grid_size, block_dim>>>(
-            this->d_mu_w, cu_next_bwd_states->d_jcb, this->d_var_ra,
-            cu_input_delta_states->d_delta_mu,
-            cu_input_delta_states->d_delta_var, this->epsilon, this->input_size,
-            batch_size, cu_output_delta_states->d_delta_mu,
-            cu_output_delta_states->d_delta_var);
-    } else {
-        int wihi = this->in_height * this->in_width;
-
-        layernorm2d_bwd_delta_z_cuda<<<grid_size, block_dim>>>(
-            this->d_mu_w, cu_next_bwd_states->d_jcb, this->d_var_ra,
-            cu_input_delta_states->d_delta_mu,
-            cu_input_delta_states->d_delta_var, this->epsilon, wihi,
-            this->in_channels, batch_size, cu_output_delta_states->d_delta_mu,
-            cu_output_delta_states->d_delta_var);
-    }
-}
-
-void LayerNormCuda::param_backward(BaseBackwardStates &next_bwd_states,
-                                   BaseDeltaStates &delta_states,
-                                   BaseTempStates &temp_states)
-/*
- */
-{
-    // New poitner will point to the same memory location when casting
-    BackwardStateCuda *cu_next_bwd_states =
-        dynamic_cast<BackwardStateCuda *>(&next_bwd_states);
-    DeltaStateCuda *cu_delta_states =
-        dynamic_cast<DeltaStateCuda *>(&delta_states);
-    TempStateCuda *cu_temp_states = dynamic_cast<TempStateCuda *>(&temp_states);
-
-    // Initalization
-    int batch_size = delta_states.block_size;
-    int num_threads = this->num_cuda_threads;
-    dim3 block_dim(num_threads, num_threads);
-
-    unsigned int grid_col = (this->input_size + num_threads - 1) / num_threads;
-
-    if (this->normalized_shape.size() == 1) {
-        layernorm_bwd_delta_w_cuda<<<grid_col, num_threads>>>(
-            this->d_var_w, cu_next_bwd_states->d_mu_a, this->d_mu_ra,
-            this->d_var_ra, cu_delta_states->d_delta_mu,
-            cu_delta_states->d_delta_var, this->epsilon, this->input_size,
-            batch_size, this->d_delta_mu_w, this->d_delta_var_w);
-
-        if (this->bias) {
-            layernorm_bwd_delta_b_cuda<<<grid_col, num_threads>>>(
-                this->d_var_b, cu_delta_states->d_delta_mu,
-                cu_delta_states->d_delta_var, this->epsilon, this->input_size,
-                batch_size, this->d_delta_mu_b, this->d_delta_var_b);
-        }
-
-    } else {
-        int wihi = this->in_height * this->in_width;
-        unsigned int grid_row = (batch_size + num_threads - 1) / num_threads;
-        dim3 grid_size(grid_col, grid_row);
-        unsigned int sum_grid_size =
-            (this->in_channels + num_threads - 1) / num_threads;
-
-        // Weights
-        // TODO: Not sure if it should be batch_size or batch_size * fi
-        layernorm2d_bwd_delta_w_cuda<<<grid_size, block_dim>>>(
-            this->d_var_w, cu_next_bwd_states->d_mu_a, this->d_mu_ra,
-            this->d_var_ra, cu_delta_states->d_delta_mu,
-            cu_delta_states->d_delta_var, this->epsilon, wihi,
-            this->in_channels, batch_size, cu_temp_states->d_tmp_1,
-            cu_temp_states->d_tmp_2);
-
-        delta_param_sum<<<sum_grid_size, num_threads>>>(
-            cu_temp_states->d_tmp_1, cu_temp_states->d_tmp_2, wihi,
-            this->in_channels, batch_size, this->d_delta_mu_w,
-            this->d_delta_var_w);
-
-        // Biases
-        if (this->bias) {
-            layernorm2d_bwd_delta_b_cuda<<<grid_size, block_dim>>>(
-                this->d_var_b, cu_delta_states->d_delta_mu,
-                cu_delta_states->d_delta_var, this->epsilon, wihi,
-                this->in_channels, batch_size, cu_temp_states->d_tmp_1,
-                cu_temp_states->d_tmp_2);
-
-            delta_param_sum<<<sum_grid_size, num_threads>>>(
-                cu_temp_states->d_tmp_1, cu_temp_states->d_tmp_2, wihi,
-                this->in_channels, batch_size, this->d_delta_mu_b,
-                this->d_delta_var_b);
-        }
+                                             *cu_output_states);
     }
 }
 
@@ -1536,6 +1401,17 @@ void BatchNorm2dCuda::init_weight_bias()
     this->params_to_device();
 }
 
+void BatchNorm2dCuda::deallocate_running_mean_var() {
+    cudaFree(this->d_mu_ra);
+    cudaFree(this->d_var_ra);
+    cudaFree(this->d_mu_norm_batch);
+    cudaFree(this->d_var_norm_batch);
+    this->d_mu_ra = nullptr;
+    this->d_var_ra = nullptr;
+    this->d_mu_norm_batch = nullptr;
+    this->d_var_norm_batch = nullptr;
+}
+
 void BatchNorm2dCuda::allocate_running_mean_var()
 /*
  */
@@ -1715,28 +1591,10 @@ void BatchNorm2dCuda::forward(BaseHiddenStates &input_states,
 
     // Update backward state for inferring parameters
     if (this->training) {
-        BackwardStateCuda *cu_bwd_states =
-            dynamic_cast<BackwardStateCuda *>(this->bwd_states.get());
-
         this->store_states_for_training_cuda(*cu_input_states,
-                                             *cu_output_states, *cu_bwd_states);
+                                             *cu_output_states);
     }
 }
-
-void BatchNorm2dCuda::state_backward(BaseBackwardStates &next_bwd_states,
-                                     BaseDeltaStates &input_delta_states,
-                                     BaseDeltaStates &output_delta_states,
-                                     BaseTempStates &temp_states)
-/*
- */
-{}
-
-void BatchNorm2dCuda::param_backward(BaseBackwardStates &next_bwd_states,
-                                     BaseDeltaStates &delta_states,
-                                     BaseTempStates &temp_states)
-/*
- */
-{}
 
 void BatchNorm2dCuda::backward(BaseDeltaStates &input_delta_states,
                                BaseDeltaStates &output_delta_states,

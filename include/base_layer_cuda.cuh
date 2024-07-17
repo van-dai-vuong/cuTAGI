@@ -47,8 +47,6 @@ class BaseLayerCuda : public BaseLayer {
     BaseLayerCuda &operator=(BaseLayerCuda &&) = default;
 
     using BaseLayer::forward;
-    using BaseLayer::param_backward;
-    using BaseLayer::state_backward;
 
     void allocate_param_delta() override;
 
@@ -73,6 +71,5 @@ class BaseLayerCuda : public BaseLayer {
    protected:
     virtual void allocate_param_memory();
     virtual void store_states_for_training_cuda(HiddenStateCuda &input_states,
-                                                HiddenStateCuda &output_states,
-                                                BackwardStateCuda &bwd_states);
+                                                HiddenStateCuda &output_states);
 };

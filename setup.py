@@ -18,7 +18,7 @@ def read():
     return version[0]
 
 
-# Convert distutils Windows platform specifiers to CMake -A arguments
+# Convert distutils Windows platform specifiers to CMake -A argument
 PLAT_TO_CMAKE = {
     "win32": "Win32",
     "win-amd64": "x64",
@@ -42,7 +42,7 @@ class CMakeBuild(build_ext):
             extdir += os.path.sep
 
         debug = int(os.environ.get("DEBUG", 0)) if self.debug is None else self.debug
-        cfg = "Debug" if debug else "RelWithDebInfo"
+        cfg = "Debug" if debug else "Release"
 
         # CMake lets you override the generator - we need to check this.
         # Can be set with Conda-Build, for example.

@@ -27,7 +27,7 @@ class LSTM : public BaseLayer {
 
     LSTM(size_t input_size, size_t output_size, int seq_len = 1,
          bool bias = true, float gain_w = 1.0f, float gain_b = 1.0f,
-         std::string init_method = "He");
+         std::string init_method = "Xavier");
 
     ~LSTM();
 
@@ -68,15 +68,6 @@ class LSTM : public BaseLayer {
     void forward(BaseHiddenStates &input_states,
                  BaseHiddenStates &output_states,
                  BaseTempStates &temp_states) override;
-
-    void state_backward(BaseBackwardStates &next_bwd_states,
-                        BaseDeltaStates &input_delta_states,
-                        BaseDeltaStates &output_hidden_states,
-                        BaseTempStates &temp_states) override;
-
-    void param_backward(BaseBackwardStates &next_bwd_states,
-                        BaseDeltaStates &delta_states,
-                        BaseTempStates &temp_states) override;
 
     void backward(BaseDeltaStates &input_delta_states,
                   BaseDeltaStates &output_delta_states,
