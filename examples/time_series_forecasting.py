@@ -63,7 +63,7 @@ def main(num_epochs: int = 10, batch_size: int = 1, sigma_v: float = 1):
     mses = []
     pbar = tqdm(range(num_epochs), desc="Training Progress")
     for epoch in pbar:
-        batch_iter = train_dtl.create_data_loader(batch_size, False)
+        batch_iter = train_dtl.create_data_loader(batch_size, shuffle=False)
 
         # Decaying observation's variance
         sigma_v = exponential_scheduler(

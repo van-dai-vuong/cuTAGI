@@ -301,6 +301,22 @@ void Sequential::backward()
                               this->input_state_update);
 }
 
+void Sequential::smoother()
+/*
+ */
+{
+    // Hidden layers
+    for (auto layer = this->layers.begin(); layer != this->layers.end();
+         ++layer) {
+        auto *current_layer = layer->get();
+
+        // Smooth only for LSTM layer
+        if (current_layer->get_layer_name() == "LSTM") {
+            current_layer->smoother();
+        }
+    }
+}
+
 void Sequential::step()
 /*
  */

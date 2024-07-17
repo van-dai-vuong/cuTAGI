@@ -240,8 +240,8 @@ void lstm_v2()
                      Linear(5 * input_seq_len, 1));
     model.input_state_update = true;
 
-    model.to_device("cuda");
-    // model.set_threads(1);
+    // model.to_device("cuda");
+    model.set_threads(1);
 
     OutputUpdater output_updater(model.device);
 
@@ -294,6 +294,8 @@ void lstm_v2()
             model.backward();
             model.step();
         }
+
+        model.smoother();
 
         // Report running time
         std::cout << std::endl;

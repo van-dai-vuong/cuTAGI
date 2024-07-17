@@ -95,6 +95,8 @@ class Sequential {
 
     void backward();
 
+    void smoother();
+
     void step();
 
     // DEBUG
