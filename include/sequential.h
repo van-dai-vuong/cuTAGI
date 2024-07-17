@@ -42,7 +42,7 @@ class Sequential {
     int input_size = 0;
     bool training = true;
     bool param_update = true;
-    bool input_state_update = true;
+    bool input_state_update = false;
     unsigned num_threads = 1;
     std::string device = "cpu";
     std::vector<std::shared_ptr<BaseLayer>> layers;
