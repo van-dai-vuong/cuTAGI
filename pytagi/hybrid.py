@@ -21,27 +21,33 @@ class LSTM_SSM:
         baseline: str,
         zB: Optional[np.ndarray] = None,
         SzB: Optional[np.ndarray] = None,
-        phi_AA: Optional[float] = 0.999,
+        Sz_init: Optional[np.ndarray] = None,
+        z_init: Optional[np.ndarray] = None,
+        phi_AA: Optional[float] = 0.99,
+        Sigma_AA_ratio: Optional[float] = 1e-14,
         phi_AR: Optional[float] = 0.75,
         Sigma_AR: Optional[float] = 0.05,
-        Sigma_AA: Optional[float] = 1e-16,
-        use_online_AR: Optional[bool] = False,
         use_auto_AR: Optional[bool] = False,
         mu_W2b_init: Optional[float] = 0,
         var_W2b_init: Optional[float] = 0,
     ) -> None:
         self.net = neural_network
         self.baseline = baseline
-        self.z = np.concatenate((zB, np.array([0])), axis=0).reshape(-1,1)
-        self.Sz = np.diag(np.concatenate((SzB, np.array([0])), axis=0))
+        if z_init is None:
+            self.z = np.concatenate((zB, np.array([0])), axis=0).reshape(-1,1)
+        else:
+            self.z = z_init
+        if Sz_init is None:
+            self.Sz = np.diag(np.concatenate((SzB, np.array([0])), axis=0))
+        else:
+            self.Sz = Sz_init
         self.init_z = self.z.copy()
         self.init_Sz = self.Sz.copy()
         self.nb_hs = len(self.z)
         self.phi_AA = phi_AA
+        self.Sigma_AA_ratio = Sigma_AA_ratio
         self.phi_AR = phi_AR
-        self.Sigma_AA = Sigma_AA
         self.Sigma_AR = Sigma_AR
-        self.use_online_AR = use_online_AR
         self.use_auto_AR = use_auto_AR
         self.mu_W2b_init = mu_W2b_init
         self.var_W2b_init = var_W2b_init
@@ -74,15 +80,6 @@ class LSTM_SSM:
         z_prior[-1,-1]  = mu_lstm[0]
         Sz_prior[-1,-1] = var_lstm[0]
 
-        # Perform GMA on x^phi and x^AR to get the prediction IF ONLINE AR IS USED
-        if self.use_online_AR:
-            GMA_z = GMA(z_prior, Sz_prior)
-            GMA_z.multiplicate_elements(-3, -2)
-            GMA_z.remove_element(-3)
-            GMA_z.swap_elements(-2, -1)
-            z_prior, Sz_prior = GMA_z.get_results()
-            Sz_prior = Sz_prior + self.Q
-
         if self.use_auto_AR:
             # phi_AR
             GMA_z = GMA(z_prior, Sz_prior)
@@ -108,6 +105,8 @@ class LSTM_SSM:
             # Use Lemma 2. to compute the prior for W2
             self.mu_W2_prior = self.mu_W2b_posterior
             self.var_W2_prior = 3 * self.var_W2b_posterior + 2 * self.mu_W2b_posterior**2
+        else:
+            Sz_prior = Sz_prior + self.Q
 
         # Predicted mean and var
         m_pred = self.F @ z_prior
@@ -241,19 +240,15 @@ class LSTM_SSM:
         if hasattr(self,'mu_smoothed'):
             self.z  = self.mu_smoothed[0]
             Sz_ = self.cov_smoothed[0]
-            Sz_ = np.diag(np.diag(Sz_))
+            # Sz_ = np.diag(np.diag(Sz_)) # Force the learned covariances to be zeros?
             self.Sz = Sz_
-
-            # Allow the model to learn the phi_AR from the global initialization
-            if self.use_online_AR:
-                self.z[-3] = self.init_z[-3]
-                self.Sz[-3, :] = self.init_Sz[-3, :]
-                self.Sz[:, -3] = self.init_Sz[:, -3]
+            # # Use the Sigma_AR to define the initial variance of AA
+            self.init_AA_var = self.Sigma_AA_ratio * self.Sigma_AR/(1-0.999**2)
+            self.Sz[2,2] = self.init_AA_var
+            self.smoothed_init_z = self.z
+            self.smoothed_init_Sz = self.Sz
 
             if self.use_auto_AR:
-                self.z[-3] = self.init_z[-3]
-                self.Sz[-3, :] = self.init_Sz[-3, :]
-                self.Sz[:, -3] = self.init_Sz[:, -3]
                 self.mu_W2b_posterior = self.mu_W2b_init
                 self.var_W2b_posterior = self.var_W2b_init
                 self.Sigma_AR = self.mu_W2b_posterior
@@ -279,42 +274,22 @@ class LSTM_SSM:
             self.A = np.array([[1,1,0.5,0],[0,1,1,0],[0,0,1,0],[0,0,0,0]])
             self.Q = np.zeros((4,4))
             self.F = np.array([1,0,0,1]).reshape(1, -1)
-        # # Add residuals in the model
-        # if self.baseline == 'level + AR':
-        #     self.A = np.diag([[1][1][1][0]])
-        #     self.Q = np.zeros((2,2))
-        #     self.Q[-2,-2] = 1e-2
-        #     self.F = np.array([1,1]).reshape(1, -1)
         elif self.baseline == 'trend + AR':
             self.A = np.array([[1,1,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,0]])
             self.Q = np.zeros((5, 5))
             self.Q[-2,-2] = self.Sigma_AR
             self.F = np.array([1,0,0,1,1]).reshape(1, -1)
-        # elif self.baseline == 'acceleration + AR':
-        #     self.A = np.array([[1,1,0.5,0,0,0],[0,1,1,0,0,0],[0,0,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0]])
-        #     self.Q = np.zeros((6,6))
-        #     # Process error for the online AR
-        #     self.Q[-2,-2] = 0.01
-        #     self.F = np.array([1,0,0,0,1,1]).reshape(1, -1)
         elif self.baseline == 'AA + AR':
             self.A = np.array([[1,1,self.phi_AA,0,0,0], [0,1,self.phi_AA,0,0,0], [0,0,self.phi_AA,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,0], [0,0,0,0,0,0]])
-            # self.A = np.array([[1,1,0,0,0,0], [0,1,0,0,0,0], [0,0,0,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,0], [0,0,0,0,0,0]])
             self.Q = np.zeros((6,6))
             self.Q[-2,-2] = self.Sigma_AR
-            self.Q[2, 2] = self.Sigma_AA
+            self.Q[2, 2] = self.Sigma_AR * self.Sigma_AA_ratio
             self.F = np.array([1,0,0,0,1,1]).reshape(1, -1)
-        # elif self.baseline == 'AA + AR':
-        #     self.A = np.array([[1,1,self.phi_AA,0,0,0], [0,1,self.phi_AA,0,0,0], [0,0,self.phi_AA,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,0], [0,0,0,0,0,0]])
-        #     # self.A = np.array([[1,1,0,0,0,0], [0,1,0,0,0,0], [0,0,0,0,0,0], [0,0,0,1,0,0], [0,0,0,0,1,0], [0,0,0,0,0,0]])
-        #     self.Q = np.zeros((6,6))
-        #     self.Q[-2,-2] = self.Sigma_AR
-        #     self.Q[2, 2] = self.Sigma_AA
-        #     self.F = np.array([1,0,0,0,1,1]).reshape(1, -1)
-        elif self.baseline == 'AA + plain_AR':
+        elif self.baseline == 'AA + AR_fixed':
             self.A = np.array([[1,1,self.phi_AA,0,0], [0,1,self.phi_AA,0,0], [0,0,self.phi_AA,0,0], [0,0,0,self.phi_AR,0], [0,0,0,0,0]])
             self.Q = np.zeros((5,5))
             self.Q[-2,-2] = self.Sigma_AR
-            self.Q[2, 2] = self.Sigma_AA
+            self.Q[2, 2] = self.Sigma_AR * self.Sigma_AA_ratio
             self.F = np.array([1.,0.,0.,1.,1.]).reshape(1, -1)
         elif self.baseline == 'LT + plain_AR':
             self.A = np.array([[1,1,0,0], [0,1,0,0], [0,0,self.phi_AR,0], [0,0,0,0]])
