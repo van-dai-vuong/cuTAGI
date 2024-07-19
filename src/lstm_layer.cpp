@@ -12,6 +12,7 @@
 #include "../include/lstm_layer.h"
 
 #include <cmath>
+#include <iostream>
 #include <thread>
 
 #include "../include/activation.h"
@@ -1393,10 +1394,12 @@ void LSTM::forward(BaseHiddenStates &input_states,
             Cc_h(lstm_states.mu_c.size());
         for (size_t i = 0; i < lstm_states.mu_c.size(); i++) {
             // cov(c_{t-1},c_{t})
-            Cc_c[i] = lstm_states.mu_c_prev[i] * lstm_states.mu_f_ga[i];
+            Cc_c[i] =
+                this->lstm_states.mu_c_prev[i] * this->lstm_states.mu_f_ga[i];
             // cov(c_{t},h_{t})
-            Cc_h[i] = lstm_states.var_c_prior[i] * lstm_states.jcb_ca[i] *
-                      lstm_states.mu_o_ga[i];
+            Cc_h[i] = this->lstm_states.var_c_prior[i] *
+                      this->lstm_states.jcb_ca[i] *
+                      this->lstm_states.mu_o_ga[i];
         }
         this->lstm_states.cov_cc.push_back(Cc_c);
         this->lstm_states.cov_ch.push_back(Cc_h);
@@ -1461,30 +1464,6 @@ void LSTM::backward(BaseDeltaStates &input_delta_states,
                     input_delta_states.delta_mu, input_delta_states.delta_var,
                     0, this->lstm_states.num_states,
                     this->lstm_states.mu_c_prev, this->lstm_states.var_c_prev);
-            }
-
-            // Estimate the posteriors for h and c
-            std::vector<float> Cc_h = lstm_states.cov_ch.back();
-
-            for (int i = 0; i < lstm_states.mu_h_prev.size(); i++) {
-                // hidden states
-                this->lstm_states.mu_h_prev[i] =
-                    lstm_states.mu_h_prior[i] +
-                    input_delta_states.delta_mu[i] * lstm_states.var_h_prior[i];
-
-                this->lstm_states.var_h_prev[i] =
-                    lstm_states.var_h_prior[i] +
-                    input_delta_states.delta_var[i] *
-                        lstm_states.var_h_prior[i] * lstm_states.var_h_prior[i];
-
-                // cell states
-                this->lstm_states.mu_c_prev[i] =
-                    lstm_states.mu_c_prior[i] +
-                    Cc_h[i] * input_delta_states.delta_mu[i];
-
-                this->lstm_states.var_c_prev[i] =
-                    lstm_states.var_c_prior[i] +
-                    Cc_h[i] * input_delta_states.delta_var[i] * Cc_h[i];
             }
 
             // save posteriors for smoothing
@@ -1584,7 +1563,7 @@ void LSTM::smoother()
         for (int j = 0; j < n_hs; j++) {
             // smoother for cell states
             Jc_temp[j] = lstm_states.cov_cc[i + 1][j] /
-                         lstm_states.var_c_priors[i + 1][j];
+                         (lstm_states.var_c_priors[i + 1][j] + 1 * 1e-8);
             mu_c_temp[j] = lstm_states.mu_c_posts[i][j] +
                            Jc_temp[j] * (mu_c_smooths[i + 1][j] -
                                          lstm_states.mu_c_priors[i + 1][j]);
@@ -1593,9 +1572,13 @@ void LSTM::smoother()
                                 (var_c_smooths[i + 1][j] -
                                  lstm_states.var_c_priors[i + 1][j]) *
                                 Jc_temp[j];
+
+            std::cout << "mu_c_smooth: " << mu_c_temp[j]
+                      << ". var_c_smooth: " << var_c_temp[j] << std::endl;
+
             // smoother for hidden states
-            Jch_temp[j] =
-                lstm_states.cov_ch[i][j] / lstm_states.var_c_priors[i][j];
+            Jch_temp[j] = lstm_states.cov_ch[i][j] /
+                          (lstm_states.var_c_priors[i][j] + 1 * 1e-8);
             mu_h_temp[j] =
                 lstm_states.mu_h_posts[i][j] +
                 Jch_temp[j] * (mu_c_temp[j] - lstm_states.mu_c_priors[i][j]);
@@ -1614,6 +1597,23 @@ void LSTM::smoother()
     this->lstm_states.var_c_smooths = var_c_smooths;
     this->lstm_states.mu_h_smooths = mu_h_smooths;
     this->lstm_states.var_h_smooths = var_h_smooths;
+
+    // std::cout
+    //     // << "mu_h_smooth: " << this->lstm_states.mu_h_smooths[n_time -
+    //     3][0]
+    //     // << ". var_h_smooth: " << this->lstm_states.var_h_smooths[n_time -
+    //     // 3][0]
+    //     // << ". mu_c_smooth: " << this->lstm_states.mu_c_smooths[n_time -
+    //     3][0]
+    //     // << ". var_c_smooth: " << this->lstm_states.var_c_smooths[n_time -
+    //     // 3][0]
+    //     // << std::endl;
+
+    //     << "mu_h_smooth: " << this->lstm_states.mu_h_smooths[0][0]
+    //     << ". var_h_smooth: " << this->lstm_states.var_h_smooths[0][0]
+    //     << ". mu_c_smooth: " << this->lstm_states.mu_c_smooths[0][0]
+    //     << ". var_c_smooth: " << this->lstm_states.var_c_smooths[0][0]
+    //     << std::endl;
 
     // Clear variables for next epoch
     this->lstm_states.mu_h_priors.clear();

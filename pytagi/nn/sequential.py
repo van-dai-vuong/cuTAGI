@@ -114,6 +114,10 @@ class Sequential:
         """Perform a backward pass."""
         self._cpp_backend.backward()
 
+    def smoother(self):
+        """Perform a smoother pass."""
+        self._cpp_backend.smoother()
+
     def step(self):
         """Perform a step of inference."""
         self._cpp_backend.step()

@@ -250,11 +250,12 @@ void lstm_v2()
     //////////////////////////////////////////////////////////////////////
     unsigned seed = 0;
     std::default_random_engine seed_e(seed);
-    int n_epochs = 10;
+    int n_epochs = 1;
     int batch_size = 1;
     float sigma_obs = 1.0;
 
-    int iters = train_db.num_data / batch_size;
+    // int iters = train_db.num_data / batch_size;
+    int iters = 10;
     std::cout << "num_iter: " << iters << "\n";
     std::vector<float> x_batch(batch_size * train_db.nx, 0.0f);
     std::vector<float> var_obs(batch_size * train_db.ny, pow(sigma_obs, 2));

@@ -220,6 +220,7 @@
         "syncstream": "cpp",
         "expected": "cpp",
         "spanstream": "cpp",
-        "stacktrace": "cpp"
+        "stacktrace": "cpp",
+        "execution": "cpp"
     }
 }

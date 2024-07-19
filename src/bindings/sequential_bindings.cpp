@@ -69,6 +69,7 @@ void bind_sequential(pybind11::module_& m) {
                  }
              })
         .def("backward", &Sequential::backward)
+        .def("smoother", &Sequential::smoother)
         .def("step", &Sequential::step)
         .def("output_to_host", &Sequential::output_to_host)
         .def("delta_z_to_host", &Sequential::delta_z_to_host)

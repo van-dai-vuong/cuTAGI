@@ -14,7 +14,7 @@ from pytagi.nn import LSTM, Linear, OutputUpdater, Sequential
 from examples.data_loader import TimeSeriesDataloader
 
 
-def main(num_epochs: int = 10, batch_size: int = 1, sigma_v: float = 1):
+def main(num_epochs: int = 1, batch_size: int = 1, sigma_v: float = 1):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
@@ -96,6 +96,9 @@ def main(num_epochs: int = 10, batch_size: int = 1, sigma_v: float = 1):
             )
             mse = metric.mse(pred, obs)
             mses.append(mse)
+
+        # Smoother
+        net.smoother()
 
         # Progress bar
         pbar.set_description(
