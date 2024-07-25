@@ -210,7 +210,6 @@ void OutputUpdater::update(BaseHiddenStates &output_states,
     this->obs->block_size = output_states.block_size;
     this->obs->size = mu_obs.size();
     this->obs->actual_size = mu_obs.size() / output_states.block_size;
-
     this->updater->update_output_delta_z(output_states, *this->obs,
                                          delta_states);
 }

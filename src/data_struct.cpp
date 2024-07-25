@@ -170,6 +170,7 @@ void BaseTempStates::set_size(size_t new_size, size_t new_block_size)
         this->size = new_size;
         this->tmp_1.resize(this->size, 0.0f);
         this->tmp_2.resize(this->size, 0.0f);
+        // this->tmp_3.resize(this->size, 0.0f);
     }
 
     this->block_size = new_block_size;

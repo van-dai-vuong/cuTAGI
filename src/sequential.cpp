@@ -284,6 +284,14 @@ void Sequential::backward()
          ++layer) {
         auto *current_layer = layer->get();
 
+        // if (layer != layers.rbegin()) {
+        // auto *next_layer = (layer - 1)->get();
+        // BaseTempStates temp_states;
+        // temp_states->tmp_1 = next_layer->mu_w;
+        // temp_states->tmp_2 = next_layer->var_w;
+        // temp_states->tmp_3 = next_layer->var_b;
+        // }
+
         // Backward pass for hidden states
         current_layer->backward(*this->input_delta_z_buffer,
                                 *this->output_delta_z_buffer,
@@ -309,10 +317,11 @@ void Sequential::smoother()
     for (auto layer = this->layers.begin(); layer != this->layers.end();
          ++layer) {
         auto *current_layer = layer->get();
+        auto *next_layer = (layer + 1)->get();
 
         // Smooth only for LSTM layer
         if (current_layer->get_layer_name() == "LSTM") {
-            current_layer->smoother();
+            current_layer->smoother(next_layer->get_layer_name());
         }
     }
 }

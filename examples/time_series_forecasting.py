@@ -18,7 +18,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 1):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 1
+    num_features = 2
     input_seq_len = 1
     output_seq_len = 1
     seq_stride = 1
@@ -31,6 +31,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 1):
         output_seq_len=output_seq_len,
         num_features=num_features,
         stride=seq_stride,
+        time_covariates=["hour_of_day"]
     )
     test_dtl = TimeSeriesDataloader(
         x_file="data/toy_time_series/x_test_sin_data.csv",
@@ -42,6 +43,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 1):
         stride=seq_stride,
         x_mean=train_dtl.x_mean,
         x_std=train_dtl.x_std,
+        time_covariates=["hour_of_day"]
     )
 
     # Viz
@@ -49,9 +51,9 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 1):
 
     # Network
     net = Sequential(
-        LSTM(1, 8, input_seq_len),
-        LSTM(8, 8, input_seq_len),
-        Linear(8 * input_seq_len, 1),
+        LSTM(2, 5, input_seq_len),
+        LSTM(5, 5, input_seq_len),
+        Linear(5 * input_seq_len, 1),
     )
     # net.to_device("cuda")
     net.set_threads(1)  # multi-processing is slow on a small net

@@ -74,7 +74,7 @@ class LSTM : public BaseLayer {
                   BaseTempStates &temp_states,
                   bool state_udapte = true) override;
 
-    void smoother() override;
+    void smoother(std::string next_layer_type) override;
 
     using BaseLayer::to_cuda;
 
