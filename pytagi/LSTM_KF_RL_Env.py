@@ -3,6 +3,7 @@ from gymnasium import spaces
 import numpy as np
 from pytagi.hybrid import process_input_ssm
 from scipy.stats import norm
+from pytagi.hybrid import *
 
 class LSTM_KF_Env(gym.Env):
     metadata = {"render_modes": []}
@@ -10,7 +11,6 @@ class LSTM_KF_Env(gym.Env):
     def __init__(self, render_mode=None, data_loader = None,
                  ts_model = None, step_look_back = 8):
         self.data_loader = data_loader
-        self.ts_model = ts_model
         self.step_look_back = step_look_back
         # Observations are dictionaries with the hidden states values
         self.observation_space = spaces.Dict(
@@ -59,7 +59,9 @@ class LSTM_KF_Env(gym.Env):
                                     'var': hidden_states_all_step_numpy['var'][look_back_steps_list, :, :]}
         return hidden_states_collected
 
-    def reset(self, seed=None, z=None, Sz=None, mu_preds_lstm = [], var_preds_lstm = []):
+    def reset(self, seed=None, z=None, Sz=None, mu_preds_lstm = [], var_preds_lstm = [],
+              net_test = None, init_mu_W2b = None, init_var_W2b = None, phi_AR = None, Sigma_AR = None,
+              phi_AA = None, Sigma_AA_ratio = None):
         super().reset(seed=seed)
 
         sigma_v = 1E-12
@@ -68,10 +70,39 @@ class LSTM_KF_Env(gym.Env):
         self.mu_preds_lstm = mu_preds_lstm
         self.var_preds_lstm = var_preds_lstm
         self.obs_unnorm = []
-        if z is not None and Sz is not None:
-            self.ts_model.init_ssm_hs(z = z, Sz = Sz)
-        else:
-            self.ts_model.init_ssm_hs()
+
+        # self.ts_model = LSTM_SSM(
+        #             neural_network = net_test,           # LSTM
+        #             baseline = 'AA + AR',
+        #             z_init  = z,
+        #             Sz_init = Sz,
+        #             use_auto_AR = True,
+        #             mu_W2b_init = init_mu_W2b,
+        #             var_W2b_init = init_var_W2b,
+        #         )
+        # z = np.delete(z, 3).reshape(-1, 1)
+        # Sz = np.delete(Sz, 3, axis=0)
+        # Sz = np.delete(Sz, 3, axis=1)
+        self.ts_model = LSTM_SSM(
+                    neural_network = net_test,           # LSTM
+                    baseline = 'AA + AR_fixed',
+                    z_init  = z,
+                    Sz_init = Sz,
+                    use_auto_AR = False,
+                    mu_W2b_init = init_mu_W2b,
+                    var_W2b_init = init_var_W2b,
+                    phi_AR = phi_AR,
+                    Sigma_AR = Sigma_AR,
+                    Sigma_AA_ratio = Sigma_AA_ratio,
+                    phi_AA = phi_AA,
+                )
+
+        self.ts_model.init_ssm_hs(z = z, Sz = Sz)
+
+        # if z is not None and Sz is not None:
+        #     self.ts_model.init_ssm_hs(z = z, Sz = Sz)
+        # else:
+        #     self.ts_model.init_ssm_hs()
 
         self.hidden_state_one_episode = {'mu': [], \
                                          'var': []}
@@ -89,8 +120,8 @@ class LSTM_KF_Env(gym.Env):
             # Backward
             z_updata, Sz_update = self.ts_model.backward(mu_obs = y, var_obs = self.var_y, train_LSTM = False)
 
-            self.hidden_state_one_episode['mu'].append(z_updata.flatten().tolist())
-            self.hidden_state_one_episode['var'].append(Sz_update.tolist())
+            self.hidden_state_one_episode['mu'].append(z_pred.flatten().tolist())
+            self.hidden_state_one_episode['var'].append(Sz_pred.tolist())
             self.prediction_one_episode['mu'].append(y_pred.tolist())
             self.prediction_one_episode['var'].append(Sy_pred.tolist())
 
@@ -111,7 +142,7 @@ class LSTM_KF_Env(gym.Env):
 
         return observation, info
 
-    def step(self, action, interv_LT_scale = 1e2):
+    def step(self, action, interv_LT_scale = 1e3, add_anomaly = False, anomaly_scale = 1e-2):
         # Action
         if action == 1:
             self.ts_model.z[2] = self.ts_model.init_z[2]
@@ -124,6 +155,8 @@ class LSTM_KF_Env(gym.Env):
         terminated = False
 
         for i, (x, y) in enumerate(self.batch_iter, start=self.current_step):
+            if add_anomaly:
+                y += anomaly_scale
             if i == self.current_step:
                 mu_x, var_x = process_input_ssm(
                     mu_x = x, mu_preds_lstm = self.mu_preds_lstm, var_preds_lstm = self.var_preds_lstm,

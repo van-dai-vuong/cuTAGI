@@ -243,12 +243,15 @@ class LSTM_SSM:
             # Sz_ = np.diag(np.diag(Sz_)) # Force the learned covariances to be zeros?
             self.Sz = Sz_
             # # Use the Sigma_AR to define the initial variance of AA
-            self.init_AA_var = self.Sigma_AA_ratio * self.Sigma_AR/(1-0.999**2)
+            self.init_AA_var = self.Sigma_AA_ratio * self.Sigma_AR/(1-0.99**2)
             self.Sz[2,2] = self.init_AA_var
             self.smoothed_init_z = self.z
             self.smoothed_init_Sz = self.Sz
 
             if self.use_auto_AR:
+                self.Sz[3,:] = self.init_Sz[3,:]
+                self.Sz[3,:] = self.init_Sz[:,3]
+                self.z[3] = self.init_z[3]
                 self.mu_W2b_posterior = self.mu_W2b_init
                 self.var_W2b_posterior = self.var_W2b_init
                 self.Sigma_AR = self.mu_W2b_posterior

@@ -22,6 +22,8 @@ class generate_one_synthetic_time_series:
             self.hyperparameters['kernel']['control_time_begin'] = self.time_series['timesteps'][0]
 
         self.x_laststep = self.x_init['mu']
+        self.x_mu = self.x_init['mu']
+        self.x_var = self.x_init['var']
 
         self.generate_time_series()
 
@@ -29,6 +31,16 @@ class generate_one_synthetic_time_series:
         j = 0
         for i in range(self.num_steps):
             A, F, Q, R = self._build_matrices(self.components, self.time_step_interval, self.hyperparameters, current_time_stamp = i)
+
+            # self.x_mu = np.dot(A, self.x_mu)
+            # self.x_var = np.dot(A, np.dot(self.x_var, A.T)) + Q
+            # x_sample = np.random.multivariate_normal(self.x_mu, self.x_var)
+            # y = np.dot(F, x_sample)+np.random.normal(0, R)
+            # if self.insert_anomaly and i in self.anomaly_timesteps:
+            #     y += self.anomaly_LT[j]
+            #     j += 1
+            # self.time_series['y'].append(float(y))
+
             if self.insert_anomaly and i in self.anomaly_timesteps:
                 self.x_laststep[1] += self.anomaly_LT[j]
                 j += 1
