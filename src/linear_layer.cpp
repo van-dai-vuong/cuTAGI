@@ -560,15 +560,8 @@ void Linear::forward(BaseHiddenStates &input_states,
     output_states.actual_size = this->output_size;
 
     // save output's prior for smoothing:
-    // std::cout << "input_size: " << input_size
-    //           << ". output_size: " << output_size
-    //           << ". size output_states: " << output_states.mu_a.size()
-    //           << ". mu_a_0: " << output_states.mu_a[0]
-    //           << ". mu_a_1: " << output_states.mu_a[1]
-    //           << ". var_a_0: " << output_states.var_a[0]
-    //           << ". var_a_1: " << output_states.var_a[1] << std::endl;
-    // temp_states.tmp_4 = output_states.mu_a[0];
-    // temp_states.tmp_5 = output_states.var_a[0];
+    temp_states.tmp_4 = output_states.mu_a[0];
+    temp_states.tmp_5 = output_states.var_a[0];
 
     if (this->training) {
         this->storing_states_for_training(input_states, output_states);
@@ -601,22 +594,11 @@ void Linear::backward(BaseDeltaStates &input_delta_states,
                 this->output_size, batch_size, start_chunk, end_chunk,
                 output_delta_states.delta_mu, output_delta_states.delta_var);
         }
-        // temp_states.tmp_6 = temp_states.tmp_4 +
-        //                     input_delta_states.delta_mu[0] *
-        //                     temp_states.tmp_5;
-        // temp_states.tmp_7 =
-        //     temp_states.tmp_5 + input_delta_states.delta_var[0] *
-        //                             temp_states.tmp_5 * temp_states.tmp_5;
-        // std::cout << "size input_delta_states.delta_mu:"
-        //           << input_delta_states.delta_mu.size()
-        //           << ". size input_delta_states.delta_var:"
-        //           << input_delta_states.delta_var.size() << std::endl;
-
-        // std::cout << "size tmp_4_mu_zo:" << temp_states.tmp_4.size()
-        //           << ". size tmp_5_var_zo:" << temp_states.tmp_5.size()
-        //           << ". size tmp_6_mu_zo:" << temp_states.tmp_6.size()
-        //           << ". size tmp_7_var_zo:" << temp_states.tmp_7.size()
-        //           << std::endl;
+        temp_states.tmp_6 = temp_states.tmp_4 +
+                            input_delta_states.delta_mu[0] * temp_states.tmp_5;
+        temp_states.tmp_7 =
+            temp_states.tmp_5 + input_delta_states.delta_var[0] *
+                                    temp_states.tmp_5 * temp_states.tmp_5;
     }
 
     // Update values for weights & biases

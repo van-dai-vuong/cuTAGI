@@ -72,7 +72,7 @@ class BaseHiddenStates {
           actual_size(other.actual_size),
           width(other.width),
           height(other.height),
-          depth(other.depth){};
+          depth(other.depth) {};
 
     // Move assignment operator
     BaseHiddenStates &operator=(BaseHiddenStates &&other) noexcept {
@@ -117,7 +117,7 @@ class BaseDeltaStates {
           delta_var(std::move(other.delta_var)),
           size(other.size),
           block_size(other.block_size),
-          actual_size(other.actual_size){};
+          actual_size(other.actual_size) {};
 
     // Move assigment operator
     BaseDeltaStates &operator=(BaseDeltaStates &&other) noexcept {
@@ -138,8 +138,8 @@ class BaseTempStates {
    public:
     std::vector<float> tmp_1;
     std::vector<float> tmp_2;
-    // std::vector<float> tmp_3;
-    // float tmp_4, tmp_5, tmp_6, tmp_7;
+    std::vector<float> tmp_3;
+    float tmp_4, tmp_5, tmp_6, tmp_7;
     size_t size = 0, block_size = 0, actual_size = 0;
 
     BaseTempStates(size_t n, size_t m);

@@ -557,7 +557,6 @@ void lstm_cov_hidden_states(
         }
     }
     C_zo_zo = C_zo_zo + Sb_next[0];
-    // std::cout << "cov: " << C_zo_zo << std::endl;
 }
 
 void lstm_hidden_state_mean_var_worker(
@@ -1340,10 +1339,10 @@ void LSTM::forward(BaseHiddenStates &input_states,
                             this->lstm_states.var_h_prior.size(),
                             this->lstm_states.var_h_prev);
         lstm_to_prev_states(this->lstm_states.mu_c_prior,
-                            this->lstm_states.mu_c_prev.size(),
+                            this->lstm_states.mu_c_prior.size(),
                             this->lstm_states.mu_c_prev);
         lstm_to_prev_states(this->lstm_states.var_c_prior,
-                            this->lstm_states.var_c_prev.size(),
+                            this->lstm_states.var_c_prior.size(),
                             this->lstm_states.var_c_prev);
     }
 
@@ -1450,7 +1449,7 @@ void LSTM::forward(BaseHiddenStates &input_states,
         for (size_t i = 0; i < lstm_states.mu_c.size(); i++) {
             // cov(c_{t-1},c_{t})
             Cc_c[i] =
-                this->lstm_states.mu_c_prev[i] * this->lstm_states.mu_f_ga[i];
+                this->lstm_states.var_c_prev[i] * this->lstm_states.mu_f_ga[i];
             // cov(c_{t},h_{t})
             Cc_h[i] = this->lstm_states.var_c_prior[i] *
                       this->lstm_states.jcb_ca[i] *
@@ -1494,27 +1493,27 @@ void LSTM::backward(BaseDeltaStates &input_delta_states,
                 output_delta_states.delta_var);
         }
 
-        // if (this->seq_len == 1 && batch_size == 1) {
-        //     int end_chunk_ = batch_size * this->seq_len * this->output_size;
-        //     std::vector<float> cov_hh(end_chunk_ * end_chunk_, 0);
-        //     float cov_zo = 0;
+        if (this->seq_len == 1 && batch_size == 1) {
+            int end_chunk_ = batch_size * this->seq_len * this->output_size;
+            std::vector<float> cov_hh(end_chunk_ * end_chunk_, 0);
+            float cov_zo = 0;
 
-        // lstm_cov_hidden_states(
-        //     this->mu_w, lstm_states.jcb_f_ga, lstm_states.mu_i_ga,
-        //     lstm_states.jcb_i_ga, lstm_states.mu_c_ga,
-        //     lstm_states.jcb_c_ga, lstm_states.mu_o_ga,
-        //     lstm_states.jcb_o_ga, lstm_states.mu_c_prior,
-        //     lstm_states.mu_h_prev, lstm_states.var_h_prev,
-        //     lstm_states.mu_c_prev, lstm_states.mu_ca, lstm_states.jcb_ca,
-        //     input_delta_states.delta_mu, input_delta_states.delta_var,
-        //     this->w_pos_f, this->w_pos_i, this->w_pos_c, this->w_pos_o,
-        //     this->output_size, this->input_size, 0, end_chunk_,
-        //     temp_states.tmp_1, temp_states.tmp_2, temp_states.tmp_3,
-        //     cov_hh, cov_zo);
-        // // print_matrix_1Dvec(cov_hh);
-        // this->lstm_states.cov_hh.push_back(cov_hh);
-        // this->lstm_states.cov_zo.push_back(cov_zo);
-        // }
+            lstm_cov_hidden_states(
+                this->mu_w, lstm_states.jcb_f_ga, lstm_states.mu_i_ga,
+                lstm_states.jcb_i_ga, lstm_states.mu_c_ga, lstm_states.jcb_c_ga,
+                lstm_states.mu_o_ga, lstm_states.jcb_o_ga,
+                lstm_states.mu_c_prior, lstm_states.mu_h_prev,
+                lstm_states.var_h_prev, lstm_states.mu_c_prev,
+                lstm_states.mu_ca, lstm_states.jcb_ca,
+                input_delta_states.delta_mu, input_delta_states.delta_var,
+                this->w_pos_f, this->w_pos_i, this->w_pos_c, this->w_pos_o,
+                this->output_size, this->input_size, 0, end_chunk_,
+                temp_states.tmp_1, temp_states.tmp_2, temp_states.tmp_3, cov_hh,
+                cov_zo);
+            // print_matrix_1Dvec(cov_hh);
+            this->lstm_states.cov_hh.push_back(cov_hh);
+            this->lstm_states.cov_zo.push_back(cov_zo);
+        }
     }
 
     if (param_update) {
@@ -1600,10 +1599,10 @@ void LSTM::backward(BaseDeltaStates &input_delta_states,
         this->lstm_states.var_h_posts.push_back(this->lstm_states.var_h_prior);
         this->lstm_states.mu_c_posts.push_back(this->lstm_states.mu_c_prior);
         this->lstm_states.var_c_posts.push_back(this->lstm_states.var_c_prior);
-        // this->lstm_states.mu_zo_priors.push_back(temp_states.tmp_4);
-        // this->lstm_states.var_zo_priors.push_back(temp_states.tmp_5);
-        // this->lstm_states.mu_zo_posts.push_back(temp_states.tmp_6);
-        // this->lstm_states.var_zo_posts.push_back(temp_states.tmp_7);
+        this->lstm_states.mu_zo_priors.push_back(temp_states.tmp_4);
+        this->lstm_states.var_zo_priors.push_back(temp_states.tmp_5);
+        this->lstm_states.mu_zo_posts.push_back(temp_states.tmp_6);
+        this->lstm_states.var_zo_posts.push_back(temp_states.tmp_7);
     }
 }
 
@@ -1617,7 +1616,7 @@ void LSTM::smoother(std::string next_layer_type)
         mu_h_temp(n_hs), var_h_temp(n_hs), Jch_temp(n_hs);
     std::vector<std::vector<float>> mu_c_smooths(n_time), var_c_smooths(n_time),
         mu_h_smooths(n_time), var_h_smooths(n_time);
-    std::vector<float> mu_zo_smooths(n_hs), var_zo_smooths(n_hs);
+    std::vector<float> mu_zo_smooths(n_time), var_zo_smooths(n_time);
     float Jzo_temp;
 
     // Initialize the last time step for smoothing
@@ -1625,8 +1624,8 @@ void LSTM::smoother(std::string next_layer_type)
     var_c_smooths.back() = lstm_states.var_c_posts.back();
     mu_h_smooths.back() = lstm_states.mu_h_posts.back();
     var_h_smooths.back() = lstm_states.var_h_posts.back();
-    // mu_zo_smooths.back() = lstm_states.mu_zo_posts.back();
-    // var_zo_smooths.back() = lstm_states.var_zo_posts.back();
+    mu_zo_smooths.back() = lstm_states.mu_zo_posts.back();
+    var_zo_smooths.back() = lstm_states.var_zo_posts.back();
 
     for (int i = n_time - 2; i >= 0; i--) {
         for (int j = 0; j < n_hs; j++) {
@@ -1641,7 +1640,6 @@ void LSTM::smoother(std::string next_layer_type)
                                 (var_c_smooths[i + 1][j] -
                                  lstm_states.var_c_priors[i + 1][j]) *
                                 Jc_temp[j];
-            std::cout << var_c_temp[j] << " ";
 
             // smoother for hidden states
             Jch_temp[j] =
@@ -1653,25 +1651,20 @@ void LSTM::smoother(std::string next_layer_type)
                 lstm_states.var_h_posts[i][j] +
                 Jch_temp[j] * (var_c_temp[j] - lstm_states.var_c_priors[i][j]) *
                     Jch_temp[j];
-            // std::cout << var_h_temp[j] << " ";
         }
-        // if (next_layer_type == "Linear") {
-        //     // smoother for z_{O}
-        //     Jzo_temp =
-        //         lstm_states.cov_zo[i + 1] / lstm_states.var_zo_priors[i +
-        //         1];
-        //     mu_zo_smooths[i] = lstm_states.mu_zo_posts[i] +
-        //                        Jzo_temp * (mu_zo_smooths[i + 1] -
-        //                                    lstm_states.mu_zo_priors[i +
-        //                                    1]);
-        //     var_zo_smooths[i] =
-        //         lstm_states.var_zo_posts[i] +
-        //         Jzo_temp *
-        //             (var_zo_smooths[i + 1] - lstm_states.var_zo_priors[i
-        //             + 1]) * Jzo_temp;
-        //     // std::cout << var_zo_smooths[i] << std::endl;
-        // }
-        // std::cout << std::endl;
+        if (next_layer_type == "Linear") {
+            // smoother for z_{O}
+            Jzo_temp =
+                lstm_states.cov_zo[i + 1] / lstm_states.var_zo_priors[i + 1];
+            mu_zo_smooths[i] = lstm_states.mu_zo_posts[i] +
+                               Jzo_temp * (mu_zo_smooths[i + 1] -
+                                           lstm_states.mu_zo_priors[i + 1]);
+            var_zo_smooths[i] =
+                lstm_states.var_zo_posts[i] +
+                Jzo_temp *
+                    (var_zo_smooths[i + 1] - lstm_states.var_zo_priors[i + 1]) *
+                    Jzo_temp;
+        }
 
         // save
         mu_c_smooths[i] = mu_c_temp;
@@ -1684,17 +1677,21 @@ void LSTM::smoother(std::string next_layer_type)
     this->lstm_states.var_c_smooths = var_c_smooths;
     this->lstm_states.mu_h_smooths = mu_h_smooths;
     this->lstm_states.var_h_smooths = var_h_smooths;
-    // this->lstm_states.mu_zo_smooths = mu_zo_smooths;
-    // this->lstm_states.var_zo_smooths = var_zo_smooths;
+    this->lstm_states.mu_zo_smooths = mu_zo_smooths;
+    this->lstm_states.var_zo_smooths = var_zo_smooths;
 
-    std::cout << "mu_h: ";
-    print_matrix_1Dvec(mu_h_smooths[1]);
-    std::cout << "var_h: ";
-    print_matrix_1Dvec(var_h_smooths[1]);
-    std::cout << "mu_c: ";
-    print_matrix_1Dvec(mu_c_smooths[1]);
-    std::cout << "var_c: ";
-    print_matrix_1Dvec(var_c_smooths[1]);
+    for (int i = 0; i < n_time; i++) {
+        // std::cout << "mu_h: ";
+        // print_matrix_1Dvec(mu_h_smooths[i]);
+        // std::cout << "var_h: ";
+        // print_matrix_1Dvec(var_h_smooths[i]);
+        // std::cout << "mu_c: ";
+        // print_matrix_1Dvec(mu_c_smooths[i]);
+        // std::cout << "var_c: ";
+        // print_matrix_1Dvec(var_c_smooths[i]);
+        std::cout << "mu_zo: " << lstm_states.mu_zo_smooths[i]
+                  << ". var_zo: " << lstm_states.var_zo_smooths[i] << std::endl;
+    }
 
     // Clear variables for next epoch
     this->lstm_states.mu_h_priors.clear();
@@ -1707,13 +1704,15 @@ void LSTM::smoother(std::string next_layer_type)
     this->lstm_states.var_c_posts.clear();
     this->lstm_states.cov_cc.clear();
     this->lstm_states.cov_ch.clear();
-    // this->lstm_states.cov_hh.clear();
-    // this->lstm_states.cov_zo.clear();
-    // this->lstm_states.mu_zo_priors.clear();
-    // this->lstm_states.var_zo_priors.clear();
-    // this->lstm_states.mu_zo_posts.clear();
-    // this->lstm_states.var_zo_posts.clear();
-    // this->lstm_states.reset_zeros();
+    this->lstm_states.cov_hh.clear();
+    this->lstm_states.cov_zo.clear();
+    this->lstm_states.mu_zo_priors.clear();
+    this->lstm_states.var_zo_priors.clear();
+    this->lstm_states.mu_zo_posts.clear();
+    this->lstm_states.var_zo_posts.clear();
+    this->lstm_states.reset_zeros();
+
+    // std::cout << "Smooth. Next layer: " << next_layer_type << std::endl;
 }
 
 #ifdef USE_CUDA

@@ -236,8 +236,8 @@ void lstm_v2()
         train_db.sigma_x);
 
     // Model
-    Sequential model(LSTM(1, 5, input_seq_len), LSTM(5, 5, input_seq_len),
-                     Linear(5 * input_seq_len, 1));
+    Sequential model(LSTM(1, 8, input_seq_len), LSTM(8, 8, input_seq_len),
+                     Linear(8 * input_seq_len, 1));
     model.input_state_update = true;
 
     // model.to_device("cuda");
@@ -250,15 +250,15 @@ void lstm_v2()
     //////////////////////////////////////////////////////////////////////
     unsigned seed = 0;
     std::default_random_engine seed_e(seed);
-    int n_epochs = 2;
+    int n_epochs = 50;
     int batch_size = 1;
     float sigma_obs = 1.0;
 
-    // int iters = train_db.num_data / batch_size;
-    int iters = 10;
+    int iters = train_db.num_data / batch_size;
+    // int iters = 10;
     std::cout << "num_iter: " << iters << "\n";
     std::vector<float> x_batch(batch_size * train_db.nx, 0.0f);
-    std::vector<float> var_obs(batch_size * train_db.ny, pow(sigma_obs, 2));
+    std::vector<float> var_obs(batch_size * train_db.ny, pow(sigma_obs, 1));
     std::vector<float> y_batch(batch_size * train_db.ny, 0.0f);
     std::vector<int> batch_idx(batch_size);
     std::vector<float> mu_a_output(batch_size * train_db.ny, 0);
