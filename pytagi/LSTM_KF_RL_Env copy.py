@@ -71,27 +71,16 @@ class LSTM_KF_Env(gym.Env):
         self.var_preds_lstm = var_preds_lstm
         self.obs_unnorm = []
 
-        # self.ts_model = LSTM_SSM(
-        #             neural_network = net_test,           # LSTM
-        #             baseline = 'AA + AR',
-        #             z_init  = z,
-        #             Sz_init = Sz,
-        #             use_auto_AR = True,
-        #             mu_W2b_init = init_mu_W2b,
-        #             var_W2b_init = init_var_W2b,
-        #             Sigma_AA_ratio = Sigma_AA_ratio,
-        #             phi_AA = phi_AA,
-        #         )
         self.ts_model = LSTM_SSM(
                     neural_network = net_test,           # LSTM
-                    baseline = 'AA + AR_fixed',
+                    baseline = 'AA + AR',
                     z_init  = z,
                     Sz_init = Sz,
-                    phi_AR = phi_AR,
-                    Sigma_AR = Sigma_AR,
+                    use_auto_AR = True,
+                    mu_W2b_init = init_mu_W2b,
+                    var_W2b_init = init_var_W2b,
                     Sigma_AA_ratio = Sigma_AA_ratio,
                     phi_AA = phi_AA,
-                    use_auto_AR = False,
                 )
         # z = np.delete(z, 3).reshape(-1, 1)
         # Sz = np.delete(Sz, 3, axis=0)
@@ -155,7 +144,7 @@ class LSTM_KF_Env(gym.Env):
 
         return observation, info
 
-    def step(self, action, interv_LT_scale = 1e2, add_anomaly = False, anomaly_scale = 1e-2):
+    def step(self, action, interv_LT_scale = 1e1, add_anomaly = False, anomaly_scale = 1e-2):
         # Action
         if action == 1:
             self.ts_model.z[2] = self.ts_model.init_z[2]

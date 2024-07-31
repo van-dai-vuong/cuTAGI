@@ -5,27 +5,32 @@ import csv
 
 class generate_one_synthetic_time_series:
     def __init__(self, **kwargs):
-        self.components = kwargs.get('components', [])
-        self.time_step_interval = kwargs.get('time_step_interval', None)
-        self.hyperparameters = kwargs.get('hyperparameters', {})
-        self.num_steps = kwargs.get('num_steps', None)
-        self.x_init = kwargs.get('x_init', {})
-        self.insert_anomaly = kwargs.get('insert_anomaly', False)
-        self.anomaly_timesteps = kwargs.get('anomaly_timesteps', [])
-        self.anomaly_LT = kwargs.get('anomaly_LT', [])
+        self.used_for_generation = kwargs.get('used_for_generation', True)
+        if self.used_for_generation:
+            self.components = kwargs.get('components', [])
+            self.time_step_interval = kwargs.get('time_step_interval', None)
+            self.hyperparameters = kwargs.get('hyperparameters', {})
+            self.num_steps = kwargs.get('num_steps', None)
+            self.x_init = kwargs.get('x_init', {})
+            self.insert_anomaly = kwargs.get('insert_anomaly', False)
+            self.anomaly_timesteps = kwargs.get('anomaly_timesteps', [])
+            self.anomaly_LT = kwargs.get('anomaly_LT', [])
 
-        self.num_component = len(self.x_init['mu'])
-        self.time_series = {'y': [], 'timesteps': []}
-        self.time_series['timesteps'] = [i*self.time_step_interval for i in range(self.num_steps)]
+            self.num_component = len(self.x_init['mu'])
+            self.time_series = {'y': [], 'timesteps': []}
+            self.time_series['timesteps'] = [i*self.time_step_interval for i in range(self.num_steps)]
 
-        if 'kernel' in self.components:
-            self.hyperparameters['kernel']['control_time_begin'] = self.time_series['timesteps'][0]
+            if 'kernel' in self.components:
+                self.hyperparameters['kernel']['control_time_begin'] = self.time_series['timesteps'][0]
 
-        self.x_laststep = self.x_init['mu']
-        self.x_mu = self.x_init['mu']
-        self.x_var = self.x_init['var']
+            self.x_laststep = self.x_init['mu']
+            self.x_mu = self.x_init['mu']
+            self.x_var = self.x_init['var']
 
-        self.generate_time_series()
+            self.generate_time_series()
+        else:
+            self.time_series = {'y': [], 'timesteps': []}
+            self.time_step_interval = kwargs.get('time_step_interval', None)
 
     def generate_time_series(self):
         j = 0

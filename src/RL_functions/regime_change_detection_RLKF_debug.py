@@ -117,8 +117,8 @@ class regime_change_detection_RLKF():
                         # Sample phi_AR following a Gaussian with mean self.phi_AR and variance self.trained_BDLM.var_phi_AR
                         # phi_AR = np.random.normal(self.phi_AR, np.sqrt(self.trained_BDLM.var_phi_AR)),
                         # Sigma_AR = np.random.normal(self.Sigma_AR, np.sqrt(self.trained_BDLM.var_Sigma_AR)),
-                        phi_AR = self.phi_AR,
-                        Sigma_AR = self.Sigma_AR,
+                        phi_AR = 0.6496100633472297,
+                        Sigma_AR = 0.11453**2,
                         Sigma_AA_ratio = self.Sigma_AA_ratio,
                         phi_AA = self.phi_AA,
                     )

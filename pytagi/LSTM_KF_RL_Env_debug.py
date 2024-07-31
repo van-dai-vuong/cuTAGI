@@ -87,8 +87,10 @@ class LSTM_KF_Env(gym.Env):
                     baseline = 'AA + AR_fixed',
                     z_init  = z,
                     Sz_init = Sz,
-                    phi_AR = phi_AR,
-                    Sigma_AR = Sigma_AR,
+                    # mu_W2b_init = init_mu_W2b,
+                    # var_W2b_init = init_var_W2b,
+                    phi_AR = 0.6496100633472297,
+                    Sigma_AR = 0.11453**2,
                     Sigma_AA_ratio = Sigma_AA_ratio,
                     phi_AA = phi_AA,
                     use_auto_AR = False,
@@ -155,7 +157,7 @@ class LSTM_KF_Env(gym.Env):
 
         return observation, info
 
-    def step(self, action, interv_LT_scale = 1e2, add_anomaly = False, anomaly_scale = 1e-2):
+    def step(self, action, interv_LT_scale = 1e1, add_anomaly = False, anomaly_scale = 1e-2):
         # Action
         if action == 1:
             self.ts_model.z[2] = self.ts_model.init_z[2]

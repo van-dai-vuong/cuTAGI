@@ -22,7 +22,7 @@ class BDLM_trainer:
         self.output_seq_len = kwargs.get('output_seq_len', None)
         self.seq_stride = kwargs.get('seq_stride', None)
 
-        self.Sigma_AA_ratio = kwargs.get('Sigma_AA_ratio', 1e-14)
+        self.Sigma_AA_ratio = kwargs.get('Sigma_AA_ratio', 1e-16)
         self.phi_AA = kwargs.get('phi_AA', 0.999)
         self.components = kwargs.get('components', 'AA + AR')
         self.use_auto_AR = kwargs.get('use_auto_AR', True)
@@ -89,7 +89,7 @@ class BDLM_trainer:
             ax0.legend()
             ax0.set_title('Baseline estimation using first-order regression')
 
-    def train(self, plot = False, true_phiAR = None, true_SigmaAR = None, initial_z = None, initial_Sz = None):
+    def train(self, plot = False, true_phiAR = None, true_SigmaAR = None):
         # Network
         net = Sequential(
             LSTM(self.num_features, 30, self.input_seq_len),
@@ -102,32 +102,18 @@ class BDLM_trainer:
         # # # State-space models: for baseline hidden states
         LA_var_stationary = self.Sigma_AA_ratio*1/(1-self.phi_AA**2)
         # # Autoregressive acceleration + online AR
-        if initial_z is None and initial_Sz is None:
-            hybrid = LSTM_SSM(
-                neural_network = net,           # LSTM
-                baseline = self.components, # 'level', 'trend', 'acceleration', 'ETS'
-                # zB  = np.array([self.level_init, self.speed_init, 0, 0.5, -0.05]),
-                zB  = np.array([self.level_init, self.speed_init, 0, 0.5, 0.02]),
-                SzB = np.array([1E-5, 1E-8, LA_var_stationary, 0.5**2, 0.15**2]),
-                use_auto_AR = self.use_auto_AR,
-                mu_W2b_init = 0.5,
-                var_W2b_init = 0.5**2,
-                Sigma_AA_ratio = self.Sigma_AA_ratio,
-                phi_AA = self.phi_AA,
-            )
-        else:
-            hybrid = LSTM_SSM(
-                neural_network = net,           # LSTM
-                baseline = self.components, # 'level', 'trend', 'acceleration', 'ETS'
-                # zB  = np.array([self.level_init, self.speed_init, 0, 0.5, -0.05]),
-                zB  = initial_z,
-                SzB = initial_Sz,
-                use_auto_AR = self.use_auto_AR,
-                mu_W2b_init = 0.25,
-                var_W2b_init = 0.25**2,
-                Sigma_AA_ratio = self.Sigma_AA_ratio,
-                phi_AA = self.phi_AA,
-            )
+        hybrid = LSTM_SSM(
+            neural_network = net,           # LSTM
+            baseline = self.components, # 'level', 'trend', 'acceleration', 'ETS'
+            # zB  = np.array([self.level_init, self.speed_init, 0, 0.5, -0.05]),
+            zB  = np.array([0.1, 1E-4, 0, 0.5, -0.05]),
+            SzB = np.array([1E-5, 1E-8, LA_var_stationary, 0.5**2, 0.15**2]),
+            use_auto_AR = self.use_auto_AR,
+            mu_W2b_init = 1**2,
+            var_W2b_init = 1**2,
+            Sigma_AA_ratio = self.Sigma_AA_ratio,
+            phi_AA = self.phi_AA,
+        )
 
         # Training
         mses = []
@@ -304,7 +290,6 @@ class BDLM_trainer:
         print(f"Log-likelihood: {log_lik: 0.2f}")
 
         self.model = hybrid
-
         self.phi_AR = mu_phiar[-1]
         self.Sigma_AR = mu_sigma_ar[-1]**2
         self.var_phi_AR = var_phiar[-1]
@@ -338,6 +323,10 @@ class BDLM_trainer:
             ax3.plot(np.arange(len(mu_ar)),mu_ar,color='b',label=r"AR")
             ax3.fill_between(np.arange(len(mu_ar)), np.array(mu_ar) - np.sqrt(var_ar), np.array(mu_ar) + np.sqrt(var_ar), color='blue', alpha=0.3, label='±1 SD')
             ax3.set_ylabel('AR')
+            # ax2.plot(np.arange(len(mu_aa)),mu_aa,color='b',label=r"AA")
+            # ax2.fill_between(np.arange(len(mu_aa)), np.array(mu_aa) - np.sqrt(var_aa), np.array(mu_aa) + np.sqrt(var_aa), color='blue', alpha=0.3, label='±1 SD')
+            # ax2.set_ylabel('AA')
+            # set title
             ax0.set_title('Check if AR and LSTM are correctly trained')
 
     def save_LSTM_model(self, path):
@@ -355,34 +344,33 @@ class BDLM_trainer:
         self.net_test.set_threads(8)
         self.net_test.load(filename = self.model_path)
 
-    def get_testing_model_initials(self, val_datetime_values, plot = False, initial_z = None, initial_Sz = None):
+    def get_testing_model_initials(self, val_datetime_values, plot = False):
         # # # # State-space models: for baseline hidden states
         LA_var_stationary = self.Sigma_AA_ratio*self.Sigma_AR/(1-self.phi_AA**2)
         AR_var_stationary = self.Sigma_AR /(1-self.phi_AR**2)
-        if initial_z is None and initial_Sz is None:
-            hybrid_test = LSTM_SSM(
-                neural_network = self.net_test,           # LSTM
-                baseline = 'AA + AR_fixed', # 'level', 'trend', 'acceleration', 'ETS'
-                zB  = np.array([self.level_init, self.speed_init, 0, 0.02]),
-                SzB = np.array([1E-5, 1E-8, LA_var_stationary, AR_var_stationary]),
-                phi_AR = self.phi_AR,
-                Sigma_AR = self.Sigma_AR,
-                Sigma_AA_ratio = self.Sigma_AA_ratio,
-                phi_AA = self.phi_AA,
-                use_auto_AR = False,
-            )
-        else:
-            hybrid_test = LSTM_SSM(
-                neural_network = self.net_test,           # LSTM
-                baseline = 'AA + AR_fixed', # 'level', 'trend', 'acceleration', 'ETS'
-                zB  = initial_z,
-                SzB = initial_Sz,
-                phi_AR = self.phi_AR,
-                Sigma_AR = self.Sigma_AR,
-                Sigma_AA_ratio = self.Sigma_AA_ratio,
-                phi_AA = self.phi_AA,
-                use_auto_AR = False,
-            )
+        # hybrid_test = LSTM_SSM(
+        #     neural_network = self.net_test,           # LSTM
+        #     baseline = 'AA + AR_fixed', # 'level', 'trend', 'acceleration', 'ETS'
+        #     zB  = np.array([self.level_init, self.speed_init, 0, -0.05]),
+        #     SzB = np.array([1E-6, 1E-6, LA_var_stationary, AR_var_stationary]),
+        #     phi_AR = self.phi_AR,
+        #     Sigma_AR = self.Sigma_AR,
+        #     Sigma_AA_ratio = self.Sigma_AA_ratio,
+        #     phi_AA = self.phi_AA,
+        #     use_auto_AR = False,
+        # )
+
+        hybrid_test = LSTM_SSM(
+            neural_network = self.net_test,           # LSTM
+            baseline = self.components, # 'level', 'trend', 'acceleration', 'ETS'
+            zB  = np.array([self.level_init, self.speed_init, 0, 0.5, -0.05]),
+            SzB = np.array([1E-8, 1E-8, LA_var_stationary, 0.5**2, 0.15**2]),
+            use_auto_AR = self.use_auto_AR,
+            mu_W2b_init = 1**2,
+            var_W2b_init = 1**2,
+            Sigma_AA_ratio = self.Sigma_AA_ratio,
+            phi_AA = self.phi_AA,
+        )
 
         # Run the model on the training set + validation set again without training the LSTM, in ordr to get the initial states for the test set
         var_y = np.full((self.batch_size * len(self.output_col),), self.sigma_v**2, dtype=np.float32)
@@ -505,31 +493,31 @@ class BDLM_trainer:
         return self.net_test, self.init_mu_lstm, self.init_var_lstm, self.init_z, self.init_Sz, self.init_mu_W2b, self.init_var_W2b, self.last_seq_obs, self.last_seq_datetime, self.last_lstm_x
 
     def check_AA(self, plot = False):
-        # # State-space models: for baseline hidden states
-        LA_var_stationary = self.Sigma_AA_ratio*self.Sigma_AR/(1-self.phi_AA**2)
-        hybrid_test = LSTM_SSM(
-            neural_network = self.net_test,           # LSTM
-            baseline = 'AA + AR_fixed', # 'level', 'trend', 'acceleration', 'ETS'
-            z_init = self.init_z,
-            Sz_init = self.init_Sz,
-            phi_AR = self.phi_AR,
-            Sigma_AR = self.Sigma_AR,
-            use_auto_AR = False,
-            Sigma_AA_ratio = self.Sigma_AA_ratio,
-            phi_AA = self.phi_AA,
-        )
-
+        # # # State-space models: for baseline hidden states
+        # LA_var_stationary = self.Sigma_AA_ratio*self.Sigma_AR/(1-self.phi_AA**2)
         # hybrid_test = LSTM_SSM(
         #     neural_network = self.net_test,           # LSTM
-        #     baseline = self.components, # 'level', 'trend', 'acceleration', 'ETS'
-        #     z_init  = self.init_z,
+        #     baseline = 'AA + AR_fixed', # 'level', 'trend', 'acceleration', 'ETS'
+        #     z_init = self.init_z,
         #     Sz_init = self.init_Sz,
-        #     use_auto_AR = self.use_auto_AR,
-        #     mu_W2b_init = self.init_mu_W2b,
-        #     var_W2b_init = self.init_var_W2b,
+        #     phi_AR = self.phi_AR,
+        #     Sigma_AR = self.Sigma_AR,
+        #     use_auto_AR = False,
         #     Sigma_AA_ratio = self.Sigma_AA_ratio,
         #     phi_AA = self.phi_AA,
         # )
+
+        hybrid_test = LSTM_SSM(
+            neural_network = self.net_test,           # LSTM
+            baseline = self.components, # 'level', 'trend', 'acceleration', 'ETS'
+            z_init  = self.init_z,
+            Sz_init = self.init_Sz,
+            use_auto_AR = self.use_auto_AR,
+            mu_W2b_init = self.init_mu_W2b,
+            var_W2b_init = self.init_var_W2b,
+            Sigma_AA_ratio = self.Sigma_AA_ratio,
+            phi_AA = self.phi_AA,
+        )
         self.model = hybrid_test
 
         batch_iter = self.test_dtl.create_data_loader(self.batch_size, shuffle=False)
@@ -603,7 +591,7 @@ class BDLM_trainer:
             ax3.fill_between(np.arange(len(mu_AR)), np.array(mu_AR) - np.sqrt(var_AR), np.array(mu_AR) + np.sqrt(var_AR), color='blue', alpha=0.3, label='±1 SD')
             ax3.fill_between(np.arange(len(mu_AR)), np.zeros_like(len(mu_AR))-3*np.sqrt(AR_var_stationary), np.zeros_like(len(mu_AR))+3*np.sqrt(AR_var_stationary), color='red', alpha=0.1)
             ax3.set_ylabel('AR')
-            # ax3.set_ylim(-1.1, 1.1)
+            ax3.set_ylim(-1.1, 1.1)
 
             ax4.plot(np.arange(len(mu_AA)),mu_AA,color='b',label=r"AA")
             ax4.fill_between(np.arange(len(mu_AA)), np.array(mu_AA) - np.sqrt(var_AA), np.array(mu_AA) + np.sqrt(var_AA), color='blue', alpha=0.3, label='±1 SD')

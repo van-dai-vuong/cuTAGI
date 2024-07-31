@@ -71,8 +71,8 @@ class regime_change_detection_RLKF():
         self.init_var_lstm = self.trained_BDLM.init_var_lstm
         self.init_z = self.trained_BDLM.init_z
         self.init_Sz = self.trained_BDLM.init_Sz
-        # self.init_mu_W2b = self.trained_BDLM.init_mu_W2b
-        # self.init_var_W2b = self.trained_BDLM.init_var_W2b
+        self.init_mu_W2b = self.trained_BDLM.init_mu_W2b
+        self.init_var_W2b = self.trained_BDLM.init_var_W2b
         self.last_seq_obs = self.trained_BDLM.last_seq_obs
         self.last_lstm_x = self.trained_BDLM.last_lstm_x
 
@@ -97,30 +97,14 @@ class regime_change_detection_RLKF():
     def generate_synthetic_ts(self, num_syn_ts, syn_ts_len, plot = True):
         self.syn_ts_all = []
         for j in tqdm(range(num_syn_ts)):
-            # hybrid_gen = LSTM_SSM(
-            #             neural_network = self.LSTM_test_net,           # LSTM
-            #             baseline = 'AA + AR',
-            #             z_init  = self.init_z,
-            #             Sz_init = self.init_Sz,
-            #             use_auto_AR = True,
-            #             mu_W2b_init = self.init_mu_W2b,
-            #             var_W2b_init = self.init_var_W2b,
-            #             Sigma_AA_ratio = self.Sigma_AA_ratio,
-            #             phi_AA = self.phi_AA,
-            #         )
             hybrid_gen = LSTM_SSM(
                         neural_network = self.LSTM_test_net,           # LSTM
-                        baseline = 'AA + AR_fixed',
+                        baseline = 'AA + AR',
                         z_init  = self.init_z,
                         Sz_init = self.init_Sz,
-                        use_auto_AR = False,
-                        # Sample phi_AR following a Gaussian with mean self.phi_AR and variance self.trained_BDLM.var_phi_AR
-                        # phi_AR = np.random.normal(self.phi_AR, np.sqrt(self.trained_BDLM.var_phi_AR)),
-                        # Sigma_AR = np.random.normal(self.Sigma_AR, np.sqrt(self.trained_BDLM.var_Sigma_AR)),
-                        phi_AR = self.phi_AR,
-                        Sigma_AR = self.Sigma_AR,
-                        Sigma_AA_ratio = self.Sigma_AA_ratio,
-                        phi_AA = self.phi_AA,
+                        use_auto_AR = True,
+                        mu_W2b_init = self.init_mu_W2b,
+                        var_W2b_init = self.init_var_W2b,
                     )
 
             syn_ts_i=copy.deepcopy(self.last_seq_obs)
@@ -158,8 +142,8 @@ class regime_change_detection_RLKF():
 
                 # Sample
                 Q_gen = copy.deepcopy(hybrid_gen.Q)
-                # Q_gen[-2, -2] = hybrid_gen.mu_W2b_posterior
-                # Q_gen[2, 2] = hybrid_gen.Sigma_AR * hybrid_gen.Sigma_AA_ratio
+                Q_gen[-2, -2] = hybrid_gen.mu_W2b_posterior
+                Q_gen[2, 2] = hybrid_gen.Sigma_AR * hybrid_gen.Sigma_AA_ratio
                 Q_gen[-1, -1] = v_pred
                 z_sample = z_prior.flatten() + np.random.multivariate_normal(0*z_prior.flatten(), Q_gen)
                 y_sample = np.dot(hybrid_gen.F, z_sample)
@@ -258,12 +242,9 @@ class regime_change_detection_RLKF():
 
             env = LSTM_KF_Env(render_mode=None, data_loader=train_dtl, step_look_back=step_look_back)
 
-            # state, info = env.reset(z=init_z, Sz=init_Sz, mu_preds_lstm = copy.deepcopy(init_mu_preds_lstm), var_preds_lstm = copy.deepcopy(init_var_preds_lstm),
-            #                         net_test = self.LSTM_test_net, init_mu_W2b = self.init_mu_W2b, init_var_W2b = self.init_var_W2b, phi_AR = self.phi_AR, Sigma_AR = self.Sigma_AR,
-            #                         phi_AA = self.phi_AA, Sigma_AA_ratio = self.Sigma_AA_ratio)
             state, info = env.reset(z=init_z, Sz=init_Sz, mu_preds_lstm = copy.deepcopy(init_mu_preds_lstm), var_preds_lstm = copy.deepcopy(init_var_preds_lstm),
-                        net_test = self.LSTM_test_net, init_mu_W2b = None, init_var_W2b = None, phi_AR = self.phi_AR, Sigma_AR = self.Sigma_AR,
-                        phi_AA = self.phi_AA, Sigma_AA_ratio = self.Sigma_AA_ratio)
+                                    net_test = self.LSTM_test_net, init_mu_W2b = self.init_mu_W2b, init_var_W2b = self.init_var_W2b, phi_AR = self.phi_AR, Sigma_AR = self.Sigma_AR,
+                                    phi_AA = self.phi_AA, Sigma_AA_ratio = self.Sigma_AA_ratio)
             # state = np.hstack((state['KF_hidden_states'], intervention_taken))
             state = state['hidden_states']
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)

@@ -23,8 +23,8 @@ class LSTM_SSM:
         SzB: Optional[np.ndarray] = None,
         Sz_init: Optional[np.ndarray] = None,
         z_init: Optional[np.ndarray] = None,
-        phi_AA: Optional[float] = 0.99,
-        Sigma_AA_ratio: Optional[float] = 1e-14,
+        phi_AA: Optional[float] = None,
+        Sigma_AA_ratio: Optional[float] = None,
         phi_AR: Optional[float] = 0.75,
         Sigma_AR: Optional[float] = 0.05,
         use_auto_AR: Optional[bool] = False,
@@ -249,8 +249,7 @@ class LSTM_SSM:
             self.smoothed_init_Sz = self.Sz
 
             if self.use_auto_AR:
-                self.Sz[3,:] = self.init_Sz[3,:]
-                self.Sz[3,:] = self.init_Sz[:,3]
+                self.Sz[3,3] = self.init_Sz[3,3]
                 self.z[3] = self.init_z[3]
                 self.mu_W2b_posterior = self.mu_W2b_init
                 self.var_W2b_posterior = self.var_W2b_init
