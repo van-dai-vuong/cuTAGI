@@ -140,6 +140,7 @@ class BaseTempStates {
     std::vector<float> tmp_2;
     std::vector<float> tmp_3;
     float tmp_4, tmp_5, tmp_6, tmp_7;
+    std::vector<float> tmp_8, tmp_9;
     size_t size = 0, block_size = 0, actual_size = 0;
 
     BaseTempStates(size_t n, size_t m);
@@ -194,7 +195,7 @@ class BaseLSTMStates {
 
     std::vector<std::vector<float>> mu_h_priors, var_h_priors, mu_c_priors,
         var_c_priors, mu_h_posts, var_h_posts, mu_c_posts, var_c_posts,
-        mu_h_smooths, var_h_smooths, mu_c_smooths, var_c_smooths, cov_ch,
+        mu_h_smooths, var_h_smooths, mu_c_smooths, var_c_smooths, cov_hc,
         cov_cc, cov_hh;
 
     BaseLSTMStates(size_t num_states, size_t num_inputs);

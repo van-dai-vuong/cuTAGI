@@ -333,6 +333,86 @@ void lstm_cat_activations_and_prev_states(std::vector<float> &a,
     }
 }
 
+void lstm_cov_cell_states_smoother(std::vector<float> &var_c_prev,
+                                   std::vector<float> &mu_f_ga,
+                                   std::vector<std::vector<float>> &cov_cc)
+/*
+ */
+{
+    std::vector<float> Cc_c(var_c_prev.size());
+    for (int i = 0; i < var_c_prev.size(); i++) {
+        // cov(c_{t-1},c_{t})
+        Cc_c[i] = var_c_prev[i] * mu_f_ga[i];
+    }
+    cov_cc.push_back(Cc_c);
+}
+
+void lstm_cov_hidden_cell_states_smoother(
+    std::vector<float> &var_c_prior, std::vector<float> &mu_o_ga,
+    std::vector<float> &jcb_ca, std::vector<std::vector<float>> &cov_hc)
+/*
+ */
+{
+    std::vector<float> Ch_c(var_c_prior.size());
+    for (int i = 0; i < var_c_prior.size(); i++) {
+        // cov(h_{t},c_{t})
+        Ch_c[i] = var_c_prior[i] * jcb_ca[i] * mu_o_ga[i];
+    }
+    cov_hc.push_back(Ch_c);
+}
+
+void lstm_cov_h_zo_smoother(
+    std::vector<float> &mw, std::vector<float> &Jf_ga,
+    std::vector<float> &mi_ga, std::vector<float> &Ji_ga,
+    std::vector<float> &mc_ga, std::vector<float> &Jc_ga,
+    std::vector<float> &mo_ga, std::vector<float> &Jo_ga,
+    std::vector<float> &mu_h_prior, std::vector<float> &mu_h_prev,
+    std::vector<float> &var_h_prev, std::vector<float> &mc_prev,
+    std::vector<float> &mca, std::vector<float> &Jca, int w_pos_f, int w_pos_i,
+    int w_pos_c, int w_pos_o, int no, int ni, int start_idx, int end_idx,
+    std::vector<float> &mw_next, std::vector<float> &Sw_next,
+    std::vector<float> &Sb_next, std::vector<float> &cov_hh, float &C_zo_zo)
+/*
+ */
+{
+    float Czz_f, Czz_i, Czz_c, Czz_o;
+    int m;
+
+    for (int t = start_idx; t < end_idx; t++) {
+        for (int j = 0; j < no; j++) {
+            // Forget gate
+            Czz_f = var_h_prev[t] * Jca[j] * mo_ga[j] * Jf_ga[j] *
+                    mw[(ni + no) * j + t + ni + w_pos_f] * mc_prev[j];
+
+            // Input gate
+            Czz_i = var_h_prev[t] * Jca[j] * mo_ga[j] * Ji_ga[j] *
+                    mw[(ni + no) * j + t + ni + w_pos_i] * mc_ga[j];
+
+            // Cell state gate
+            Czz_c = var_h_prev[t] * Jca[j] * mo_ga[j] * Jc_ga[j] *
+                    mw[(ni + no) * j + t + ni + w_pos_c] * mi_ga[j];
+
+            // Output gate
+            Czz_o = var_h_prev[t] * Jo_ga[j] *
+                    mw[(ni + no) * j + t + ni + w_pos_o] * mca[j];
+
+            // Updating quantities
+            m = t * no + j;
+            cov_hh[m] = Czz_f + Czz_i + Czz_c + Czz_o;
+
+            // C_zo_zo : cov(z^{O}_{t-1}, z^{O}_{t})
+            if (t != j) {
+                C_zo_zo += cov_hh[m] * mw_next[t] * mw_next[j];
+            } else {
+                C_zo_zo +=
+                    Sw_next[t] * (cov_hh[m] + mu_h_prev[t] * mu_h_prior[j]) +
+                    cov_hh[m] * mw_next[t] * mw_next[j];
+            }
+        }
+    }
+    C_zo_zo = C_zo_zo + Sb_next[0];
+}
+
 //////////////////////////////////////////////////////////////////////
 /// MULTITHREAD VERSION
 //////////////////////////////////////////////////////////////////////
@@ -503,60 +583,6 @@ void lstm_cov_output_tanh_cell_states_mp(
     for (int i = 0; i < NUM_THREADS; i++) {
         threads[i].join();
     }
-}
-
-void lstm_cov_hidden_states(
-    std::vector<float> &mw, std::vector<float> &Jf_ga,
-    std::vector<float> &mi_ga, std::vector<float> &Ji_ga,
-    std::vector<float> &mc_ga, std::vector<float> &Jc_ga,
-    std::vector<float> &mo_ga, std::vector<float> &Jo_ga,
-    std::vector<float> &mu_h_prior, std::vector<float> &mu_h_prev,
-    std::vector<float> &var_h_prev, std::vector<float> &mc_prev,
-    std::vector<float> &mca, std::vector<float> &Jca,
-    std::vector<float> &delta_m_out, std::vector<float> &delta_S_out,
-    int w_pos_f, int w_pos_i, int w_pos_c, int w_pos_o, int no, int ni,
-    int start_idx, int end_idx, std::vector<float> &mw_next,
-    std::vector<float> &Sw_next, std::vector<float> &Sb_next,
-    std::vector<float> &cov_hh, float &C_zo_zo)
-/*
- */
-{
-    float Czz_f, Czz_i, Czz_c, Czz_o;
-    int m;
-
-    for (int t = start_idx; t < end_idx; t++) {
-        for (int j = 0; j < no; j++) {
-            // Forget gate
-            Czz_f = var_h_prev[t] * Jca[j] * mo_ga[j] * Jf_ga[j] *
-                    mw[(ni + no) * j + t + ni + w_pos_f] * mc_prev[j];
-
-            // Input gate
-            Czz_i = var_h_prev[t] * Jca[j] * mo_ga[j] * Ji_ga[j] *
-                    mw[(ni + no) * j + t + ni + w_pos_i] * mc_ga[j];
-
-            // Cell state gate
-            Czz_c = var_h_prev[t] * Jca[j] * mo_ga[j] * Jc_ga[j] *
-                    mw[(ni + no) * j + t + ni + w_pos_c] * mi_ga[j];
-
-            // Output gate
-            Czz_o = var_h_prev[t] * Jo_ga[j] *
-                    mw[(ni + no) * j + t + ni + w_pos_o] * mca[j];
-
-            // Updating quantities
-            m = t * no + j;
-            cov_hh[m] = Czz_f + Czz_i + Czz_c + Czz_o;
-
-            // C_zo_zo : cov(z^{O}_{t-1}, z^{O}_{t})
-            if (t != j) {
-                C_zo_zo += cov_hh[m] * mw_next[t] * mw_next[j];
-            } else {
-                C_zo_zo +=
-                    Sw_next[t] * (cov_hh[m] + mu_h_prev[t] * mu_h_prior[j]) +
-                    cov_hh[m] * mw_next[t] * mw_next[j];
-            }
-        }
-    }
-    C_zo_zo = C_zo_zo + Sb_next[0];
 }
 
 void lstm_hidden_state_mean_var_worker(
@@ -1444,19 +1470,11 @@ void LSTM::forward(BaseHiddenStates &input_states,
         this->lstm_states.var_c_priors.push_back(this->lstm_states.var_c_prior);
 
         // Save the cross-covariances for smoothing
-        std::vector<float> Cc_c(lstm_states.mu_c.size()),
-            Cc_h(lstm_states.mu_c.size());
-        for (size_t i = 0; i < lstm_states.mu_c.size(); i++) {
-            // cov(c_{t-1},c_{t})
-            Cc_c[i] =
-                this->lstm_states.var_c_prev[i] * this->lstm_states.mu_f_ga[i];
-            // cov(c_{t},h_{t})
-            Cc_h[i] = this->lstm_states.var_c_prior[i] *
-                      this->lstm_states.jcb_ca[i] *
-                      this->lstm_states.mu_o_ga[i];
-        }
-        this->lstm_states.cov_cc.push_back(Cc_c);
-        this->lstm_states.cov_ch.push_back(Cc_h);
+        lstm_cov_cell_states_smoother(lstm_states.var_c_prev,
+                                      lstm_states.mu_f_ga, lstm_states.cov_cc);
+        lstm_cov_hidden_cell_states_smoother(
+            lstm_states.var_c_prior, lstm_states.mu_o_ga, lstm_states.jcb_ca,
+            lstm_states.cov_hc);
     }
 }
 
@@ -1498,18 +1516,16 @@ void LSTM::backward(BaseDeltaStates &input_delta_states,
             std::vector<float> cov_hh(end_chunk_ * end_chunk_, 0);
             float cov_zo = 0;
 
-            lstm_cov_hidden_states(
+            lstm_cov_h_zo_smoother(
                 this->mu_w, lstm_states.jcb_f_ga, lstm_states.mu_i_ga,
                 lstm_states.jcb_i_ga, lstm_states.mu_c_ga, lstm_states.jcb_c_ga,
                 lstm_states.mu_o_ga, lstm_states.jcb_o_ga,
                 lstm_states.mu_c_prior, lstm_states.mu_h_prev,
                 lstm_states.var_h_prev, lstm_states.mu_c_prev,
-                lstm_states.mu_ca, lstm_states.jcb_ca,
-                input_delta_states.delta_mu, input_delta_states.delta_var,
-                this->w_pos_f, this->w_pos_i, this->w_pos_c, this->w_pos_o,
-                this->output_size, this->input_size, 0, end_chunk_,
-                temp_states.tmp_1, temp_states.tmp_2, temp_states.tmp_3, cov_hh,
-                cov_zo);
+                lstm_states.mu_ca, lstm_states.jcb_ca, this->w_pos_f,
+                this->w_pos_i, this->w_pos_c, this->w_pos_o, this->output_size,
+                this->input_size, 0, end_chunk_, temp_states.tmp_1,
+                temp_states.tmp_2, temp_states.tmp_3, cov_hh, cov_zo);
             // print_matrix_1Dvec(cov_hh);
             this->lstm_states.cov_hh.push_back(cov_hh);
             this->lstm_states.cov_zo.push_back(cov_zo);
@@ -1606,7 +1622,7 @@ void LSTM::backward(BaseDeltaStates &input_delta_states,
     }
 }
 
-void LSTM::smoother(std::string next_layer_type)
+void LSTM::smoother(std::string next_layer_type, BaseTempStates &temp_states)
 /*
  */
 {
@@ -1643,7 +1659,7 @@ void LSTM::smoother(std::string next_layer_type)
 
             // smoother for hidden states
             Jch_temp[j] =
-                lstm_states.cov_ch[i][j] / lstm_states.var_c_priors[i][j];
+                lstm_states.cov_hc[i][j] / lstm_states.var_c_priors[i][j];
             mu_h_temp[j] =
                 lstm_states.mu_h_posts[i][j] +
                 Jch_temp[j] * (mu_c_temp[j] - lstm_states.mu_c_priors[i][j]);
@@ -1677,21 +1693,31 @@ void LSTM::smoother(std::string next_layer_type)
     this->lstm_states.var_c_smooths = var_c_smooths;
     this->lstm_states.mu_h_smooths = mu_h_smooths;
     this->lstm_states.var_h_smooths = var_h_smooths;
-    this->lstm_states.mu_zo_smooths = mu_zo_smooths;
-    this->lstm_states.var_zo_smooths = var_zo_smooths;
+    if (next_layer_type == "Linear") {
+        this->lstm_states.mu_zo_smooths = mu_zo_smooths;
+        this->lstm_states.var_zo_smooths = var_zo_smooths;
+        temp_states.tmp_8 = this->lstm_states.mu_zo_smooths;
+        temp_states.tmp_9 = this->lstm_states.var_zo_smooths;
 
-    for (int i = 0; i < n_time; i++) {
-        // std::cout << "mu_h: ";
-        // print_matrix_1Dvec(mu_h_smooths[i]);
-        // std::cout << "var_h: ";
-        // print_matrix_1Dvec(var_h_smooths[i]);
-        // std::cout << "mu_c: ";
-        // print_matrix_1Dvec(mu_c_smooths[i]);
-        // std::cout << "var_c: ";
-        // print_matrix_1Dvec(var_c_smooths[i]);
-        std::cout << "mu_zo: " << lstm_states.mu_zo_smooths[i]
-                  << ". var_zo: " << lstm_states.var_zo_smooths[i] << std::endl;
+        //// check if all variances of zo_smooths are positive
+        // int check = 1;
+        // for (float element : var_zo_smooths) {
+        //     if (element < 0) {
+        //         check = 0;
+        //     }
+        // }
+        // if (check == 1) {
+        //     std::cout << "Variances are all positive." << std::endl;
+        // } else {
+        //     std::cout << "Variances contain a Negative value" << std::endl;
+        // }
     }
+
+    // transfer h and c to the first time step of the next epoch
+    this->lstm_states.mu_h_prior = this->lstm_states.mu_h_smooths[0];
+    this->lstm_states.var_h_prior = this->lstm_states.var_h_smooths[0];
+    this->lstm_states.mu_c_prior = this->lstm_states.mu_c_smooths[0];
+    this->lstm_states.var_c_prior = this->lstm_states.var_c_smooths[0];
 
     // Clear variables for next epoch
     this->lstm_states.mu_h_priors.clear();
@@ -1702,17 +1728,19 @@ void LSTM::smoother(std::string next_layer_type)
     this->lstm_states.var_h_posts.clear();
     this->lstm_states.mu_c_posts.clear();
     this->lstm_states.var_c_posts.clear();
+    this->lstm_states.mu_h_smooths.clear();
+    this->lstm_states.var_h_smooths.clear();
+    this->lstm_states.mu_c_smooths.clear();
+    this->lstm_states.var_c_smooths.clear();
     this->lstm_states.cov_cc.clear();
-    this->lstm_states.cov_ch.clear();
+    this->lstm_states.cov_hc.clear();
     this->lstm_states.cov_hh.clear();
     this->lstm_states.cov_zo.clear();
     this->lstm_states.mu_zo_priors.clear();
     this->lstm_states.var_zo_priors.clear();
     this->lstm_states.mu_zo_posts.clear();
     this->lstm_states.var_zo_posts.clear();
-    this->lstm_states.reset_zeros();
-
-    // std::cout << "Smooth. Next layer: " << next_layer_type << std::endl;
+    // this->lstm_states.reset_zeros();
 }
 
 #ifdef USE_CUDA

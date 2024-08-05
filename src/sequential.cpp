@@ -320,7 +320,8 @@ void Sequential::smoother()
 
         // Smooth only for LSTM layer
         if (current_layer->get_layer_name() == "LSTM") {
-            current_layer->smoother(next_layer->get_layer_name());
+            current_layer->smoother(next_layer->get_layer_name(),
+                                    *this->temp_states);
         }
     }
 }
@@ -586,4 +587,17 @@ Sequential::get_outputs()
         pybind11::array_t<float>(var_a_output.size(), var_a_output.data());
 
     return {py_m_pred, py_v_pred};
+}
+
+std::tuple<pybind11::array_t<float>, pybind11::array_t<float>>
+Sequential::get_outputs_smoother()
+/*
+ */
+{
+    auto py_mu_zo_smooths = pybind11::array_t<float>(
+        this->temp_states->tmp_8.size(), this->temp_states->tmp_8.data());
+    auto py_var_zo_smooths = pybind11::array_t<float>(
+        this->temp_states->tmp_9.size(), this->temp_states->tmp_9.data());
+
+    return {py_mu_zo_smooths, py_var_zo_smooths};
 }

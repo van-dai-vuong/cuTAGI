@@ -79,5 +79,6 @@ void bind_sequential(pybind11::module_& m) {
         .def("save_csv", &Sequential::save_csv)
         .def("load_csv", &Sequential::load_csv)
         .def("params_from", &Sequential::params_from)
-        .def("get_outputs", &Sequential::get_outputs);
+        .def("get_outputs", &Sequential::get_outputs)
+        .def("get_outputs_smoother", &Sequential::get_outputs_smoother);
 }

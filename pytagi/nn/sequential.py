@@ -118,6 +118,8 @@ class Sequential:
         """Perform a smoother pass."""
         self._cpp_backend.smoother()
 
+        return self.get_outputs_smoother()
+
     def step(self):
         """Perform a step of inference."""
         self._cpp_backend.step()
@@ -156,3 +158,6 @@ class Sequential:
 
     def get_outputs(self) -> Tuple[np.ndarray, np.ndarray]:
         return self._cpp_backend.get_outputs()
+
+    def get_outputs_smoother(self) -> Tuple[np.ndarray, np.ndarray]:
+        return self._cpp_backend.get_outputs_smoother()
