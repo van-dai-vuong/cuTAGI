@@ -88,10 +88,13 @@ class regime_change_detection_RLKF():
         self.memory = ReplayMemory(10000)
         self.policy_net = DQN(self.n_observations, self.n_actions).to(self.device)
         self.target_net = DQN(self.n_observations, self.n_actions).to(self.device)
+        self.optimal_net = DQN(self.n_observations, self.n_actions).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.optimal_net.load_state_dict(self.policy_net.state_dict())
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=0.01, amsgrad=True)
         self.steps_done = 0
         self.episode_rewards = []
+        self.episode_f1t = []
         self.GAMMA = 0.999
 
     def generate_synthetic_ts(self, num_syn_ts, syn_ts_len, plot = True):
@@ -212,10 +215,21 @@ class regime_change_detection_RLKF():
 
     def train(self, num_episodes, step_look_back, abnormal_ts_percentage, anomaly_range,
               init_z, init_Sz, init_mu_preds_lstm, init_var_preds_lstm,
-              batchsize, TAU, plot_samples=False, learning_curve_ylim = None):
+              batchsize, TAU, plot_samples=False, learning_curve_ylim = None,
+              early_stopping = False, patience = 10, validation_episode_num = 0, early_stop_start = 0):
         num_steps_per_episode = len(self.syn_ts_all[0])
-        track_intervention_taken_times = np.zeros(num_episodes)
-        for i_episode in range(num_episodes):
+        track_intervention_taken_times = np.zeros(num_episodes-validation_episode_num)
+        optim_F1t = -1E8
+        optim_episode = 0
+        # Set seed for numpy random
+        np.random.seed(0)
+        validation_rand_samples = [np.random.random() for _ in range(validation_episode_num)]
+        anm_positions_val = np.random.randint(step_look_back + self.trained_BDLM.input_seq_len, num_steps_per_episode, validation_episode_num)
+        anm_magnitudes_val = np.random.uniform(anomaly_range[0], anomaly_range[1], validation_episode_num)
+        print(validation_rand_samples)
+        print(anm_positions_val)
+        print(anm_magnitudes_val)
+        for i_episode in range(num_episodes-validation_episode_num):
             anm_pos = np.random.randint(step_look_back + self.trained_BDLM.input_seq_len, num_steps_per_episode)
 
             sample = random.random()
@@ -258,13 +272,9 @@ class regime_change_detection_RLKF():
 
             env = LSTM_KF_Env(render_mode=None, data_loader=train_dtl, step_look_back=step_look_back)
 
-            # state, info = env.reset(z=init_z, Sz=init_Sz, mu_preds_lstm = copy.deepcopy(init_mu_preds_lstm), var_preds_lstm = copy.deepcopy(init_var_preds_lstm),
-            #                         net_test = self.LSTM_test_net, init_mu_W2b = self.init_mu_W2b, init_var_W2b = self.init_var_W2b, phi_AR = self.phi_AR, Sigma_AR = self.Sigma_AR,
-            #                         phi_AA = self.phi_AA, Sigma_AA_ratio = self.Sigma_AA_ratio)
             state, info = env.reset(z=init_z, Sz=init_Sz, mu_preds_lstm = copy.deepcopy(init_mu_preds_lstm), var_preds_lstm = copy.deepcopy(init_var_preds_lstm),
                         net_test = self.LSTM_test_net, init_mu_W2b = None, init_var_W2b = None, phi_AR = self.phi_AR, Sigma_AR = self.Sigma_AR,
                         phi_AA = self.phi_AA, Sigma_AA_ratio = self.Sigma_AA_ratio)
-            # state = np.hstack((state['KF_hidden_states'], intervention_taken))
             state = state['hidden_states']
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
 
@@ -272,7 +282,6 @@ class regime_change_detection_RLKF():
             # Compute the stationary standard deviation for AR
             AR_std_stationary = np.sqrt(self.trained_BDLM.Sigma_AR/(1 - self.trained_BDLM.phi_AR**2))
             LA_var_stationary = self.trained_BDLM.Sigma_AA_ratio *  self.trained_BDLM.Sigma_AR/(1 - self.trained_BDLM.phi_AA**2)
-            print('LA_std_stationary:', np.sqrt(LA_var_stationary))
             if step_look_back == 64:
                 seg_len = 8
             state = normalize_tensor_two_parts(state, 0, np.sqrt(LA_var_stationary), \
@@ -280,20 +289,14 @@ class regime_change_detection_RLKF():
 
             total_reward_one_episode = 0
             dummy_steps = 0
+            Q_values_all = []
             for t in count():
                 action = self._select_action(state)
 
                 observation, reward, terminated, truncated, info = env.step(action.item())
-                # # For checking if the reward is correctly defined
-                # if dummy_steps == 120:
-                #     observation, reward, terminated, truncated, info = env.step(1)
-                #     print('?',reward)
-                # elif dummy_steps == 121:
-                #     observation, reward, terminated, truncated, info = env.step(0)
-                #     print('?',reward)
-                #     print('====================')
-                # else:
-                #     observation, reward, terminated, truncated, info = env.step(0)
+
+                Q_values_t = self._track_Qvalues(state)[0].tolist()
+                Q_values_all.append(Q_values_t)
 
                 dummy_steps += 1
 
@@ -332,10 +335,18 @@ class regime_change_detection_RLKF():
 
                 if done:
                     self.episode_rewards.append(total_reward_one_episode)
-                    self._plot_rewards(ylim = learning_curve_ylim)
+                    if early_stopping is not True:
+                        self._plot_rewards(metric = self.episode_rewards, ylim=learning_curve_ylim)
+                    else:
+                        self._plot_rewards(metric = self.episode_f1t, ylim=[-0.1, 1.1])
                     break
-            print(track_intervention_taken_times)
 
+            # Fill 65 rows of [nan, nan] values in front of Q_values_all
+            Q_values_all = [[np.nan, np.nan]] * 65 + Q_values_all
+            Q_values_all = np.array(Q_values_all).T
+
+            print(track_intervention_taken_times)
+            print(self.episode_f1t)
 
             if plot_samples:
                 timesteps = np.arange(0, len(info['measurement_one_episode']), 1)
@@ -346,12 +357,13 @@ class regime_change_detection_RLKF():
                 # if track_intervention_taken_times[i_episode] == 1:
                 if True:
                     # Plot prediction
-                    fig = plt.figure(figsize=(20, 9))
-                    gs = gridspec.GridSpec(4, 1)
+                    fig = plt.figure(figsize=(15, 12))
+                    gs = gridspec.GridSpec(5, 1)
                     ax0 = plt.subplot(gs[0])
-                    ax1 = plt.subplot(gs[1])
-                    ax2 = plt.subplot(gs[2])
-                    ax3 = plt.subplot(gs[3])
+                    ax1 = plt.subplot(gs[2])
+                    ax2 = plt.subplot(gs[3])
+                    ax3 = plt.subplot(gs[4])
+                    ax4 = plt.subplot(gs[1])
 
                     ax0.plot(timesteps, info['measurement_one_episode'], label='True')
                     # plot the standard deviation of the prediction
@@ -382,13 +394,150 @@ class regime_change_detection_RLKF():
                     ax3.fill_between(timesteps, mu_hidden_states_one_episode[:,-2] - np.sqrt(var_hidden_states_one_episode[:,-2,-2]),\
                                         mu_hidden_states_one_episode[:,-2] + np.sqrt(var_hidden_states_one_episode[:,-2,-2]), color='gray', alpha=0.2)
                     ax3.set_ylabel('AR')
+
+                    ax4.plot(Q_values_all[0], label='Q_value_0')
+                    ax4.plot(Q_values_all[1], label='Q_value_1')
+                    ax4.set_ylabel('Q_values')
+                    ax4.set_xlim(ax0.get_xlim())
+                    ax4.legend(loc='upper left')
                     plt.show()
+                    # filename = f'saved_results/Qvalues_training/Qvalues_episode#{i_episode}.png'
+                    # plt.savefig(filename)
+                    # plt.close()
+
+
+            # Early stopping
+            if early_stopping:
+                if i_episode >= early_stop_start:
+                    FP = 0
+                    FN = 0
+                    TP = 0
+                    lambdas_all = []
+                    for i_val_episode in range(validation_episode_num):
+                        anm_pos = anm_positions_val[i_val_episode]
+
+                        sample = validation_rand_samples[i_val_episode]
+                        if sample < abnormal_ts_percentage:
+                            train_dtl = SyntheticTimeSeriesDataloader(
+                                x_file=self.observation_save_path,
+                                select_column = num_episodes-validation_episode_num+i_val_episode,
+                                date_time_file=self.datetime_save_path,
+                                add_anomaly = True,
+                                anomaly_magnitude = anm_magnitudes_val[i_val_episode],
+                                anomaly_start=anm_pos,
+                                x_mean=self.trained_BDLM.train_dtl.x_mean,
+                                x_std=self.trained_BDLM.train_dtl.x_std,
+                                output_col=self.trained_BDLM.output_col,
+                                input_seq_len=self.trained_BDLM.input_seq_len,
+                                output_seq_len=self.trained_BDLM.output_seq_len,
+                                num_features=self.trained_BDLM.num_features,
+                                stride=self.trained_BDLM.seq_stride,
+                                time_covariates=self.trained_BDLM.time_covariates,
+                            )
+                            anomaly_injected = True
+                        else:
+                            train_dtl = SyntheticTimeSeriesDataloader(
+                                x_file=self.observation_save_path,
+                                select_column = num_episodes-validation_episode_num+i_val_episode,
+                                date_time_file=self.datetime_save_path,
+                                x_mean=self.trained_BDLM.train_dtl.x_mean,
+                                x_std=self.trained_BDLM.train_dtl.x_std,
+                                output_col=self.trained_BDLM.output_col,
+                                input_seq_len=self.trained_BDLM.input_seq_len,
+                                output_seq_len=self.trained_BDLM.output_seq_len,
+                                num_features=self.trained_BDLM.num_features,
+                                stride=self.trained_BDLM.seq_stride,
+                                time_covariates=self.trained_BDLM.time_covariates,
+                            )
+                            anomaly_injected = False
+
+                        env = LSTM_KF_Env(render_mode=None, data_loader=train_dtl, step_look_back=step_look_back)
+                        state, info = env.reset(z=init_z, Sz=init_Sz, mu_preds_lstm = copy.deepcopy(init_mu_preds_lstm), var_preds_lstm = copy.deepcopy(init_var_preds_lstm),
+                                    net_test = self.LSTM_test_net, init_mu_W2b = None, init_var_W2b = None, phi_AR = self.phi_AR, Sigma_AR = self.Sigma_AR,
+                                    phi_AA = self.phi_AA, Sigma_AA_ratio = self.Sigma_AA_ratio)
+                        state = state['hidden_states']
+                        state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
+
+                        # Nomalize the state
+                        AR_std_stationary = np.sqrt(self.trained_BDLM.Sigma_AR/(1 - self.trained_BDLM.phi_AR**2))
+                        LA_var_stationary = self.trained_BDLM.Sigma_AA_ratio *  self.trained_BDLM.Sigma_AR/(1 - self.trained_BDLM.phi_AA**2)
+                        state = normalize_tensor_two_parts(state, 0, np.sqrt(LA_var_stationary), 0, AR_std_stationary, seg_len)
+
+                        # Run agent on the i_val_episode time series
+                        val_ep_steps = 0
+                        for t in count():
+                            action = self._select_action(state, greedy=True)
+                            observation, _, terminated, truncated, info = env.step(action.item())
+
+                            done = terminated or truncated
+
+                            if action.item() == 1:
+                                if anomaly_injected:
+                                    # Alarm is triggered
+                                    trigger_pos = val_ep_steps + step_look_back + self.trained_BDLM.input_seq_len
+                                    if trigger_pos >= anm_pos:
+                                        # True alarm
+                                        TP += 1
+                                        lambda_i = 1 - (trigger_pos - anm_pos) / (num_steps_per_episode - anm_pos)
+                                    else:
+                                        # False alarm
+                                        FP += 1
+                                        lambda_i = 1
+                                    lambdas_all.append(lambda_i)
+                                else:
+                                    FP += 1
+                                done = True
+
+                            if terminated:
+                                # When comes to here, alarm is never triggered and the time series ends
+                                if anomaly_injected:
+                                    FN += 1
+                                    lambda_i = 0
+                                    lambdas_all.append(lambda_i)
+                                next_state = None
+                            else:
+                                next_state = torch.tensor(observation['hidden_states'], dtype=torch.float32, device=self.device).unsqueeze(0)
+                                next_state = normalize_tensor_two_parts(next_state, 0, np.sqrt(LA_var_stationary), 0, AR_std_stationary, seg_len)
+                            state = next_state
+                            val_ep_steps += 1
+
+                            if done:
+                                print('For validation episode:', i_val_episode)
+                                print('Anomaly is injected:', anomaly_injected)
+                                print(f'TP = {TP}, FP = {FP}, FN = {FN}, lambda = {lambdas_all}')
+                                break
+
+                    current_F1t = np.mean(lambdas_all)*2*TP/(2*TP+FP+FN)
+                    self.episode_f1t.append(current_F1t)
+
+                    if current_F1t > optim_F1t:
+                        print('------------------------------------')
+                        print(f'Optimal F1t: {optim_F1t}, episode: {optim_episode}')
+                        print(f'Current F1t: {current_F1t}, episode: {i_episode}')
+                        print('****** Update the optimal model ******')
+                        print('------------------------------------')
+                        optim_F1t = current_F1t
+                        optim_episode = i_episode
+                        self.optimal_net.load_state_dict(self.policy_net.state_dict())
+                    else:
+                        print('------------------------------------')
+                        print(f'Optimal F1t: {optim_F1t}, episode: {optim_episode}')
+                        print(f'Current F1t: {current_F1t}, episode: {i_episode}')
+                        print('Optimal model remains')
+                        print('------------------------------------')
+                        if i_episode - optim_episode > patience:
+                            print('Early stopping is triggered, training stopped, model saved at epoch:', optim_episode)
+                            self.policy_net.load_state_dict(self.optimal_net.state_dict())
+                            break
 
         print('Complete')
-        self._plot_rewards(show_result=True, ylim=learning_curve_ylim)
+        if early_stopping is not True:
+            self._plot_rewards(metric = self.episode_rewards, show_result=True, ylim=learning_curve_ylim)
+        else:
+            self._plot_rewards(metric = self.episode_f1t, show_result=True, ylim=[-0.1, 1.1])
         # plot a bar chart of the number of interventions taken
         plt.figure(2)
-        plt.bar(np.arange(num_episodes)+1, track_intervention_taken_times)
+        plt.bar(np.arange(num_episodes-validation_episode_num)+1, track_intervention_taken_times)
         plt.title('Number of interventions taken')
         plt.xlabel('Episode')
         plt.ylabel('Number of interventions taken')
@@ -484,9 +633,9 @@ class regime_change_detection_RLKF():
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
 
-    def _plot_rewards(self, show_result=False, ylim=None):
+    def _plot_rewards(self, metric, show_result=False, ylim=None):
         plt.figure(1)
-        durations_t = torch.tensor(self.episode_rewards, dtype=torch.float)
+        durations_t = torch.tensor(metric, dtype=torch.float)
         if show_result:
             plt.title('Result')
         else:
@@ -539,3 +688,8 @@ class regime_change_detection_RLKF():
         else:
             with torch.no_grad():
                 return self.policy_net(state).max(1).indices.view(1, 1)
+
+    def _track_Qvalues(self, state):
+        with torch.no_grad():
+            Q_values = self.policy_net(state)
+            return Q_values

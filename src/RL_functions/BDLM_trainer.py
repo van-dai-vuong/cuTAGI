@@ -89,7 +89,8 @@ class BDLM_trainer:
             ax0.legend()
             ax0.set_title('Baseline estimation using first-order regression')
 
-    def train(self, plot = False, true_phiAR = None, true_SigmaAR = None, initial_z = None, initial_Sz = None):
+    def train(self, plot = False, true_phiAR = None, true_SigmaAR = None, initial_z = None, initial_Sz = None,
+              early_stopping = False, patience = 10):
         # Network
         net = Sequential(
             LSTM(self.num_features, 30, self.input_seq_len),
@@ -107,11 +108,11 @@ class BDLM_trainer:
                 neural_network = net,           # LSTM
                 baseline = self.components, # 'level', 'trend', 'acceleration', 'ETS'
                 # zB  = np.array([self.level_init, self.speed_init, 0, 0.5, -0.05]),
-                zB  = np.array([self.level_init, self.speed_init, 0, 0.5, 0.02]),
-                SzB = np.array([1E-5, 1E-8, LA_var_stationary, 0.5**2, 0.15**2]),
+                zB  = np.array([self.level_init, self.speed_init, 0, 0.7, 0.02]),
+                SzB = np.array([1E-5, 1E-8, LA_var_stationary, 0.1**2, 0.15**2]),
                 use_auto_AR = self.use_auto_AR,
-                mu_W2b_init = 0.5,
-                var_W2b_init = 0.5**2,
+                mu_W2b_init = 0.3,
+                var_W2b_init = 0.1**2,
                 Sigma_AA_ratio = self.Sigma_AA_ratio,
                 phi_AA = self.phi_AA,
             )
@@ -132,6 +133,9 @@ class BDLM_trainer:
         # Training
         mses = []
         pbar = tqdm(range(self.num_epochs), desc="Training Progress")
+
+        metric_optim = -1e8
+        epoch_optim = 0
         for epoch in pbar:
             batch_iter = self.train_dtl.create_data_loader(self.batch_size, shuffle=False)
 
@@ -242,6 +246,157 @@ class BDLM_trainer:
                 refresh=True,
             )
 
+            if early_stopping:
+                # Test on validation set
+                val_batch_iter = self.val_dtl.create_data_loader(self.batch_size, shuffle=False)
+
+                # Initialize list to save
+                mu_preds = []
+                var_preds = []
+                y_val = []
+
+                for x, y in val_batch_iter:
+                    mu_x, var_x = process_input_ssm(
+                        mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
+                        input_seq_len = self.input_seq_len, num_features = self.num_features,
+                    )
+                    # Feed forward
+                    y_pred, Sy_red, z_pred, Sz_pred, m_pred, v_pred = hybrid(mu_x, var_x)
+                    hybrid.backward(mu_obs = np.nan, var_obs = np.nan, train_LSTM=False)
+
+                    mu_preds.extend(y_pred)
+                    var_preds.extend(Sy_red + self.sigma_v**2)
+                    y_val.extend(y)
+                    mu_preds_lstm.extend(m_pred)
+                    var_preds_lstm.extend(v_pred)
+
+                mu_preds = np.array(mu_preds).flatten()
+                std_preds = np.array(var_preds).flatten() ** 0.5
+                y_val = np.array(y_val)
+                obs_val_norm = y_val
+
+                mu_preds = normalizer.unstandardize(
+                    mu_preds, self.train_dtl.x_mean[self.output_col], self.train_dtl.x_std[self.output_col]
+                )
+                std_preds = normalizer.unstandardize_std(std_preds, self.train_dtl.x_std[self.output_col])
+
+                y_val = normalizer.unstandardize(
+                    y_val, self.train_dtl.x_mean[self.output_col], self.train_dtl.x_std[self.output_col]
+                )
+
+                # Compute log-likelihood
+                mse = metric.mse(mu_preds.flatten(), y_val)
+                log_lik = metric.log_likelihood(
+                    prediction=mu_preds, observation=y_val, std=std_preds
+                )
+
+                current_metric = log_lik
+
+                print(f"Current_metric: {current_metric: 0.4f}")
+                print(f"Optimal_metric: {metric_optim: 0.4f}")
+
+                if current_metric > metric_optim:
+                    metric_optim = current_metric
+                    epoch_optim = epoch
+                    # Save optimal net
+                    hybrid.net.save(filename = './saved_param/temp/optimal_net.pth')
+                else:
+                    if epoch - epoch_optim > patience:
+                        net_optim = Sequential(
+                                LSTM(self.num_features, 30, self.input_seq_len),
+                                LSTM(30, 30, self.input_seq_len),
+                                Linear(30 * self.input_seq_len, 1),
+                            )
+                        net_optim.set_threads(8)
+                        net_optim.load(filename = './saved_param/temp/optimal_net.pth')
+                        if initial_z is None and initial_Sz is None:
+                            hybrid = LSTM_SSM(
+                                neural_network = net_optim,           # LSTM
+                                baseline = self.components, # 'level', 'trend', 'acceleration', 'ETS'
+                                # zB  = np.array([self.level_init, self.speed_init, 0, 0.5, -0.05]),
+                                zB  = np.array([self.level_init, self.speed_init, 0, 0.7, 0.02]),
+                                SzB = np.array([1E-5, 1E-8, LA_var_stationary, 0.1**2, 0.15**2]),
+                                use_auto_AR = self.use_auto_AR,
+                                mu_W2b_init = 0.3,
+                                var_W2b_init = 0.1**2,
+                                Sigma_AA_ratio = self.Sigma_AA_ratio,
+                                phi_AA = self.phi_AA,
+                            )
+                        else:
+                            hybrid = LSTM_SSM(
+                                neural_network = net_optim,           # LSTM
+                                baseline = self.components, # 'level', 'trend', 'acceleration', 'ETS'
+                                zB  = initial_z,
+                                SzB = initial_Sz,
+                                use_auto_AR = self.use_auto_AR,
+                                mu_W2b_init = 0.25,
+                                var_W2b_init = 0.25**2,
+                                Sigma_AA_ratio = self.Sigma_AA_ratio,
+                                phi_AA = self.phi_AA,
+                            )
+                        print(f"Early stopping at epoch {epoch_optim+1}")
+                        break
+
+        # Run on the training set again because we are now starting again
+        batch_iter = self.train_dtl.create_data_loader(self.batch_size, shuffle=False)
+        var_y = np.full((self.batch_size * len(self.output_col),), self.sigma_v**2, dtype=np.float32)
+
+        # Initialize list to save
+        hybrid.init_ssm_hs()
+        mu_preds_lstm = []
+        var_preds_lstm = []
+        mu_preds_norm = []
+        var_preds_norm = []
+        obs_norm = []
+        mu_phiar = []
+        var_phiar = []
+        mu_aa = []
+        var_aa = []
+        mu_sigma_ar = []
+        var_sigma_ar = []
+        mu_ar = []
+        var_ar = []
+
+        for x, y in batch_iter:
+            mu_x, var_x = process_input_ssm(
+                mu_x = x, mu_preds_lstm = mu_preds_lstm, var_preds_lstm = var_preds_lstm,
+                input_seq_len = self.input_seq_len, num_features = self.num_features,
+                )
+
+            # Feed forward
+            y_pred, Sy_pred, z_pred, Sz_pred, m_pred, v_pred = hybrid(mu_x, var_x)
+            # Backward
+            hybrid.backward(mu_obs = y, var_obs = var_y)
+
+            # Training metric
+            pred = normalizer.unstandardize(
+                y_pred.flatten(), self.train_dtl.x_mean[self.output_col], self.train_dtl.x_std[self.output_col]
+            )
+            obs = normalizer.unstandardize(
+                y, self.train_dtl.x_mean[self.output_col], self.train_dtl.x_std[self.output_col]
+            )
+            mse = metric.mse(pred, obs)
+            mses.append(mse)
+            mu_preds_lstm.extend(m_pred)
+            var_preds_lstm.extend(v_pred)
+            obs_norm.extend(y)
+            mu_preds_norm.extend(y_pred[0])
+            var_preds_norm.extend(Sy_pred[0] + self.sigma_v**2)
+            mu_phiar.append(z_pred[-3].item())
+            var_phiar.append(Sz_pred[-3][-3])
+            mu_aa.append(z_pred[2].item())
+            var_aa.append(Sz_pred[2][2])
+            mu_ar.append(z_pred[-2].item())
+            var_ar.append(Sz_pred[-2][-2])
+            mu_sigma_ar.append(np.sqrt(hybrid.mu_W2b_posterior.item()))
+            var_sigma_ar.append(np.sqrt(hybrid.var_W2b_posterior.item()))
+
+        # Smoother
+        hybrid.smoother()
+
+        mu_smoothed = np.array(hybrid.mu_smoothed)
+        cov_smoothed = np.array(hybrid.cov_smoothed)
+
         # -------------------------------------------------------------------------#
         # Test on validation set
         val_batch_iter = self.val_dtl.create_data_loader(self.batch_size, shuffle=False)
@@ -268,8 +423,8 @@ class BDLM_trainer:
             mu_preds_lstm.extend(m_pred)
             var_preds_lstm.extend(v_pred)
 
-        mu_preds = np.array(mu_preds)
-        std_preds = np.array(var_preds) ** 0.5
+        mu_preds = np.array(mu_preds).flatten()
+        std_preds = np.array(var_preds).flatten() ** 0.5
         y_val = np.array(y_val)
         obs_val_norm = y_val
         mu_preds_norm_val = mu_preds

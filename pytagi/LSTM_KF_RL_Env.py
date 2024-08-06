@@ -155,7 +155,7 @@ class LSTM_KF_Env(gym.Env):
 
         return observation, info
 
-    def step(self, action, interv_LT_scale = 1e2, add_anomaly = False, anomaly_scale = 1e-2):
+    def step(self, action, interv_LT_scale = 1e1, add_anomaly = False, anomaly_scale = 1e-2):
         # Action
         if action == 1:
             self.ts_model.z[2] = self.ts_model.init_z[2]

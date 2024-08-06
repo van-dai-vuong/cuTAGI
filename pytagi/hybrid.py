@@ -249,7 +249,8 @@ class LSTM_SSM:
             self.smoothed_init_Sz = self.Sz
 
             if self.use_auto_AR:
-                self.Sz[3,3] = self.init_Sz[3,3]
+                self.Sz[3,:] = self.init_Sz[3,:]
+                self.Sz[:,3] = self.init_Sz[:,3]
                 self.z[3] = self.init_z[3]
                 self.mu_W2b_posterior = self.mu_W2b_init
                 self.var_W2b_posterior = self.var_W2b_init
