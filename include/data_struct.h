@@ -134,14 +134,28 @@ class BaseDeltaStates {
     virtual void swap(BaseDeltaStates &other);
 };
 
+class BaseLinearSmoother {
+   public:
+    float mu_prior, var_prior;
+    float mu_post, var_post;
+    std::vector<float> mu_w, var_w, var_b;
+    size_t num_w = 0;
+
+    BaseLinearSmoother(size_t num_w);
+    BaseLinearSmoother();
+    ~BaseLinearSmoother() = default;
+    // virtual void set_size(size_t size, size_t size_w);
+    virtual void set_num_states_w(size_t num_w);
+    void reset_zeros();
+};
+
 class BaseTempStates {
    public:
     std::vector<float> tmp_1;
     std::vector<float> tmp_2;
-    std::vector<float> tmp_3;
-    float tmp_4, tmp_5, tmp_6, tmp_7;
     std::vector<float> tmp_8, tmp_9;
     size_t size = 0, block_size = 0, actual_size = 0;
+    BaseLinearSmoother linear_states;
 
     BaseTempStates(size_t n, size_t m);
     BaseTempStates();

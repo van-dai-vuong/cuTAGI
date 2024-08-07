@@ -1524,8 +1524,9 @@ void LSTM::backward(BaseDeltaStates &input_delta_states,
                 lstm_states.var_h_prev, lstm_states.mu_c_prev,
                 lstm_states.mu_ca, lstm_states.jcb_ca, this->w_pos_f,
                 this->w_pos_i, this->w_pos_c, this->w_pos_o, this->output_size,
-                this->input_size, 0, end_chunk_, temp_states.tmp_1,
-                temp_states.tmp_2, temp_states.tmp_3, cov_hh, cov_zo);
+                this->input_size, 0, end_chunk_, temp_states.linear_states.mu_w,
+                temp_states.linear_states.var_w,
+                temp_states.linear_states.var_b, cov_hh, cov_zo);
             // print_matrix_1Dvec(cov_hh);
             this->lstm_states.cov_hh.push_back(cov_hh);
             this->lstm_states.cov_zo.push_back(cov_zo);
@@ -1610,15 +1611,20 @@ void LSTM::backward(BaseDeltaStates &input_delta_states,
                 this->lstm_states.num_states, this->lstm_states.mu_c_prior,
                 this->lstm_states.var_c_prior);
         }
+
         // save posteriors for smoothing
         this->lstm_states.mu_h_posts.push_back(this->lstm_states.mu_h_prior);
         this->lstm_states.var_h_posts.push_back(this->lstm_states.var_h_prior);
         this->lstm_states.mu_c_posts.push_back(this->lstm_states.mu_c_prior);
         this->lstm_states.var_c_posts.push_back(this->lstm_states.var_c_prior);
-        this->lstm_states.mu_zo_priors.push_back(temp_states.tmp_4);
-        this->lstm_states.var_zo_priors.push_back(temp_states.tmp_5);
-        this->lstm_states.mu_zo_posts.push_back(temp_states.tmp_6);
-        this->lstm_states.var_zo_posts.push_back(temp_states.tmp_7);
+        this->lstm_states.mu_zo_priors.push_back(
+            temp_states.linear_states.mu_prior);
+        this->lstm_states.var_zo_priors.push_back(
+            temp_states.linear_states.var_prior);
+        this->lstm_states.mu_zo_posts.push_back(
+            temp_states.linear_states.mu_post);
+        this->lstm_states.var_zo_posts.push_back(
+            temp_states.linear_states.var_post);
     }
 }
 
@@ -1698,19 +1704,6 @@ void LSTM::smoother(std::string next_layer_type, BaseTempStates &temp_states)
         this->lstm_states.var_zo_smooths = var_zo_smooths;
         temp_states.tmp_8 = this->lstm_states.mu_zo_smooths;
         temp_states.tmp_9 = this->lstm_states.var_zo_smooths;
-
-        //// check if all variances of zo_smooths are positive
-        // int check = 1;
-        // for (float element : var_zo_smooths) {
-        //     if (element < 0) {
-        //         check = 0;
-        //     }
-        // }
-        // if (check == 1) {
-        //     std::cout << "Variances are all positive." << std::endl;
-        // } else {
-        //     std::cout << "Variances contain a Negative value" << std::endl;
-        // }
     }
 
     // transfer h and c to the first time step of the next epoch
@@ -1740,7 +1733,7 @@ void LSTM::smoother(std::string next_layer_type, BaseTempStates &temp_states)
     this->lstm_states.var_zo_priors.clear();
     this->lstm_states.mu_zo_posts.clear();
     this->lstm_states.var_zo_posts.clear();
-    // this->lstm_states.reset_zeros();
+    this->lstm_states.reset_zeros();
 }
 
 #ifdef USE_CUDA
