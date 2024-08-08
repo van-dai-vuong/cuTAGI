@@ -154,6 +154,32 @@ void BaseDeltaStates::swap(BaseDeltaStates& other)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Base Linear layer's Smoother States
+////////////////////////////////////////////////////////////////////////////////
+BaseLinearSmoother::BaseLinearSmoother(size_t num_w) : num_w(num_w) {}
+BaseLinearSmoother::BaseLinearSmoother() {}
+void BaseLinearSmoother::set_num_states_w(size_t num_w)
+/*
+ */
+{
+    this->num_w = num_w;
+    this->reset_zeros();
+}
+
+void BaseLinearSmoother::reset_zeros()
+/*
+ */
+{
+    mu_prior = 0.0;
+    var_prior = 0.0;
+    mu_post = 0.0;
+    var_post = 0.0;
+    this->mu_w.resize(num_w, 0.0);
+    this->var_w.resize(num_w, 0.0);
+    this->var_b.resize(1, 0.0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Base Temp States
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -161,6 +187,25 @@ BaseTempStates::BaseTempStates(size_t n, size_t m)
     : tmp_1(n, 0.0f), tmp_2(n, 0.0f), size(n), block_size(m) {}
 
 BaseTempStates::BaseTempStates() {}
+
+// void BaseTempStates::set_size(size_t new_size, size_t new_block_size)
+// /*
+//  */
+// {
+//     if (new_size > this->size) {
+//         this->size = new_size;
+//         this->tmp_1.resize(this->size, 0.0f);
+//         this->tmp_2.resize(this->size, 0.0f);
+//         this->tmp_3.resize(this->size, 0.0f);
+//     }
+//     // this->tmp_4 = 0;
+//     // this->tmp_5 = 0;
+//     // this->tmp_6 = 0;
+//     // this->tmp_7 = 0;
+
+//     this->block_size = new_block_size;
+//     this->actual_size = new_size / new_block_size;
+// }
 
 void BaseTempStates::set_size(size_t new_size, size_t new_block_size)
 /*
@@ -171,7 +216,6 @@ void BaseTempStates::set_size(size_t new_size, size_t new_block_size)
         this->tmp_1.resize(this->size, 0.0f);
         this->tmp_2.resize(this->size, 0.0f);
     }
-
     this->block_size = new_block_size;
     this->actual_size = new_size / new_block_size;
 }

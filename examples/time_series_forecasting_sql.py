@@ -1,11 +1,3 @@
-# Temporary import. It will be removed in the final vserion
-import os
-import sys
-
-# Add the 'build' directory to sys.path in one line
-sys.path.append(
-    os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "build"))
-)
 from typing import Optional
 
 import fire
@@ -22,34 +14,36 @@ from pytagi.nn import LSTM, Linear, OutputUpdater, Sequential
 from examples.data_loader import TimeSeriesDataloader
 
 
-def main(num_epochs: int = 50, batch_size: int = 5, sigma_v: float = 1):
+def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 1):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
     num_features = 1
-    input_seq_len = 5
+    input_seq_len = 24
     output_seq_len = 1
     seq_stride = 1
 
     train_dtl = TimeSeriesDataloader(
-        x_file="data/toy_time_series/x_train_sin_data.csv",
-        date_time_file="data/toy_time_series/train_sin_datetime.csv",
+        x_file="data/toy_time_series_smoother/x_train_sin_smoother.csv",
+        date_time_file="data/toy_time_series_smoother/x_train_sin_smoother_datetime.csv",
         output_col=output_col,
         input_seq_len=input_seq_len,
         output_seq_len=output_seq_len,
         num_features=num_features,
-        stride=seq_stride,
+        stride=seq_stride
+        # time_covariates=["hour_of_day", "day_of_week"]
     )
     test_dtl = TimeSeriesDataloader(
-        x_file="data/toy_time_series/x_test_sin_data.csv",
-        date_time_file="data/toy_time_series/test_sin_datetime.csv",
+        x_file="data/toy_time_series_smoother/x_test_sin_smoother.csv",
+        date_time_file="data/toy_time_series_smoother/x_test_sin_smoother_datetime.csv",
         output_col=output_col,
         input_seq_len=input_seq_len,
         output_seq_len=output_seq_len,
         num_features=num_features,
         stride=seq_stride,
         x_mean=train_dtl.x_mean,
-        x_std=train_dtl.x_std,
+        x_std=train_dtl.x_std
+        # time_covariates=["hour_of_day", "day_of_week"]
     )
 
     # Viz
@@ -57,26 +51,23 @@ def main(num_epochs: int = 50, batch_size: int = 5, sigma_v: float = 1):
 
     # Network
     net = Sequential(
-        LSTM(num_features, 8, input_seq_len),
-        LSTM(8, 8, input_seq_len),
-        Linear(8 * input_seq_len, 1),
+        LSTM(num_features*input_seq_len, 40, 1),
+        LSTM(40, 40, 1),
+        Linear(40, 1),
     )
-<<<<<<< HEAD
-    net.to_device("cuda")
-    # net.set_threads(1)  # multi-processing is slow on a small net
-    # net.input_state_update = True
-=======
 
     # net.to_device("cuda")
     net.set_threads(1)  # multi-processing is slow on a small net
     net.input_state_update = True
->>>>>>> DV_dev
     out_updater = OutputUpdater(net.device)
 
     # -------------------------------------------------------------------------#
     # Training
     mses = []
+    # Initialize the sequence length
+    mu_sq = np.ones(input_seq_len,dtype=np.float32)
     pbar = tqdm(range(num_epochs), desc="Training Progress")
+
     for epoch in pbar:
         batch_iter = train_dtl.create_data_loader(batch_size, shuffle=False)
 
@@ -85,9 +76,14 @@ def main(num_epochs: int = 50, batch_size: int = 5, sigma_v: float = 1):
             curr_v=sigma_v, min_v=0.3, decaying_factor=0.99, curr_iter=epoch
         )
         var_y = np.full((batch_size * len(output_col),), sigma_v**2, dtype=np.float32)
+        y_train = []
 
-        for x, y in batch_iter:
-            # Feed forward
+        # for x, y in batch_iter:
+        for idx_sample, (x, y) in enumerate(batch_iter):
+            # replace nan in input x by the prediction:
+            if idx_sample < input_seq_len+48:
+                x = mu_sq[-input_seq_len:]
+            # # Feed forward
             m_pred, _ = net(x)
 
             # Update output layer
@@ -97,7 +93,6 @@ def main(num_epochs: int = 50, batch_size: int = 5, sigma_v: float = 1):
                 var_obs=var_y,
                 delta_states=net.input_delta_z_buffer,
             )
-
             # Feed backward
             net.backward()
             net.step()
@@ -106,14 +101,34 @@ def main(num_epochs: int = 50, batch_size: int = 5, sigma_v: float = 1):
             pred = normalizer.unstandardize(
                 m_pred, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
             )
+            y_train.append(y)
             obs = normalizer.unstandardize(
                 y, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
             )
             mse = metric.mse(pred, obs)
             mses.append(mse)
 
+
+            # Update mu_sq
+            mu_sq = np.append(mu_sq,m_pred)
+
+
         # Smoother
-        net.smoother()
+        mu_zo_smooth, var_zo_smooth = net.smoother()
+        zo_smooth_std = np.array(var_zo_smooth) ** 0.5
+        mu_sq = mu_zo_smooth[:input_seq_len]
+
+        # # Figures for each epoch
+        t = np.arange(len(mu_zo_smooth))
+        t_train = np.arange(len(y_train))
+        plt.switch_backend('Agg')
+        plt.figure()
+        plt.plot(t_train, y_train, color='r')
+        plt.plot(t, mu_zo_smooth, color='b')
+        plt.fill_between(t, mu_zo_smooth - zo_smooth_std, mu_zo_smooth + zo_smooth_std, alpha=0.2, label='1 Std Dev')
+        filename = f'saved_results/smoother#{epoch}.png'
+        plt.savefig(filename)
+        plt.close()
 
         # Progress bar
         pbar.set_description(

@@ -26,7 +26,7 @@ void compute_delta_z_output(std::vector<float> &mu_a, std::vector<float> &var_a,
     // We compute directely the inovation vector for output layer
     for (int col = start_chunk; col < end_chunk; col++) {
         tmp = jcb[col] / (var_a[col] + var_obs[col]);
-        if (isinf(tmp) || isnan(tmp)) {
+        if (isinf(tmp) || isnan(tmp) || isnan(obs[col])) {
             delta_mu[col] = zero_pad;
             delta_var[col] = zero_pad;
         } else {
@@ -210,7 +210,6 @@ void OutputUpdater::update(BaseHiddenStates &output_states,
     this->obs->block_size = output_states.block_size;
     this->obs->size = mu_obs.size();
     this->obs->actual_size = mu_obs.size() / output_states.block_size;
-
     this->updater->update_output_delta_z(output_states, *this->obs,
                                          delta_states);
 }

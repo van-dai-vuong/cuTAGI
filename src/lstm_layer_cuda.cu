@@ -970,6 +970,26 @@ void LSTMCuda::backward(BaseDeltaStates &input_delta_states,
             this->w_pos_c, this->w_pos_o, this->output_size, this->input_size,
             this->seq_len, batch_size, cu_output_delta_states->d_delta_mu,
             cu_output_delta_states->d_delta_var);
+
+        if (this->seq_len == 1 && batch_size == 1) {
+            const unsigned int ps_grid_size =
+                (this->lstm_state.num_states + this->num_cuda_threads - 1) /
+                this->num_cuda_threads;
+
+            lstm_update_prev_hidden_states<<<ps_grid_size,
+                                             this->num_cuda_threads>>>(
+                this->lstm_state.d_mu_h_prior, this->lstm_state.d_var_h_prior,
+                cu_input_delta_states->d_delta_mu,
+                cu_input_delta_states->d_delta_var, this->lstm_state.num_states,
+                this->lstm_state.d_mu_h_prev, this->lstm_state.d_var_h_prev);
+            lstm_update_prev_cell_states<<<ps_grid_size,
+                                           this->num_cuda_threads>>>(
+                this->lstm_state.d_mu_c_prior, this->lstm_state.d_var_c_prior,
+                this->lstm_state.d_jcb_ca, this->lstm_state.d_mu_o_ga,
+                cu_input_delta_states->d_delta_mu,
+                cu_input_delta_states->d_delta_var, this->lstm_state.num_states,
+                this->lstm_state.d_mu_c_prev, this->lstm_state.d_var_c_prev);
+        }
     }
 
     if (param_update) {

@@ -1,13 +1,13 @@
 *build
 *.vscode
 *.json
-*.csv
 debug_data/
 saved_param/
 kernel_playground/
 __pycache__/
 *.DS_Store
 *.pyc
+*.png
 pytagi.egg-info
 dist
 data/cifar

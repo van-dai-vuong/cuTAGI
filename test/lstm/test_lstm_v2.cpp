@@ -120,12 +120,14 @@ void lstm_v2()
         train_db.sigma_x);
 
     // Model
-    Sequential model(LSTM(1, 5, input_seq_len), LSTM(5, 5, input_seq_len),
-                     Linear(5 * input_seq_len, 1));
+    Sequential model(LSTM(1, 8, input_seq_len), LSTM(8, 8, input_seq_len),
+                     Linear(8 * input_seq_len, 1));
+    // Sequential model(LSTM(1, 8, input_seq_len), Linear(8 * input_seq_len,
+    // 1));
     model.input_state_update = true;
 
-    model.to_device("cuda");
-    // model.set_threads(1);
+    // model.to_device("cuda");
+    model.set_threads(1);
 
     OutputUpdater output_updater(model.device);
 
@@ -134,14 +136,15 @@ void lstm_v2()
     //////////////////////////////////////////////////////////////////////
     unsigned seed = 0;
     std::default_random_engine seed_e(seed);
-    int n_epochs = 10;
+    int n_epochs = 50;
     int batch_size = 1;
     float sigma_obs = 1.0;
 
     int iters = train_db.num_data / batch_size;
+    // int iters = 5;
     std::cout << "num_iter: " << iters << "\n";
     std::vector<float> x_batch(batch_size * train_db.nx, 0.0f);
-    std::vector<float> var_obs(batch_size * train_db.ny, pow(sigma_obs, 2));
+    std::vector<float> var_obs(batch_size * train_db.ny, pow(sigma_obs, 1));
     std::vector<float> y_batch(batch_size * train_db.ny, 0.0f);
     std::vector<int> batch_idx(batch_size);
     std::vector<float> mu_a_output(batch_size * train_db.ny, 0);
@@ -179,20 +182,23 @@ void lstm_v2()
             model.step();
         }
 
+        model.smoother();
+
         // Report running time
         std::cout << std::endl;
         auto end = std::chrono::steady_clock::now();
         auto run_time =
             std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
                 .count();
-        std::cout << " Time per epoch: ";
-        std::cout << std::fixed;
-        std::cout << std::setprecision(3);
-        std::cout << run_time * 1e-9 << " sec\n";
-        std::cout << " Time left     : ";
-        std::cout << std::fixed;
-        std::cout << std::setprecision(3);
-        std::cout << (run_time * 1e-9) * (n_epochs - e - 1) / 60 << " mins\n";
+        // std::cout << " Time per epoch: ";
+        // std::cout << std::fixed;
+        // std::cout << std::setprecision(3);
+        // std::cout << run_time * 1e-9 << " sec\n";
+        // std::cout << " Time left     : ";
+        // std::cout << std::fixed;
+        // std::cout << std::setprecision(3);
+        // std::cout << (run_time * 1e-9) * (n_epochs - e - 1) / 60 << "
+        // mins\n";
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -204,9 +210,10 @@ void lstm_v2()
     std::vector<float> var_a_output_test(test_db.num_data * test_db.ny, 0);
     auto test_data_idx = create_range(test_db.num_data);
 
-    int n_iter =
-        static_cast<float>(test_db.num_data) / static_cast<float>(batch_size);
-    // int n_iter = ceil(n_iter_round);
+    // int n_iter =
+    //     static_cast<float>(test_db.num_data) /
+    //     static_cast<float>(batch_size);
+    int n_iter = 1;
     int mt_idx = 0;
 
     for (int i = 0; i < n_iter; i++) {
