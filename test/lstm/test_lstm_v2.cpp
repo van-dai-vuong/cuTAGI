@@ -238,8 +238,6 @@ void lstm_v2()
     // Model
     Sequential model(LSTM(1, 8, input_seq_len), LSTM(8, 8, input_seq_len),
                      Linear(8 * input_seq_len, 1));
-    // Sequential model(LSTM(1, 8, input_seq_len), Linear(8 * input_seq_len,
-    // 1));
     model.input_state_update = true;
 
     // model.to_device("cuda");

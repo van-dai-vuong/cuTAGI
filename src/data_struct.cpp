@@ -188,25 +188,6 @@ BaseTempStates::BaseTempStates(size_t n, size_t m)
 
 BaseTempStates::BaseTempStates() {}
 
-// void BaseTempStates::set_size(size_t new_size, size_t new_block_size)
-// /*
-//  */
-// {
-//     if (new_size > this->size) {
-//         this->size = new_size;
-//         this->tmp_1.resize(this->size, 0.0f);
-//         this->tmp_2.resize(this->size, 0.0f);
-//         this->tmp_3.resize(this->size, 0.0f);
-//     }
-//     // this->tmp_4 = 0;
-//     // this->tmp_5 = 0;
-//     // this->tmp_6 = 0;
-//     // this->tmp_7 = 0;
-
-//     this->block_size = new_block_size;
-//     this->actual_size = new_size / new_block_size;
-// }
-
 void BaseTempStates::set_size(size_t new_size, size_t new_block_size)
 /*
  */
