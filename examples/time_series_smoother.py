@@ -18,10 +18,11 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 1):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 1
+    num_features = 3
     input_seq_len = 24
     output_seq_len = 1
     seq_stride = 1
+    infer_seq_len_smoother = 48
 
     train_dtl = TimeSeriesDataloader(
         x_file="data/toy_time_series_smoother/x_train_sin_smoother.csv",
@@ -30,8 +31,9 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 1):
         input_seq_len=input_seq_len,
         output_seq_len=output_seq_len,
         num_features=num_features,
-        stride=seq_stride
-        # time_covariates=["hour_of_day", "day_of_week"]
+        stride=seq_stride,
+        time_covariates=["hour_of_day", "day_of_week"],
+        keep_last_time_cov = True
     )
     test_dtl = TimeSeriesDataloader(
         x_file="data/toy_time_series_smoother/x_test_sin_smoother.csv",
@@ -42,8 +44,9 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 1):
         num_features=num_features,
         stride=seq_stride,
         x_mean=train_dtl.x_mean,
-        x_std=train_dtl.x_std
-        # time_covariates=["hour_of_day", "day_of_week"]
+        x_std=train_dtl.x_std,
+        time_covariates=["hour_of_day", "day_of_week"],
+        keep_last_time_cov = True
     )
 
     # Viz
@@ -51,7 +54,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 1):
 
     # Network
     net = Sequential(
-        LSTM(num_features*input_seq_len, 40, 1),
+        LSTM(num_features + input_seq_len - 1, 40, 1),
         LSTM(40, 40, 1),
         Linear(40, 1),
     )
@@ -80,10 +83,13 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 1):
 
         # for x, y in batch_iter:
         for idx_sample, (x, y) in enumerate(batch_iter):
-            # replace nan in input x by the prediction:
-            if idx_sample < input_seq_len+48:
-                x = mu_sq[-input_seq_len:]
-            # # Feed forward
+
+            # replace nan in input x by the lstm_prediction:
+            if idx_sample < input_seq_len + infer_seq_len_smoother:
+                nan_indices = np.where(np.isnan(x))[0]
+                x[nan_indices] = mu_sq[nan_indices]
+
+            # Feed forward
             m_pred, _ = net(x)
 
             # Update output layer
@@ -111,6 +117,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 1):
 
             # Update mu_sq
             mu_sq = np.append(mu_sq,m_pred)
+            mu_sq = mu_sq[-input_seq_len:]
 
 
         # Smoother

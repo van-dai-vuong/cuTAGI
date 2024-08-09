@@ -877,6 +877,80 @@ void lstm_update_prev_cell_states_mp(
     threads.clear();
 }
 
+void lstm_smoother_z_ouput(int num_timestep, std::vector<float> &cov,
+                           std::vector<float> &mu_priors,
+                           std::vector<float> &var_priors,
+                           std::vector<float> &mu_posts,
+                           std::vector<float> &var_posts,
+                           std::vector<float> &mu_smooths,
+                           std::vector<float> &var_smooths)
+/*
+ */
+{
+    for (int i = num_timestep - 2; i >= 0; i--) {
+        float tmp = cov[i + 1] / var_priors[i + 1];
+        mu_smooths[i] =
+            mu_posts[i] + tmp * (mu_smooths[i + 1] - mu_priors[i + 1]);
+        var_smooths[i] =
+            var_posts[i] + tmp * (var_smooths[i + 1] - var_priors[i + 1]) * tmp;
+    }
+}
+
+void lstm_smoother_cell_states(int num_timestep,
+                               std::vector<std::vector<float>> &cov_cc,
+                               std::vector<std::vector<float>> &mu_c_priors,
+                               std::vector<std::vector<float>> &var_c_priors,
+                               std::vector<std::vector<float>> &mu_c_posts,
+                               std::vector<std::vector<float>> &var_c_posts,
+                               std::vector<std::vector<float>> &mu_c_smooths,
+                               std::vector<std::vector<float>> &var_c_smooths)
+/*
+ */
+{
+    int num_states = mu_c_priors[0].size();
+    for (int i = num_timestep - 2; i >= 0; --i) {
+        for (int j = 0; j < num_states; j++) {
+            float tmp = cov_cc[i + 1][j] / var_c_priors[i + 1][j];
+            // std::cout << "i: " << i << " .j: " << j << ".tmp: " << tmp
+            //           << std::endl;
+            mu_c_smooths[i][j] =
+                mu_c_posts[i][j] +
+                tmp * (mu_c_smooths[i + 1][j] - mu_c_priors[i + 1][j]);
+            var_c_smooths[i][j] =
+                var_c_posts[i][j] +
+                tmp * (var_c_smooths[i + 1][j] - var_c_priors[i + 1][j]) * tmp;
+            // std::cout << "mu_c_smooths: " << mu_c_smooths[i][j] << std::endl;
+        }
+    }
+}
+
+void lstm_smoother_hidden_states(int num_timestep,
+                                 std::vector<std::vector<float>> &cov_hc,
+                                 std::vector<std::vector<float>> &mu_c_priors,
+                                 std::vector<std::vector<float>> &var_c_priors,
+                                 std::vector<std::vector<float>> &mu_h_posts,
+                                 std::vector<std::vector<float>> &var_h_posts,
+                                 std::vector<std::vector<float>> &mu_c_smooths,
+                                 std::vector<std::vector<float>> &var_c_smooths,
+                                 std::vector<std::vector<float>> &mu_h_smooths,
+                                 std::vector<std::vector<float>> &var_h_smooths)
+/*
+ */
+{
+    int num_states = mu_c_priors[0].size();
+    for (int i = num_timestep - 2; i >= 0; i--) {
+        for (int j = 0; j < num_states; j++) {
+            float tmp = cov_hc[i + 1][j] / var_c_priors[i + 1][j];
+            mu_h_smooths[i][j] =
+                mu_h_posts[i][j] +
+                tmp * (mu_c_smooths[i + 1][j] - mu_c_priors[i + 1][j]);
+            var_h_smooths[i][j] =
+                var_h_posts[i][j] +
+                tmp * (var_c_smooths[i + 1][j] - var_c_priors[i + 1][j]) * tmp;
+        }
+    }
+}
+
 void lstm_delta_mean_var_w_worker(
     std::vector<float> &Sw, std::vector<float> &mha, std::vector<float> &Jf_ga,
     std::vector<float> &mi_ga, std::vector<float> &Ji_ga,
@@ -1355,8 +1429,8 @@ void LSTM::forward(BaseHiddenStates &input_states,
     output_states.block_size = batch_size;
     output_states.actual_size = this->output_size * this->seq_len;
 
-    // TODO: This is not efficient for memory and performance. Update the
-    // previous states
+    // TODO: This is not efficient for memory and performance. Update
+    // the previous states
     if (this->seq_len == 1 && batch_size == 1) {
         lstm_to_prev_states(this->lstm_states.mu_h_prior,
                             this->lstm_states.mu_h_prior.size(),
@@ -1632,85 +1706,80 @@ void LSTM::smoother(std::string next_layer_type, BaseTempStates &temp_states)
 /*
  */
 {
-    int n_time = lstm_states.cov_cc.size();
-    int n_hs = lstm_states.cov_cc[0].size();
-    std::vector<float> mu_c_temp(n_hs), var_c_temp(n_hs), Jc_temp(n_hs),
-        mu_h_temp(n_hs), var_h_temp(n_hs), Jch_temp(n_hs);
-    std::vector<std::vector<float>> mu_c_smooths(n_time), var_c_smooths(n_time),
-        mu_h_smooths(n_time), var_h_smooths(n_time);
-    std::vector<float> mu_zo_smooths(n_time), var_zo_smooths(n_time);
-    float Jzo_temp;
+    int num_timestep = lstm_states.cov_cc.size();
+    int num_hidden_states = lstm_states.cov_cc[0].size();
 
-    // Initialize the last time step for smoothing
-    mu_c_smooths.back() = lstm_states.mu_c_posts.back();
-    var_c_smooths.back() = lstm_states.var_c_posts.back();
-    mu_h_smooths.back() = lstm_states.mu_h_posts.back();
-    var_h_smooths.back() = lstm_states.var_h_posts.back();
-    mu_zo_smooths.back() = lstm_states.mu_zo_posts.back();
-    var_zo_smooths.back() = lstm_states.var_zo_posts.back();
+    lstm_states.mu_c_smooths.resize(num_timestep);
+    lstm_states.var_c_smooths.resize(num_timestep);
+    lstm_states.mu_h_smooths.resize(num_timestep);
+    lstm_states.var_h_smooths.resize(num_timestep);
+    lstm_states.mu_zo_smooths.resize(num_timestep);
+    lstm_states.var_zo_smooths.resize(num_timestep);
 
-    for (int i = n_time - 2; i >= 0; i--) {
-        for (int j = 0; j < n_hs; j++) {
-            // smoother for cell states
-            Jc_temp[j] = lstm_states.cov_cc[i + 1][j] /
-                         lstm_states.var_c_priors[i + 1][j];
-            mu_c_temp[j] = lstm_states.mu_c_posts[i][j] +
-                           Jc_temp[j] * (mu_c_smooths[i + 1][j] -
-                                         lstm_states.mu_c_priors[i + 1][j]);
-            var_c_temp[j] = lstm_states.var_c_posts[i][j] +
-                            Jc_temp[j] *
-                                (var_c_smooths[i + 1][j] -
-                                 lstm_states.var_c_priors[i + 1][j]) *
-                                Jc_temp[j];
-
-            // smoother for hidden states
-            Jch_temp[j] =
-                lstm_states.cov_hc[i][j] / lstm_states.var_c_priors[i][j];
-            mu_h_temp[j] =
-                lstm_states.mu_h_posts[i][j] +
-                Jch_temp[j] * (mu_c_temp[j] - lstm_states.mu_c_priors[i][j]);
-            var_h_temp[j] =
-                lstm_states.var_h_posts[i][j] +
-                Jch_temp[j] * (var_c_temp[j] - lstm_states.var_c_priors[i][j]) *
-                    Jch_temp[j];
-        }
-        if (next_layer_type == "Linear") {
-            // smoother for z_{O}
-            Jzo_temp =
-                lstm_states.cov_zo[i + 1] / lstm_states.var_zo_priors[i + 1];
-            mu_zo_smooths[i] = lstm_states.mu_zo_posts[i] +
-                               Jzo_temp * (mu_zo_smooths[i + 1] -
-                                           lstm_states.mu_zo_priors[i + 1]);
-            var_zo_smooths[i] =
-                lstm_states.var_zo_posts[i] +
-                Jzo_temp *
-                    (var_zo_smooths[i + 1] - lstm_states.var_zo_priors[i + 1]) *
-                    Jzo_temp;
-        }
-
-        // save
-        mu_c_smooths[i] = mu_c_temp;
-        var_c_smooths[i] = var_c_temp;
-        mu_h_smooths[i] = mu_h_temp;
-        var_h_smooths[i] = var_h_temp;
+    for (auto &val : lstm_states.mu_c_smooths) {
+        val.resize(num_hidden_states, 0.0f);
+    }
+    for (auto &val : lstm_states.var_c_smooths) {
+        val.resize(num_hidden_states, 0.0f);
+    }
+    for (auto &val : lstm_states.mu_h_smooths) {
+        val.resize(num_hidden_states, 0.0f);
+    }
+    for (auto &val : lstm_states.var_h_smooths) {
+        val.resize(num_hidden_states, 0.0f);
+    }
+    for (auto &val : lstm_states.mu_zo_smooths) {
+        val = 0.0f;
+    }
+    for (auto &val : lstm_states.var_zo_smooths) {
+        val = 0.0f;
     }
 
-    this->lstm_states.mu_c_smooths = mu_c_smooths;
-    this->lstm_states.var_c_smooths = var_c_smooths;
-    this->lstm_states.mu_h_smooths = mu_h_smooths;
-    this->lstm_states.var_h_smooths = var_h_smooths;
+    // Initialize the last time step for smoothing
+    lstm_states.mu_c_smooths.back() = lstm_states.mu_c_posts.back();
+    lstm_states.var_c_smooths.back() = lstm_states.var_c_posts.back();
+    lstm_states.mu_h_smooths.back() = lstm_states.mu_h_posts.back();
+    lstm_states.var_h_smooths.back() = lstm_states.var_h_posts.back();
+    lstm_states.mu_zo_smooths.back() = lstm_states.mu_zo_posts.back();
+    lstm_states.var_zo_smooths.back() = lstm_states.var_zo_posts.back();
+
+    lstm_smoother_cell_states(num_timestep, lstm_states.cov_cc,
+                              lstm_states.mu_c_priors, lstm_states.var_c_priors,
+                              lstm_states.mu_c_posts, lstm_states.var_c_posts,
+                              lstm_states.mu_c_smooths,
+                              lstm_states.var_c_smooths);
+
+    lstm_smoother_hidden_states(
+        num_timestep, lstm_states.cov_hc, lstm_states.mu_c_priors,
+        lstm_states.var_c_priors, lstm_states.mu_h_posts,
+        lstm_states.var_h_posts, lstm_states.mu_c_smooths,
+        lstm_states.var_c_smooths, lstm_states.mu_h_smooths,
+        lstm_states.var_h_smooths);
+
+    // only smooth the z_output for the last linear layer
     if (next_layer_type == "Linear") {
-        this->lstm_states.mu_zo_smooths = mu_zo_smooths;
-        this->lstm_states.var_zo_smooths = var_zo_smooths;
-        temp_states.tmp_8 = this->lstm_states.mu_zo_smooths;
-        temp_states.tmp_9 = this->lstm_states.var_zo_smooths;
+        lstm_smoother_z_ouput(
+            num_timestep, lstm_states.cov_zo, lstm_states.mu_zo_priors,
+            lstm_states.var_zo_priors, lstm_states.mu_zo_posts,
+            lstm_states.var_zo_posts, lstm_states.mu_zo_smooths,
+            lstm_states.var_zo_smooths);
+    }
+
+    // take the smoothed z_output for python
+    if (next_layer_type == "Linear") {
+        temp_states.linear_states.mu_zo_smooths =
+            this->lstm_states.mu_zo_smooths;
+        temp_states.linear_states.var_zo_smooths =
+            this->lstm_states.var_zo_smooths;
     }
 
     // transfer h and c to the first time step of the next epoch
-    this->lstm_states.mu_h_prior = this->lstm_states.mu_h_smooths[0];
-    this->lstm_states.var_h_prior = this->lstm_states.var_h_smooths[0];
-    this->lstm_states.mu_c_prior = this->lstm_states.mu_c_smooths[0];
-    this->lstm_states.var_c_prior = this->lstm_states.var_c_smooths[0];
+    // this->lstm_states.mu_h_prior = this->lstm_states.mu_h_smooths[0];
+    // this->lstm_states.var_h_prior =
+    // this->lstm_states.var_h_smooths[0]; this->lstm_states.mu_c_prior
+    // = this->lstm_states.mu_c_smooths[0];
+    // this->lstm_states.var_c_prior =
+    // this->lstm_states.var_c_smooths[0];
 
     // Clear variables for next epoch
     this->lstm_states.mu_h_priors.clear();

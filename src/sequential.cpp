@@ -613,9 +613,11 @@ Sequential::get_outputs_smoother()
  */
 {
     auto py_mu_zo_smooths = pybind11::array_t<float>(
-        this->temp_states->tmp_8.size(), this->temp_states->tmp_8.data());
+        this->temp_states->linear_states.mu_zo_smooths.size(),
+        this->temp_states->linear_states.mu_zo_smooths.data());
     auto py_var_zo_smooths = pybind11::array_t<float>(
-        this->temp_states->tmp_9.size(), this->temp_states->tmp_9.data());
+        this->temp_states->linear_states.var_zo_smooths.size(),
+        this->temp_states->linear_states.var_zo_smooths.data());
 
     return {py_mu_zo_smooths, py_var_zo_smooths};
 }

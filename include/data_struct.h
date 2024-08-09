@@ -139,6 +139,7 @@ class BaseLinearSmoother {
     float mu_prior, var_prior;
     float mu_post, var_post;
     std::vector<float> mu_w, var_w, var_b;
+    std::vector<float> mu_zo_smooths, var_zo_smooths;
     size_t num_w = 0;
 
     BaseLinearSmoother(size_t num_w);
@@ -153,7 +154,6 @@ class BaseTempStates {
    public:
     std::vector<float> tmp_1;
     std::vector<float> tmp_2;
-    std::vector<float> tmp_8, tmp_9;
     size_t size = 0, block_size = 0, actual_size = 0;
     BaseLinearSmoother linear_states;
 
