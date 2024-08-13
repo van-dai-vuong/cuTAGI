@@ -235,6 +235,16 @@ def normalize_tensor_two_parts(tensor, mu1, std1, mu2, std2, segment_len):
     norm_tensor = torch.cat((norm_first_seg, norm_last_seg), dim=1)
     return norm_tensor
 
+def normalize_array_two_parts(array, mu1, std1, mu2, std2, segment_len):
+    first_seg = array[:segment_len]
+    last_seg = array[segment_len:]
+
+    norm_first_seg = (first_seg - mu1) / std1
+    norm_last_seg = (last_seg - mu2) / std2
+
+    norm_array = np.concatenate((norm_first_seg, norm_last_seg))
+    return norm_array
+
 def normalize_array(arr, mu, std):
     return (arr - mu) / std
 

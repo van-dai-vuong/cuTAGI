@@ -155,7 +155,7 @@ class LSTM_KF_Env(gym.Env):
 
         return observation, info
 
-    def step(self, action, interv_LT_scale = 1e1, add_anomaly = False, anomaly_scale = 1e-2):
+    def step(self, action, interv_LT_scale = 1, cost_intervention = 0.0, add_anomaly = False, anomaly_scale = 1e-2):
         # Action
         if action == 1:
             self.ts_model.z[2] = self.ts_model.init_z[2]
@@ -219,6 +219,9 @@ class LSTM_KF_Env(gym.Env):
                 + np.clip(np.log(self._evaluate_standard_gaussian_probability(z_updata[2], 0, np.sqrt(Sz_update[2, 2]+self.ts_model.init_Sz[2, 2]))),\
                             -1e3, clip_value_la) - clip_value_la\
                 )
+
+        if action == 1:
+            reward -= cost_intervention
 
         if i == self.time_series_len - 1:
             terminated = True

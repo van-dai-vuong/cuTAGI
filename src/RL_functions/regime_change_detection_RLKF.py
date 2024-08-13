@@ -85,7 +85,7 @@ class regime_change_detection_RLKF():
         self.phi_AR = self.trained_BDLM.phi_AR
         self.Sigma_AR = self.trained_BDLM.Sigma_AR
 
-        self.memory = ReplayMemory(10000)
+        self.memory = ReplayMemory(1000)
         self.policy_net = DQN(self.n_observations, self.n_actions).to(self.device)
         self.target_net = DQN(self.n_observations, self.n_actions).to(self.device)
         self.optimal_net = DQN(self.n_observations, self.n_actions).to(self.device)
@@ -216,7 +216,8 @@ class regime_change_detection_RLKF():
     def train(self, num_episodes, step_look_back, abnormal_ts_percentage, anomaly_range,
               init_z, init_Sz, init_mu_preds_lstm, init_var_preds_lstm,
               batchsize, TAU, plot_samples=False, learning_curve_ylim = None,
-              early_stopping = False, patience = 10, validation_episode_num = 0, early_stop_start = 0):
+              early_stopping = False, patience = 10, validation_episode_num = 0, early_stop_start = 0,
+              agent_net_save_path='./saved_param/CASC_LGA007PIAP_E010_2024_07/agent_net.pth', cost_of_intervention=None):
         num_steps_per_episode = len(self.syn_ts_all[0])
         track_intervention_taken_times = np.zeros(num_episodes-validation_episode_num)
         optim_F1t = -1E8
@@ -229,6 +230,16 @@ class regime_change_detection_RLKF():
         print(validation_rand_samples)
         print(anm_positions_val)
         print(anm_magnitudes_val)
+
+        # Estimatethe cost of intervention
+        if cost_of_intervention is None:
+            print('Estimating the cost of intervention...')
+            self.cost_intervention = self._estimate_intervention_cost(num_episodes, validation_episode_num, init_z, init_Sz, init_mu_preds_lstm, init_var_preds_lstm)
+            print('The cost of intervention is: ', self.cost_intervention)
+            print('=====================================')
+        else:
+            self.cost_intervention = cost_of_intervention
+
         for i_episode in range(num_episodes-validation_episode_num):
             anm_pos = np.random.randint(step_look_back + self.trained_BDLM.input_seq_len, num_steps_per_episode)
 
@@ -293,7 +304,7 @@ class regime_change_detection_RLKF():
             for t in count():
                 action = self._select_action(state)
 
-                observation, reward, terminated, truncated, info = env.step(action.item())
+                observation, reward, terminated, truncated, info = env.step(action.item(), cost_intervention=self.cost_intervention)
 
                 Q_values_t = self._track_Qvalues(state)[0].tolist()
                 Q_values_all.append(Q_values_t)
@@ -528,7 +539,14 @@ class regime_change_detection_RLKF():
                         if i_episode - optim_episode > patience:
                             print('Early stopping is triggered, training stopped, model saved at epoch:', optim_episode)
                             self.policy_net.load_state_dict(self.optimal_net.state_dict())
+                            # Save policy net
+                            torch.save(self.policy_net.state_dict(), agent_net_save_path)
                             break
+                    if i_episode == num_episodes-validation_episode_num-1:
+                        print('Finished training in all episodes.')
+                        # Save policy net
+                        torch.save(self.policy_net.state_dict(), agent_net_save_path)
+
 
         print('Complete')
         if early_stopping is not True:
@@ -544,6 +562,42 @@ class regime_change_detection_RLKF():
         plt.show()
         plt.ioff()
 
+    def _estimate_intervention_cost(self, num_episodes, validation_episode_num, init_z, init_Sz, init_mu_preds_lstm, init_var_preds_lstm):
+        Q_estimates = []
+        for i_episode in tqdm(range(num_episodes-validation_episode_num)):
+            from itertools import count
+
+            train_dtl = SyntheticTimeSeriesDataloader(
+                        x_file=self.observation_save_path,
+                        select_column=i_episode,
+                        date_time_file=self.datetime_save_path,
+                        add_anomaly = False,
+                        x_mean=self.trained_BDLM.train_dtl.x_mean,
+                        x_std=self.trained_BDLM.train_dtl.x_std,
+                        output_col=self.trained_BDLM.output_col,
+                        input_seq_len=self.trained_BDLM.input_seq_len,
+                        output_seq_len=self.trained_BDLM.output_seq_len,
+                        num_features=self.trained_BDLM.num_features,
+                        stride=self.trained_BDLM.seq_stride,
+                        time_covariates=self.trained_BDLM.time_covariates,
+                    )
+            step_look_back = 64
+            env = LSTM_KF_Env(render_mode=None, data_loader=train_dtl, step_look_back=step_look_back)
+
+            Q_estimate = 0
+            for t in count():
+                _, reward, terminated, truncated, _ = env.step(0)
+                Q_estimate += self.GAMMA**(t) * reward
+                done = terminated or truncated
+                if done:
+                    break
+
+            Q_estimates.append(Q_estimate)
+
+        # Compute the mean and std of Q_estimates
+        std_Q = np.std(np.array(Q_estimates))
+
+        return 2 * std_Q
 
     def _normalize_date(self, date_time_i, mean, std, time_covariates):
         for time_cov in time_covariates:
