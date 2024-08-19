@@ -583,7 +583,9 @@ class regime_change_detection_RLKF():
                     )
             step_look_back = 64
             env = LSTM_KF_Env(render_mode=None, data_loader=train_dtl, step_look_back=step_look_back)
-
+            env.reset(z=init_z, Sz=init_Sz, mu_preds_lstm = copy.deepcopy(init_mu_preds_lstm), var_preds_lstm = copy.deepcopy(init_var_preds_lstm),
+                        net_test = self.LSTM_test_net, init_mu_W2b = None, init_var_W2b = None, phi_AR = self.phi_AR, Sigma_AR = self.Sigma_AR,
+                        phi_AA = self.phi_AA, Sigma_AA_ratio = self.Sigma_AA_ratio)
             Q_estimate = 0
             for t in count():
                 _, reward, terminated, truncated, _ = env.step(0)
@@ -597,7 +599,7 @@ class regime_change_detection_RLKF():
         # Compute the mean and std of Q_estimates
         std_Q = np.std(np.array(Q_estimates))
 
-        return 2 * std_Q
+        return std_Q
 
     def _normalize_date(self, date_time_i, mean, std, time_covariates):
         for time_cov in time_covariates:
