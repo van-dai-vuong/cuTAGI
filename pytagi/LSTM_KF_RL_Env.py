@@ -200,7 +200,7 @@ class LSTM_KF_Env(gym.Env):
 
         # Reward
         AR_var_stationary = self.ts_model.Sigma_AR / (1 - self.ts_model.phi_AR**2)
-        clip_value_ar = np.log(self._evaluate_standard_gaussian_probability(x = 3*np.sqrt(Sz_update[-2, -2]+AR_var_stationary), \
+        clip_value_ar = np.log(self._evaluate_standard_gaussian_probability(x = 1*np.sqrt(Sz_update[-2, -2]+AR_var_stationary), \
                                                                             mu = 0, std=np.sqrt(Sz_update[-2, -2]+AR_var_stationary)))
         clip_value_la = np.log(self._evaluate_standard_gaussian_probability(x = 1*np.sqrt(Sz_update[2, 2]+self.ts_model.init_Sz[2, 2]), \
                                                                             mu = 0, std=np.sqrt(Sz_update[2, 2]+self.ts_model.init_Sz[2, 2])))

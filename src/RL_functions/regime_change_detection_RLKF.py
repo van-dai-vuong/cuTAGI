@@ -23,6 +23,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+import time
+
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
@@ -85,7 +87,7 @@ class regime_change_detection_RLKF():
         self.phi_AR = self.trained_BDLM.phi_AR
         self.Sigma_AR = self.trained_BDLM.Sigma_AR
 
-        self.memory = ReplayMemory(1000)
+        self.memory = ReplayMemory(10000)
         self.policy_net = DQN(self.n_observations, self.n_actions).to(self.device)
         self.target_net = DQN(self.n_observations, self.n_actions).to(self.device)
         self.optimal_net = DQN(self.n_observations, self.n_actions).to(self.device)
@@ -95,7 +97,7 @@ class regime_change_detection_RLKF():
         self.steps_done = 0
         self.episode_rewards = []
         self.episode_f1t = []
-        self.GAMMA = 0.999
+        self.GAMMA = 0.99
 
     def generate_synthetic_ts(self, num_syn_ts, syn_ts_len, plot = True):
         self.syn_ts_all = []
@@ -225,12 +227,13 @@ class regime_change_detection_RLKF():
         # Set seed for numpy random
         np.random.seed(0)
         validation_rand_samples = [np.random.random() for _ in range(validation_episode_num)]
-        anm_positions_val = np.random.randint(step_look_back + self.trained_BDLM.input_seq_len, num_steps_per_episode, validation_episode_num)
+        anm_positions_val = np.random.randint(step_look_back + self.trained_BDLM.input_seq_len, int(num_steps_per_episode/2), validation_episode_num)
         anm_magnitudes_val = np.random.uniform(anomaly_range[0], anomaly_range[1], validation_episode_num)
         print(validation_rand_samples)
         print(anm_positions_val)
         print(anm_magnitudes_val)
 
+        np.random.seed(int(time.time() * 1000)% (2**32 - 1))
         # Estimatethe cost of intervention
         if cost_of_intervention is None:
             print('Estimating the cost of intervention...')
@@ -241,7 +244,7 @@ class regime_change_detection_RLKF():
             self.cost_intervention = cost_of_intervention
 
         for i_episode in range(num_episodes-validation_episode_num):
-            anm_pos = np.random.randint(step_look_back + self.trained_BDLM.input_seq_len, num_steps_per_episode)
+            anm_pos = np.random.randint(step_look_back + self.trained_BDLM.input_seq_len, int((num_steps_per_episode-step_look_back + self.trained_BDLM.input_seq_len)/2))
 
             sample = random.random()
             if sample < abnormal_ts_percentage:
@@ -250,7 +253,7 @@ class regime_change_detection_RLKF():
                     select_column=i_episode,
                     date_time_file=self.datetime_save_path,
                     add_anomaly = True,
-                    anomaly_magnitude=np.random.uniform(anomaly_range[0], anomaly_range[1]),
+                    anomaly_magnitude=[np.random.uniform(anomaly_range[0], anomaly_range[1]), np.random.uniform(anomaly_range[0], anomaly_range[1])],
                     anomaly_start=anm_pos,
                     x_mean=self.trained_BDLM.train_dtl.x_mean,
                     x_std=self.trained_BDLM.train_dtl.x_std,
@@ -386,8 +389,10 @@ class regime_change_detection_RLKF():
                     delta_max_min = np.max(mu_prediction_one_episode) - np.min(mu_prediction_one_episode)
                     ax0.set_ylim(np.min(mu_prediction_one_episode)-0.05*delta_max_min, np.max(mu_prediction_one_episode)+0.05*delta_max_min)
                     if anomaly_injected:
-                        anomaly_pos = timesteps[anm_pos-step_look_back]
+                        anomaly_pos = timesteps[anm_pos - self.trained_BDLM.input_seq_len]
+                        anomaly_pos2 = timesteps[anm_pos+int((len(timesteps)-65)/2)-self.trained_BDLM.input_seq_len]
                         ax0.axvline(x=anomaly_pos, color='gray', linestyle='--')
+                        ax0.axvline(x=anomaly_pos2, color='gray', linestyle='--')
                     ax0.legend()
 
                     ax1.plot(timesteps, mu_hidden_states_one_episode[:,2], label='LA')
@@ -428,7 +433,7 @@ class regime_change_detection_RLKF():
                         anm_pos = anm_positions_val[i_val_episode]
 
                         sample = validation_rand_samples[i_val_episode]
-                        if sample < abnormal_ts_percentage:
+                        if sample < 0.5:
                             train_dtl = SyntheticTimeSeriesDataloader(
                                 x_file=self.observation_save_path,
                                 select_column = num_episodes-validation_episode_num+i_val_episode,
