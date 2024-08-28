@@ -733,8 +733,8 @@ class regime_change_detection_tagi():
         expected_state_action_values_var = expected_state_action_values_var.reshape(self.batchsize, self.policy_net.n_actions)
         expected_state_action_values_mu[np.arange(self.batchsize), action_batch.flatten()] = expected_state_values_mu
         expected_state_action_values_var[np.arange(self.batchsize), action_batch.flatten()] = expected_state_values_var
-        # expected_state_action_values_mu[np.arange(self.batchsize), 1-action_batch.flatten()] = np.nan
-        expected_state_action_values_var[np.arange(self.batchsize), 1-action_batch.flatten()] = 1e12
+        expected_state_action_values_mu[np.arange(self.batchsize), 1-action_batch.flatten()] = np.nan
+        expected_state_action_values_var[np.arange(self.batchsize), 1-action_batch.flatten()] = np.nan
         expected_state_action_values_mu = expected_state_action_values_mu.flatten()
         expected_state_action_values_var = expected_state_action_values_var.flatten()
 
@@ -783,6 +783,7 @@ class regime_change_detection_tagi():
                 display.display(plt.gcf())
 
     def _select_action(self, state, greedy=False, EPS_START=0.9, EPS_END=0.05, EPS_DECAY=1000):
+        self.policy_net.net.eval()
         state_np = state.numpy()
 
         state_temp = np.array(state_np)
@@ -839,58 +840,7 @@ class regime_change_detection_tagi():
     #     # return torch.tensor(np.array([action]),device=self.device)
 
     def _track_Qvalues(self, state):
+        self.policy_net.net.eval()
         state_np = state.numpy()
         Q_values,_ = self.policy_net.net(state_np)
         return [Q_values]
-
-    def _soft_update(self, policy_model_path, target_model_path, TAU):
-        import csv
-        # Remove the .csv in a string and add "_1_mw.csv" to the end
-        policy_model_path1 = policy_model_path + "_1_mw.csv"
-        policy_model_path2 = policy_model_path + "_2_Sw.csv"
-        policy_model_path3 = policy_model_path + "_3_mb.csv"
-        policy_model_path4 = policy_model_path + "_4_Sb.csv"
-
-        # Remove the .csv in a string and add "_1_mw.csv" to the end
-        target_model_path1 = target_model_path + "_1_mw.csv"
-        target_model_path2 = target_model_path + "_2_Sw.csv"
-        target_model_path3 = target_model_path + "_3_mb.csv"
-        target_model_path4 = target_model_path + "_4_Sb.csv"
-
-        # Read the csv file and store them in four variables
-        policy_param1 = np.genfromtxt(policy_model_path1, delimiter=',', skip_header=0)
-        policy_param2 = np.genfromtxt(policy_model_path2, delimiter=',', skip_header=0)
-        policy_param3 = np.genfromtxt(policy_model_path3, delimiter=',', skip_header=0)
-        policy_param4 = np.genfromtxt(policy_model_path4, delimiter=',', skip_header=0)
-
-        target_param1 = np.genfromtxt(target_model_path1, delimiter=',', skip_header=0)
-        target_param2 = np.genfromtxt(target_model_path2, delimiter=',', skip_header=0)
-        target_param3 = np.genfromtxt(target_model_path3, delimiter=',', skip_header=0)
-        target_param4 = np.genfromtxt(target_model_path4, delimiter=',', skip_header=0)
-
-        # Multiply the parameters by the ratio TAU
-        param1 = policy_param1 * TAU + target_param1 * (1 - TAU)
-        param2 = policy_param2 * TAU + target_param2 * (1 - TAU)
-        param3 = policy_param3 * TAU + target_param3 * (1 - TAU)
-        param4 = policy_param4 * TAU + target_param4 * (1 - TAU)
-
-        # Write the new parameters to the csv file
-        with open(target_model_path1 + "_temp_1_mw.csv", mode='w') as file:
-            writer = csv.writer(file)
-            for value in param1:
-                writer.writerow([value])
-        with open(target_model_path1 + "_temp_2_Sw.csv", mode='w') as file:
-            writer = csv.writer(file)
-            for value in param2:
-                writer.writerow([value])
-        with open(target_model_path1 + "_temp_3_mb.csv", mode='w') as file:
-            writer = csv.writer(file)
-            for value in param3:
-                writer.writerow([value])
-        with open(target_model_path1 + "_temp_4_Sb.csv", mode='w') as file:
-            writer = csv.writer(file)
-            for value in param4:
-                writer.writerow([value])
-
-        # Load the new parameters to the target model
-        self.target_net.net.load_csv(target_model_path1+"_temp")

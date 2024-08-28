@@ -168,15 +168,18 @@ void Sequential::train()
 /*
  */
 {
-    // set training to true
-    this->training = true;
+    for (auto &layer : this->layers) {
+        layer->train();
+    }
 }
 
 void Sequential::eval()
 /*
  */
 {
-    this->training = false;
+    for (auto &layer : this->layers) {
+        layer->eval();
+    }
 }
 
 void Sequential::forward(const std::vector<float> &mu_x,
