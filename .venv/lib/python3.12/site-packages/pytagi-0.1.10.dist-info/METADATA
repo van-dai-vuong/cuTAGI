@@ -1,0 +1,15 @@
+Metadata-Version: 2.1
+Name: pytagi
+Version: 0.1.10
+Summary: Tractable Approximate Gaussian Inference
+Home-page: https://github.com/lhnguyen102/cuTAGI
+Author: Luong-Ha Nguyen and James-A. Goulet
+Author-email: luongha.nguyen@gmail.com, james.goulet@polymtl.ca
+License: MIT
+Project-URL: Download_url, https://github.com/lhnguyen102/cuTAGI
+Keywords: Bayesian,Neural Networks,Machine Learning,Tractability,C++11,CUDA
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+cuTAGI is an open-source Bayesian neural networks library that is based on Tractable Approximate Gaussian Inference (TAGI) theory
