@@ -92,6 +92,9 @@ class Sequential {
 
     void set_threads(unsigned num_threads);
 
+    void train();
+    void eval();
+
     void forward(const std::vector<float>& mu_a,
                  const std::vector<float>& var_a = std::vector<float>());
 
@@ -117,6 +120,15 @@ class Sequential {
     void save_csv(const std::string& filename);
 
     void load_csv(const std::string& filename);
+
+    std::tuple<pybind11::array_t<float>, pybind11::array_t<float>, pybind11::array_t<float>, pybind11::array_t<float>>
+    get_params();
+
+    // load parameters, which is a tuple of four numpy arrays
+    void load_params(pybind11::array_t<float> py_mw,
+                        pybind11::array_t<float> py_vw,
+                        pybind11::array_t<float> py_mb,
+                        pybind11::array_t<float> py_vb);
 
     // Copy model params
     void params_from(const Sequential& ref_model);

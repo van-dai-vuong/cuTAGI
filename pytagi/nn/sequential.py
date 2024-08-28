@@ -92,6 +92,14 @@ class Sequential:
         """Set the number of threads to use."""
         self._cpp_backend.set_threads(num_threads)
 
+    def train(self):
+        """Set the number of threads to use."""
+        self._cpp_backend.train()
+
+    def eval(self):
+        """Set the number of threads to use."""
+        self._cpp_backend.eval()
+
     def forward(
         self, mu_x: np.ndarray, var_x: np.ndarray = None
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -142,3 +150,9 @@ class Sequential:
 
     def get_outputs(self) -> Tuple[np.ndarray, np.ndarray]:
         return self._cpp_backend.get_outputs()
+
+    def get_params(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        return self._cpp_backend.get_params()
+
+    def load_params(self, mu_w: np.ndarray, var_w: np.ndarray, mu_b: np.ndarray, var_b: np.ndarray):
+        self._cpp_backend.load_params(mu_w, var_w, mu_b, var_b)

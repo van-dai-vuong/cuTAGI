@@ -201,6 +201,7 @@
         "charconv": "cpp",
         "ios": "cpp",
         "locale": "cpp",
-        "__availability": "cpp"
+        "__availability": "cpp",
+        "filesystem": "cpp"
     }
 }

@@ -164,6 +164,21 @@ void Sequential::set_threads(unsigned int num_threads)
     }
 }
 
+void Sequential::train()
+/*
+ */
+{
+    // set training to true
+    this->training = true;
+}
+
+void Sequential::eval()
+/*
+ */
+{
+    this->training = false;
+}
+
 void Sequential::forward(const std::vector<float> &mu_x,
                          const std::vector<float> &var_x)
 /*
@@ -496,6 +511,107 @@ void Sequential::load_csv(const std::string &filename)
         bias_start_idx += layer->mu_b.size();
     }
 }
+
+std::tuple<pybind11::array_t<float>, pybind11::array_t<float>, pybind11::array_t<float>, pybind11::array_t<float>>
+Sequential::get_params()
+/*
+This allows accessing network's parameters so that
+*/
+{
+    // Initialize the size counters
+    size_t total_mu_w_size = 0, total_var_w_size = 0, total_mu_b_size = 0,
+           total_var_b_size = 0;
+
+    // Calculate the total size needed for each vector
+    for (const auto &layer : this->layers) {
+        total_mu_w_size += layer->mu_w.size();
+        total_var_w_size += layer->var_w.size();
+        total_mu_b_size += layer->mu_b.size();
+        total_var_b_size += layer->var_b.size();
+    }
+
+    // Allocate data vectors
+    std::vector<float> mu_w, var_w, mu_b, var_b;
+    mu_w.reserve(total_mu_w_size);
+    var_w.reserve(total_var_w_size);
+    mu_b.reserve(total_mu_b_size);
+    var_b.reserve(total_var_b_size);
+
+    // Concatenate layer parameters
+    for (const auto &layer : this->layers) {
+        mu_w.insert(mu_w.end(), layer->mu_w.begin(), layer->mu_w.end());
+        var_w.insert(var_w.end(), layer->var_w.begin(), layer->var_w.end());
+        mu_b.insert(mu_b.end(), layer->mu_b.begin(), layer->mu_b.end());
+        var_b.insert(var_b.end(), layer->var_b.begin(), layer->var_b.end());
+    }
+
+    // Return parameters
+    auto py_mw = pybind11::array_t<float>(mu_w.size(), mu_w.data());
+    auto py_vw = pybind11::array_t<float>(var_w.size(), var_w.data());
+    auto py_mb = pybind11::array_t<float>(mu_b.size(), mu_b.data());
+    auto py_vb = pybind11::array_t<float>(var_b.size(), var_b.data());
+
+    return {py_mw, py_vw, py_mb, py_vb};
+}
+
+void Sequential::load_params(pybind11::array_t<float> py_mw,
+                             pybind11::array_t<float> py_vw,
+                             pybind11::array_t<float> py_mb,
+                             pybind11::array_t<float> py_vb){
+    // Count number of weights & biases for the entire network
+    int num_weights = 0, num_biases = 0;
+    for (auto &layer : this->layers) {
+        num_weights += layer->mu_w.size();
+        num_biases += layer->mu_b.size();
+    }
+
+    // Define the global weight & bias vectors
+    std::vector<float> mu_w(num_weights);
+    std::vector<float> var_w(num_weights);
+    std::vector<float> mu_b(num_biases);
+    std::vector<float> var_b(num_biases);
+
+    // Fill mu_w, var_w, mu_b, var_b with the four inputs numpy array
+    auto mu_w_buf = py_mw.request();
+    float *mu_w_ptr = static_cast<float *>(mu_w_buf.ptr);
+    std::vector<float> mu_w_vec(mu_w_ptr, mu_w_ptr + mu_w_buf.size);
+    mu_w = mu_w_vec;
+
+    auto var_w_buf = py_vw.request();
+    float *var_w_ptr = static_cast<float *>(var_w_buf.ptr);
+    std::vector<float> var_w_vec(var_w_ptr, var_w_ptr + var_w_buf.size);
+    var_w = var_w_vec;
+
+    auto mu_b_buf = py_mb.request();
+    float *mu_b_ptr = static_cast<float *>(mu_b_buf.ptr);
+    std::vector<float> mu_b_vec(mu_b_ptr, mu_b_ptr + mu_b_buf.size);
+    mu_b = mu_b_vec;
+
+    auto var_b_buf = py_vb.request();
+    float *var_b_ptr = static_cast<float *>(var_b_buf.ptr);
+    std::vector<float> var_b_vec(var_b_ptr, var_b_ptr + var_b_buf.size);
+    var_b = var_b_vec;
+
+    // Distribute parameter for each layer
+    int weight_start_idx = 0, bias_start_idx = 0;
+    for (auto &layer : this->layers) {
+        std::copy(mu_w.begin() + weight_start_idx,
+                  mu_w.begin() + weight_start_idx + layer->mu_w.size(),
+                  layer->mu_w.begin());
+        std::copy(var_w.begin() + weight_start_idx,
+                  var_w.begin() + weight_start_idx + layer->var_w.size(),
+                  layer->var_w.begin());
+        std::copy(mu_b.begin() + bias_start_idx,
+                  mu_b.begin() + bias_start_idx + layer->mu_b.size(),
+                  layer->mu_b.begin());
+        std::copy(var_b.begin() + bias_start_idx,
+                  var_b.begin() + bias_start_idx + layer->var_b.size(),
+                  layer->var_b.begin());
+
+        weight_start_idx += layer->mu_w.size();
+        bias_start_idx += layer->mu_b.size();
+        }
+    }
 
 void Sequential::params_from(const Sequential &model_ref) {
     if (this->layers.size() != model_ref.layers.size()) {

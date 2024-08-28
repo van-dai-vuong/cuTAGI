@@ -50,6 +50,8 @@ void bind_sequential(pybind11::module_& m) {
         .def_readwrite("device", &Sequential::device)
         .def("to_device", &Sequential::to_device)
         .def("set_threads", &Sequential::set_threads)
+        .def("train", &Sequential::train)
+        .def("eval", &Sequential::eval)
         .def("forward", &Sequential::forward_py)
         .def("forward",
              [](Sequential& self, pybind11::object arg1,
@@ -75,6 +77,8 @@ void bind_sequential(pybind11::module_& m) {
         .def("get_layer_stack_info", &Sequential::get_layer_stack_info)
         .def("save", &Sequential::save)
         .def("load", &Sequential::load)
+        .def("get_params", &Sequential::get_params)
+        .def("load_params", &Sequential::load_params)
         .def("save_csv", &Sequential::save_csv)
         .def("load_csv", &Sequential::load_csv)
         .def("params_from", &Sequential::params_from)

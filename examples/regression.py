@@ -128,6 +128,8 @@ def main(num_epochs: int = 50, batch_size: int = 10, sigma_v: float = 0.2):
     print(f"MSE           : {mse: 0.2f}")
     print(f"Log-likelihood: {log_lik: 0.2f}")
 
+    net.save("regression_model.pt")
+
 
 if __name__ == "__main__":
     fire.Fire(main)
