@@ -110,7 +110,13 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python_version: ["3.10", "3.11", "3.12"]
+        include:
+          - python_version: "3.10"
+            cibw_build: "cp310-win_amd64"
+          - python_version: "3.11"
+            cibw_build: "cp311-win_amd64"
+          - python_version: "3.12"
+            cibw_build: "cp312-win_amd64"
     if: ${{ github.event.pull_request.draft == false }}
     steps:
       - uses: actions/checkout@v4
@@ -131,7 +137,7 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: cp${{ matrix.python_version }}-win_amd64
+          CIBW_BUILD: ${{ matrix.cibw_build }}
           CIBW_ARCHS_WINDOWS: auto64
           CIBW_BUILD_VERBOSITY: 1
           CIBW_ENVIRONMENT: "FORCE_CPU_ONLY=1 CMAKE_ARGS='-DBUILD_TESTING=OFF'"
