@@ -1,6 +1,9 @@
 # CMAKE VERSION
 cmake_minimum_required(VERSION 3.22)
 
+option(BUILD_TESTING "Build and run tests" OFF)
+
+
 # ##############################################################################
 # # PPROJECT
 # ##############################################################################
@@ -198,33 +201,36 @@ target_link_libraries(cutagi PRIVATE cutagi_lib)
 ################################################################################
 # TESTS
 ################################################################################
-enable_testing()
+if(BUILD_TESTING)
 
-# Glob the test sources
-file(GLOB TEST_SOURCES "test/cpp_unit/*.cpp")
+  enable_testing()
 
-# Add main.cpp separately to specify the entry point
-set(TEST_MAIN "test/cpp_unit/main.cpp")
+  # Glob the test sources
+  file(GLOB TEST_SOURCES "test/cpp_unit/*.cpp")
 
-# Create an executable for the tests
-add_executable(run_tests ${TEST_MAIN} ${TEST_SOURCES})
+  # Add main.cpp separately to specify the entry point
+  set(TEST_MAIN "test/cpp_unit/main.cpp")
 
-# Set include directories for the test executable
-target_include_directories(run_tests PRIVATE
-  ${pybind11_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/cpp_unit
-)
+  # Create an executable for the tests
+  add_executable(run_tests ${TEST_MAIN} ${TEST_SOURCES})
 
-# Link the test executable with the required libraries and cutagi_lib
-target_link_libraries(run_tests PRIVATE
-  ${Python_INCLUDE_DIRS}
-  pybind11::embed
-  gtest_main
-  cutagi_lib
-)
+  # Set include directories for the test executable
+  target_include_directories(run_tests PRIVATE
+    ${pybind11_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/cpp_unit
+  )
 
-# Discover GoogleTest tests
-include(GoogleTest)
-gtest_discover_tests(run_tests)
+  # Link the test executable with the required libraries and cutagi_lib
+  target_link_libraries(run_tests PRIVATE
+    ${Python_INCLUDE_DIRS}
+    pybind11::embed
+    gtest_main
+    cutagi_lib
+  )
+
+  # Discover GoogleTest tests
+  include(GoogleTest)
+  gtest_discover_tests(run_tests)
+endif()
 
 
