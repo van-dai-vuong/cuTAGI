@@ -129,8 +129,10 @@ class CMakeBuild(build_ext):
 
 
 setup(
+    name="pytagi",
     version=read(),
     long_description_content_type="text/markdown",
     ext_modules=[CMakeExtension("build")],
     cmdclass={"build_ext": CMakeBuild},
+    packages=find_packages(),
 )

@@ -1,5 +1,5 @@
 [build-system]
-requires=[
+requires = [
     "setuptools>=75.5.0",
     "wheel>=0.44.0",
     "cmake>=3.31.1",
@@ -8,3 +8,17 @@ requires=[
 ]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "pytagi"
+version = "0.1.0"
+description = "PyTorch-compatible implementation of the cuTAGI algorithm."
+authors = [
+    { name = "Your Name", email = "you@example.com" }
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
