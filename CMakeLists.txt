@@ -1,7 +1,7 @@
 # CMAKE VERSION
 cmake_minimum_required(VERSION 3.22)
 
-option(BUILD_TESTING "Build and run tests" OFF)
+option(BUILD_TESTING "Build and run tests" ON)
 
 
 # ##############################################################################
