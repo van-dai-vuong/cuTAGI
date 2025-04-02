@@ -129,7 +129,7 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: cp${{ matrix.python_version }}-*
+          CIBW_BUILD: cp${{ matrix.python_version }}-win_amd64
           CIBW_ARCHS_WINDOWS: auto64
           CIBW_BUILD_VERBOSITY: 1
           CIBW_ENVIRONMENT: "FORCE_CPU_ONLY=1"
