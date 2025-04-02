@@ -18,7 +18,8 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         cuda: ["12.2.2"]
-        python_version: ["3.10", "3.11", "3.12"]
+        # python_version: ["3.10", "3.11", "3.12"]
+        python_version: ["3.10"]
     if: ${{ github.event.pull_request.draft == false }}
     steps:
       - name: Setup cmake
@@ -70,13 +71,13 @@ jobs:
             python_version: "3.10"
             cibuildwheel_python: "cp310-*"
 
-          - os: macos-13
-            python_version: "3.11"
-            cibuildwheel_python: "cp311-*"
+          # - os: macos-13
+          #   python_version: "3.11"
+          #   cibuildwheel_python: "cp311-*"
 
-          - os: macos-13
-            python_version: "3.12"
-            cibuildwheel_python: "cp312-*"
+          # - os: macos-13
+          #   python_version: "3.12"
+          #   cibuildwheel_python: "cp312-*"
 
     if: ${{ github.event.pull_request.draft == false }}
     steps:
@@ -113,10 +114,10 @@ jobs:
         include:
           - python_version: "3.10"
             cibw_build: "cp310-win_amd64"
-          - python_version: "3.11"
-            cibw_build: "cp311-win_amd64"
-          - python_version: "3.12"
-            cibw_build: "cp312-win_amd64"
+          # - python_version: "3.11"
+          #   cibw_build: "cp311-win_amd64"
+          # - python_version: "3.12"
+          #   cibw_build: "cp312-win_amd64"
     if: ${{ github.event.pull_request.draft == false }}
     steps:
       - uses: actions/checkout@v4
