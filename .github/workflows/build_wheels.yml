@@ -141,7 +141,7 @@ jobs:
           CIBW_BUILD: ${{ matrix.cibw_build }}
           CIBW_ARCHS_WINDOWS: auto64
           CIBW_BUILD_VERBOSITY: 1
-          CIBW_ENVIRONMENT: "FORCE_CPU_ONLY=1 CMAKE_ARGS='-DBUILD_TESTING=OFF'"
+          CIBW_ENVIRONMENT: "FORCE_CPU_ONLY=1 CMAKE_ARGS='-DBUILD_TESTING=ON'"
 
       - uses: actions/upload-artifact@v4
         with:
