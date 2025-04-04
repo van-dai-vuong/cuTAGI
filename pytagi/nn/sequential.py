@@ -166,6 +166,10 @@ class Sequential:
     def delta_z_to_host(self) -> List[float]:
         """Copy the delta Z data to the host."""
         return self._cpp_backend.delta_z_to_host()
+    
+    def delta_z_to_device(self) -> None:
+        """Send the delta Z to cuda"""
+        self._cpp_backend.delta_z_to_device()
 
     def get_layer_stack_info(self) -> str:
         """Get information about the layer stack."""
