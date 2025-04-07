@@ -362,7 +362,7 @@ void lstm_cov_input_cell_states_mp(
     const int n_batch = tot_ops / NUM_THREADS;
     const int rem_batch = tot_ops % NUM_THREADS;
     int start_idx, end_idx;
-    std::thread threads[NUM_THREADS];
+    std::vector<std::thread> threads(NUM_THREADS);
 
     for (int i = 0; i < NUM_THREADS; i++) {
         get_multithread_indices(i, n_batch, rem_batch, start_idx, end_idx);
@@ -417,7 +417,7 @@ void lstm_cell_state_mean_var_mp(
     const int n_batch = tot_ops / NUM_THREADS;
     const int rem_batch = tot_ops % NUM_THREADS;
     int start_idx, end_idx;
-    std::thread threads[NUM_THREADS];
+    std::vector<std::thread> threads(NUM_THREADS);
 
     for (int i = 0; i < NUM_THREADS; i++) {
         get_multithread_indices(i, n_batch, rem_batch, start_idx, end_idx);
@@ -482,7 +482,7 @@ void lstm_cov_output_tanh_cell_states_mp(
     const int n_batch = tot_ops / NUM_THREADS;
     const int rem_batch = tot_ops % NUM_THREADS;
     int start_idx, end_idx;
-    std::thread threads[NUM_THREADS];
+    std::vector<std::thread> threads(NUM_THREADS);
 
     for (int i = 0; i < NUM_THREADS; i++) {
         get_multithread_indices(i, n_batch, rem_batch, start_idx, end_idx);
@@ -534,7 +534,7 @@ void lstm_hidden_state_mean_var_mp(
     const int n_batch = tot_ops / NUM_THREADS;
     const int rem_batch = tot_ops % NUM_THREADS;
     int start_idx, end_idx;
-    std::thread threads[NUM_THREADS];
+    std::vector<std::thread> threads(NUM_THREADS);
 
     for (int i = 0; i < NUM_THREADS; i++) {
         get_multithread_indices(i, n_batch, rem_batch, start_idx, end_idx);
@@ -585,7 +585,7 @@ void lstm_cat_activations_and_prev_states_mp(std::vector<float> &a,
     const int n_batch = tot_ops / NUM_THREADS;
     const int rem_batch = tot_ops % NUM_THREADS;
     int start_idx, end_idx;
-    std::thread threads[NUM_THREADS];
+    std::vector<std::thread> threads(NUM_THREADS);
 
     for (int i = 0; i < NUM_THREADS; i++) {
         get_multithread_indices(i, n_batch, rem_batch, start_idx, end_idx);
@@ -676,7 +676,7 @@ void lstm_delta_mean_var_z_mp(
     const int n_batch = tot_ops / NUM_THREADS;
     const int rem_batch = tot_ops % NUM_THREADS;
     int start_idx, end_idx;
-    std::thread threads[NUM_THREADS];
+    std::vector<std::thread> threads(NUM_THREADS);
 
     for (int i = 0; i < NUM_THREADS; i++) {
         get_multithread_indices(i, n_batch, rem_batch, start_idx, end_idx);
@@ -880,7 +880,7 @@ void lstm_delta_mean_var_w_mp(
     const int n_batch = tot_ops / NUM_THREADS;
     const int rem_batch = tot_ops % NUM_THREADS;
     int start_idx, end_idx;
-    std::thread threads[NUM_THREADS];
+    std::vector<std::thread> threads(NUM_THREADS);
 
     for (int i = 0; i < NUM_THREADS; i++) {
         get_multithread_indices(i, n_batch, rem_batch, start_idx, end_idx);
@@ -986,7 +986,7 @@ void lstm_delta_mean_var_b_mp(
     const int n_batch = tot_ops / NUM_THREADS;
     const int rem_batch = tot_ops % NUM_THREADS;
     int start_idx, end_idx;
-    std::thread threads[NUM_THREADS];
+    std::vector<std::thread> threads(NUM_THREADS);
 
     for (int i = 0; i < NUM_THREADS; i++) {
         get_multithread_indices(i, n_batch, rem_batch, start_idx, end_idx);
@@ -1009,7 +1009,7 @@ void lstm_delta_mean_var_b_mp(
 ////////////////////////////////////////////////////////////////////////////////
 
 LSTM::LSTM(size_t input_size, size_t output_size, int seq_len, bool bias,
-           float gain_w, float gain_b, std::string init_method)
+           float gain_w, float gain_b, std::string init_method, int device_idx)
     : seq_len(seq_len),
       gain_w(gain_w),
       gain_b(gain_b),
@@ -1019,6 +1019,7 @@ LSTM::LSTM(size_t input_size, size_t output_size, int seq_len, bool bias,
     this->input_size = input_size;
     this->output_size = output_size;
     this->bias = bias;
+    this->device_idx = device_idx;
 
     this->get_number_param();
     this->init_weight_bias();
@@ -1518,11 +1519,12 @@ void LSTM::set_LSTM_states(const std::vector<float> &mu_h,
 }
 
 #ifdef USE_CUDA
-std::unique_ptr<BaseLayer> LSTM::to_cuda() {
+std::unique_ptr<BaseLayer> LSTM::to_cuda(int device_idx) {
     this->device = "cuda";
+    this->device_idx = device_idx;
     auto cuda_layer = std::make_unique<LSTMCuda>(
         this->input_size, this->output_size, this->seq_len, this->bias,
-        this->gain_w, this->gain_b, this->init_method);
+        this->gain_w, this->gain_b, this->init_method, this->device_idx);
 
     // Move params from this->layer to cuda_layer
     auto base_cuda = dynamic_cast<BaseLayerCuda *>(cuda_layer.get());
