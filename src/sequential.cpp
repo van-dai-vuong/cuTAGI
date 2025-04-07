@@ -476,16 +476,13 @@ void Sequential::delta_z_to_host() {
 #endif
 }
 
-void DeltaStateCuda::to_device()
-/*
- */
-{
-    cudaMemcpy(this->d_delta_mu, this->delta_mu.data(),
-               this->size * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(this->d_delta_var, this->delta_var.data(),
-               this->size * sizeof(float), cudaMemcpyHostToDevice);
-
-    CHECK_LAST_CUDA_ERROR();
+void Sequential::delta_z_to_device() {
+#ifdef USE_CUDA
+    if (this->device.compare("cuda") == 0) {    
+        this->input_delta_z_buffer->to_device();
+        this->output_delta_z_buffer->to_device();
+    }
+#endif
 }
 
 std::unordered_map<std::string, int> Sequential::get_neg_var_w_counter() {
