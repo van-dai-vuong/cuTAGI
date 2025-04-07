@@ -479,8 +479,13 @@ void Sequential::delta_z_to_host() {
 void Sequential::delta_z_to_device() {
 #ifdef USE_CUDA
     if (this->device.compare("cuda") == 0) {    
-        this->input_delta_z_buffer->to_device();
-        this->output_delta_z_buffer->to_device();
+        DeltaStateCuda *cu_input_delta_z =
+            dynamic_cast<DeltaStateCuda *>(this->input_delta_z_buffer.get());
+        DeltaStateCuda *cu_output_delta_z =
+            dynamic_cast<DeltaStateCuda *>(this->output_delta_z_buffer.get());
+
+        cu_input_delta_z->to_device();
+        cu_output_delta_z->to_device();
     }
 #endif
 }
