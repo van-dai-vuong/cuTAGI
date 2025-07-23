@@ -10,10 +10,10 @@ import pytagi.metric as metric
 from examples.data_loader import TimeSeriesDataloader
 from pytagi import Normalizer as normalizer
 from pytagi import exponential_scheduler
-from pytagi.nn import LSTM, Linear, OutputUpdater, Sequential
+from pytagi.nn import SLSTM, OutputUpdater, Sequential, SLinear
 
 
-def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
+def main(num_epochs: int = 2, batch_size: int = 1, sigma_v: float = 5):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
@@ -55,15 +55,15 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
 
     # Network
     net = Sequential(
-        LSTM(num_features + input_seq_len - 1, 40, 1),
-        LSTM(40, 40, 1),
-        Linear(40, 1),
+        SLSTM(num_features + input_seq_len - 1, 40, 1),
+        SLSTM(40, 40, 1),
+        SLinear(40, 1),
     )
 
     # net.to_device("cuda")
     net.set_threads(1)  # multi-processing is slow on a small net
     net.input_state_update = True
-    # net.num_samples = train_dtl.dataset["value"][0].shape[0]
+    net.num_samples = train_dtl.dataset["value"][0].shape[0]
     out_updater = OutputUpdater(net.device)
 
     # -------------------------------------------------------------------------#
@@ -71,20 +71,21 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
     mses = []
     # Initialize the sequence length
     mu_sequence = np.ones(input_seq_len, dtype=np.float32)
-    pbar = tqdm(range(num_epochs), desc="Training Progress")
+    # pbar = tqdm(range(num_epochs), desc="Training Progress")
 
-    for epoch in pbar:
+    # for epoch in pbar:
+    for epoch in range(num_epochs):
+        print(f"Epoch: # {epoch}")
         batch_iter = train_dtl.create_data_loader(batch_size, shuffle=False)
 
         # Decaying observation's variance
         sigma_v = exponential_scheduler(
-            curr_v=sigma_v, min_v=0.01, decaying_factor=0.99, curr_iter=epoch
+            curr_v=sigma_v, min_v=0.0001, decaying_factor=0.99, curr_iter=epoch
         )
         var_y = np.full(
             (batch_size * len(output_col),), sigma_v**2, dtype=np.float32
         )
         y_train = []
-        m_preds = []
         var_preds = []
 
         # for x, y in batch_iter:
@@ -96,6 +97,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
 
             # Feed forward
             m_pred, var_pred = net(x)
+            print(f"At time step {idx_sample}, var_pred = {var_pred}")
 
             # Update output layer
             out_updater.update(
@@ -118,7 +120,6 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
             obs = normalizer.unstandardize(
                 y, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
             )
-            m_preds.append(pred)
             var_preds.append(var_pred)
 
             mse = metric.mse(pred, obs)
@@ -129,37 +130,41 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
             mu_sequence = mu_sequence[-input_seq_len:]
 
         # Smoother
-        # mu_zo_smooth, var_zo_smooth = net.smoother()
-        # zo_smooth_std = np.array(var_zo_smooth) ** 0.5
-        # mu_sequence = mu_zo_smooth[:input_seq_len]
+        mu_zo_smooth, var_zo_smooth = net.smoother()
+        zo_smooth_std = np.array(var_zo_smooth) ** 0.5
+        mu_sequence = mu_zo_smooth[:input_seq_len]
         # mu_sequence = np.ones(input_seq_len, dtype=np.float32)
 
         # # Figures for each epoch
-        t = np.arange(len(var_preds))
-        t_train = np.arange(len(var_preds))
         var_preds = np.array(var_preds).flatten()
-        zeros_like = np.zeros_like(var_preds)
         zo_smooth_std = var_preds**0.5
-        plt.switch_backend("Agg")
-        plt.figure()
-        # plt.plot(t_train, y_train, color="r")
-        # plt.plot(t, zeros_like, color="b")
-        plt.fill_between(
-            t,
-            zeros_like - zo_smooth_std,
-            zeros_like + zo_smooth_std,
-            alpha=0.2,
-            label="1 Std Dev",
-        )
-        filename = f"saved_results/smoother/smoother#{epoch}.png"
-        plt.savefig(filename)
-        plt.close()
+        t = np.arange(len(var_preds))
+        zeros_like = np.zeros_like(var_preds)
+
+        # t = np.arange(len(var_preds))
+        # t_train = np.arange(len(var_preds))
+        # var_preds = np.array(var_preds).flatten()
+        # zeros_like = np.zeros_like(var_preds)
+        # zo_smooth_std = var_preds ** 0.5
+
+        # plt.switch_backend("Agg")
+        # plt.figure()
+        # plt.fill_between(
+        #     t,
+        #     zeros_like - zo_smooth_std,
+        #     zeros_like + zo_smooth_std,
+        #     alpha=0.2,
+        #     label="1 Std Dev",
+        # )
+        # filename = f"saved_results/smoother/smoother#{epoch}.png"
+        # plt.savefig(filename)
+        # plt.close()
 
         # Progress bar
-        pbar.set_description(
-            f"Epoch {epoch + 1}/{num_epochs}| mse: {np.nansum(mses)/np.sum(~np.isnan(mses)):>7.2f}",
-            refresh=True,
-        )
+        # pbar.set_description(
+        #     f"Epoch {epoch + 1}/{num_epochs}| mse: {np.nansum(mses)/np.sum(~np.isnan(mses)):>7.2f}",
+        #     refresh=True,
+        # )
 
     # -------------------------------------------------------------------------#
     # Testing
@@ -200,17 +205,17 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
         prediction=mu_preds, observation=y_test, std=std_preds
     )
 
-    # Visualization
-    viz.plot_predictions(
-        x_test=test_dtl.dataset["date_time"][: len(y_test)],
-        y_test=y_test,
-        y_pred=mu_preds,
-        sy_pred=std_preds,
-        std_factor=1,
-        label="time_series_forecasting",
-        title=r"\textbf{Time Series Forecasting}",
-        time_series=True,
-    )
+    # # Visualization
+    # viz.plot_predictions(
+    #     x_test=test_dtl.dataset["date_time"][: len(y_test)],
+    #     y_test=y_test,
+    #     y_pred=mu_preds,
+    #     sy_pred=std_preds,
+    #     std_factor=1,
+    #     label="time_series_forecasting",
+    #     title=r"\textbf{Time Series Forecasting}",
+    #     time_series=True,
+    # )
 
     print("#############")
     print(f"MSE           : {mse: 0.2f}")

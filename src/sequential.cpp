@@ -802,12 +802,20 @@ Sequential::get_outputs_smoother()
 {
     auto last_layer = dynamic_cast<SLinear *>(this->layers.back().get());
     auto py_mu_zo_smooths = pybind11::array_t<float>(
-        last_layer->smooth_states.mu_zo_smooths.size(),
-        last_layer->smooth_states.mu_zo_smooths.data());
+        // last_layer->smooth_states.mu_zo_smooths.size(),
+        // last_layer->smooth_states.mu_zo_smooths.data());
+        last_layer->smooth_states.mu_zo_priors.size(),
+        last_layer->smooth_states.mu_zo_priors.data());
+    // last_layer->smooth_states.mu_zo_posts.size(),
+    // last_layer->smooth_states.mu_zo_posts.data());
 
     auto py_var_zo_smooths = pybind11::array_t<float>(
-        last_layer->smooth_states.var_zo_smooths.size(),
-        last_layer->smooth_states.var_zo_smooths.data());
+        // last_layer->smooth_states.var_zo_smooths.size(),
+        // last_layer->smooth_states.var_zo_smooths.data());
+        last_layer->smooth_states.var_zo_priors.size(),
+        last_layer->smooth_states.var_zo_priors.data());
+    // last_layer->smooth_states.var_zo_posts.size(),
+    // last_layer->smooth_states.var_zo_posts.data());
 
     return {py_mu_zo_smooths, py_var_zo_smooths};
 }

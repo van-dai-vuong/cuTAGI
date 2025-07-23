@@ -13,7 +13,7 @@ from pytagi import exponential_scheduler
 from pytagi.nn import SLSTM, OutputUpdater, Sequential, SLinear
 
 
-def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
+def main(num_epochs: int = 100, batch_size: int = 1, sigma_v: float = 5):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
@@ -77,11 +77,20 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
         batch_iter = train_dtl.create_data_loader(batch_size, shuffle=False)
 
         # Decaying observation's variance
-        sigma_v = exponential_scheduler(
-            curr_v=sigma_v, min_v=0.01, decaying_factor=0.99, curr_iter=epoch
-        )
+        min_v = 0.001
+        nb_epoch_decay = 5
+        decay_factor = (min_v / sigma_v) ** (1.0 / nb_epoch_decay)
+
+        # sigma_v = exponential_scheduler(
+        #     curr_v=sigma_v, min_v=0.001, decaying_factor=0.99, curr_iter=epoch
+        # )
+
+        if epoch < nb_epoch_decay:
+            sigma_v_used = sigma_v * decay_factor**epoch
+        else:
+            sigma_v_used = min_v
         var_y = np.full(
-            (batch_size * len(output_col),), sigma_v**2, dtype=np.float32
+            (batch_size * len(output_col),), sigma_v_used**2, dtype=np.float32
         )
         y_train = []
         var_preds = []
@@ -146,7 +155,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
         plt.switch_backend("Agg")
         plt.figure()
         # plt.plot(t_train, y_train, color="r")
-        # plt.plot(t, zeros_like, color="b")
+        plt.plot(t, zeros_like, color="b")
         plt.fill_between(
             t,
             zeros_like - zo_smooth_std,

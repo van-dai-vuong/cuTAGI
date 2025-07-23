@@ -21,6 +21,7 @@ data/imagenet
 test_model/
 wandb/
 saved_results/param_viz
+saved_results/smoother/*.png
 
 # VSCode
 .vscode

@@ -163,6 +163,12 @@ void SLinear::forward(BaseHiddenStates &input_states,
     this->smooth_states.var_zo_priors[this->time_step] =
         smooth_output_states->var_a[0];
 
+    // printf(
+    //     "At time step %d, var_a[0] = %f\n",
+    //     this->time_step,
+    //     this->smooth_states.var_zo_priors[this->time_step]
+    // );
+
     // save cov_zo for smoother
     save_cov_zo_smoother(
         this->input_size, this->time_step, this->mu_w, this->var_w, this->var_b,
