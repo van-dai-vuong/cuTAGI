@@ -424,6 +424,17 @@ void SmoothSLinear::reset_zeros()
     if (var_zo_smooths.size() != num_timesteps)
         var_zo_smooths.resize(num_timesteps);
     for (auto& val : var_zo_smooths) val = 0;
+
+    // if (mu_zo_smooths.size() != num_timesteps) {
+    //     mu_zo_smooths.resize(num_timesteps);
+    //     for (auto& val : mu_zo_smooths)
+    //         val = 0;
+    // }
+    // if (var_zo_smooths.size() != num_timesteps) {
+    //     var_zo_smooths.resize(num_timesteps);
+    //     for (auto& val : var_zo_smooths)
+    //         val = 0;
+    // }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

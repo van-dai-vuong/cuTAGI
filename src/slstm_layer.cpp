@@ -111,6 +111,7 @@ void smooth_cell_states(
 /*
  */
 {
+    int check = 0;
     int current, next;
     for (int i = num_timestep - 2; i >= 0; --i) {
         for (int j = num_states - 1; j >= 0; --j) {
@@ -125,7 +126,13 @@ void smooth_cell_states(
             var_c_smooths[current] =
                 var_c_posts[current] +
                 tmp * (var_c_smooths[next] - var_c_priors[next]) * tmp;
+            if (var_c_smooths[current] < 0) {
+                check = 1;
+            }
         }
+    }
+    if (check == 1) {
+        std::cout << "WARNING: var_c_smooths is negative " << std::endl;
     }
 }
 
@@ -138,6 +145,7 @@ void smooth_hidden_states(
 /*
  */
 {
+    int check = 0;
     int current, next;
     for (int i = num_timestep - 2; i >= 0; --i) {
         for (int j = num_states - 1; j >= 0; --j) {
@@ -150,7 +158,13 @@ void smooth_hidden_states(
             var_h_smooths[current] =
                 var_h_posts[current] +
                 tmp * (var_c_smooths[next] - var_c_priors[next]) * tmp;
+            if (var_h_smooths[current] < 0) {
+                check = 1;
+            }
         }
+    }
+    if (check == 1) {
+        std::cout << "WARNING: var_h_smooths is negative " << std::endl;
     }
 }
 
@@ -513,14 +527,20 @@ void SLSTM::smoother()
  */
 {
     // Initialize the last time step for smoothing
-    this->smooth_states.mu_c_smooths.back() =
-        this->smooth_states.mu_c_posts.back();
-    this->smooth_states.var_c_smooths.back() =
-        this->smooth_states.var_c_posts.back();
-    this->smooth_states.mu_h_smooths.back() =
-        this->smooth_states.mu_h_posts.back();
-    this->smooth_states.var_h_smooths.back() =
-        this->smooth_states.var_h_posts.back();
+    size_t num_states = this->smooth_states.num_states;
+    size_t last_timestep_start =
+        (this->smooth_states.num_timesteps - 1) * num_states;
+
+    for (size_t i = 0; i < num_states; ++i) {
+        this->smooth_states.mu_c_smooths[last_timestep_start + i] =
+            this->smooth_states.mu_c_posts[last_timestep_start + i];
+        this->smooth_states.var_c_smooths[last_timestep_start + i] =
+            this->smooth_states.var_c_posts[last_timestep_start + i];
+        this->smooth_states.mu_h_smooths[last_timestep_start + i] =
+            this->smooth_states.mu_h_posts[last_timestep_start + i];
+        this->smooth_states.var_h_smooths[last_timestep_start + i] =
+            this->smooth_states.var_h_posts[last_timestep_start + i];
+    }
 
     smooth_cell_states(
         this->smooth_states.num_timesteps, this->smooth_states.num_states,

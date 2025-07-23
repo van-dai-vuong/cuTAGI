@@ -420,8 +420,10 @@ std::tuple<std::vector<float>, std::vector<float>> Sequential::smoother()
         } else if (current_layer->get_layer_type() == LayerType::SLinear) {
             auto *slinear_layer = dynamic_cast<SLinear *>(current_layer);
             slinear_layer->smoother();
-            mu_zo_smooths = slinear_layer->smooth_states.mu_zo_smooths;
-            var_zo_smooths = slinear_layer->smooth_states.var_zo_smooths;
+            // mu_zo_smooths = slinear_layer->smooth_states.mu_zo_smooths;
+            // var_zo_smooths = slinear_layer->smooth_states.var_zo_smooths;
+            mu_zo_smooths = slinear_layer->smooth_states.mu_zo_priors;
+            var_zo_smooths = slinear_layer->smooth_states.var_zo_priors;
         }
     }
     return std::make_tuple(mu_zo_smooths, var_zo_smooths);

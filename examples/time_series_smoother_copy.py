@@ -10,7 +10,7 @@ import pytagi.metric as metric
 from examples.data_loader import TimeSeriesDataloader
 from pytagi import Normalizer as normalizer
 from pytagi import exponential_scheduler
-from pytagi.nn import SLSTM, OutputUpdater, Sequential, SLinear
+from pytagi.nn import LSTM, Linear, OutputUpdater, Sequential
 
 
 def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
@@ -55,15 +55,15 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
 
     # Network
     net = Sequential(
-        SLSTM(num_features + input_seq_len - 1, 40, 1),
-        SLSTM(40, 40, 1),
-        SLinear(40, 1),
+        LSTM(num_features + input_seq_len - 1, 40, 1),
+        LSTM(40, 40, 1),
+        Linear(40, 1),
     )
 
     # net.to_device("cuda")
     net.set_threads(1)  # multi-processing is slow on a small net
     net.input_state_update = True
-    net.num_samples = train_dtl.dataset["value"][0].shape[0]
+    # net.num_samples = train_dtl.dataset["value"][0].shape[0]
     out_updater = OutputUpdater(net.device)
 
     # -------------------------------------------------------------------------#
@@ -84,6 +84,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
             (batch_size * len(output_col),), sigma_v**2, dtype=np.float32
         )
         y_train = []
+        m_preds = []
         var_preds = []
 
         # for x, y in batch_iter:
@@ -117,6 +118,7 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
             obs = normalizer.unstandardize(
                 y, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
             )
+            m_preds.append(pred)
             var_preds.append(var_pred)
 
             mse = metric.mse(pred, obs)
@@ -127,22 +129,17 @@ def main(num_epochs: int = 50, batch_size: int = 1, sigma_v: float = 5):
             mu_sequence = mu_sequence[-input_seq_len:]
 
         # Smoother
-        mu_zo_smooth, var_zo_smooth = net.smoother()
-        zo_smooth_std = np.array(var_zo_smooth) ** 0.5
-        mu_sequence = mu_zo_smooth[:input_seq_len]
+        # mu_zo_smooth, var_zo_smooth = net.smoother()
+        # zo_smooth_std = np.array(var_zo_smooth) ** 0.5
+        # mu_sequence = mu_zo_smooth[:input_seq_len]
         # mu_sequence = np.ones(input_seq_len, dtype=np.float32)
 
         # # Figures for each epoch
-        t = np.arange(len(mu_zo_smooth))
-        t_train = np.arange(len(y_train))
-        zeros_like = np.zeros_like(mu_zo_smooth)
-
-        # t = np.arange(len(var_preds))
-        # t_train = np.arange(len(var_preds))
-        # var_preds = np.array(var_preds).flatten()
-        # zeros_like = np.zeros_like(var_preds)
-        # zo_smooth_std = var_preds ** 0.5
-
+        t = np.arange(len(var_preds))
+        t_train = np.arange(len(var_preds))
+        var_preds = np.array(var_preds).flatten()
+        zeros_like = np.zeros_like(var_preds)
+        zo_smooth_std = var_preds**0.5
         plt.switch_backend("Agg")
         plt.figure()
         # plt.plot(t_train, y_train, color="r")

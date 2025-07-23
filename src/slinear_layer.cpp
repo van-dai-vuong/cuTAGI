@@ -81,12 +81,24 @@ void smooth_zo(int num_timestep, std::vector<float> &cov,
 /*
  */
 {
+    int check = 0;
     for (int i = num_timestep - 2; i >= 0; i--) {
         float tmp = cov[i + 1] / var_priors[i + 1];
         mu_smooths[i] =
             mu_posts[i] + tmp * (mu_smooths[i + 1] - mu_priors[i + 1]);
         var_smooths[i] =
             var_posts[i] + tmp * (var_smooths[i + 1] - var_priors[i + 1]) * tmp;
+
+        if (var_smooths[i] < 0) {
+            check = 1;
+            // std::cerr << "tmp is: "
+            //   << tmp << std::endl;
+            // std::cerr << "var_priors is: "
+            //   << var_priors[i + 1] << std::endl;
+        }
+    }
+    if (check == 1) {
+        std::cout << "WARNING: var_zo_smooths is negative " << std::endl;
     }
 }
 
@@ -252,4 +264,5 @@ void SLinear::smoother()
 
     // // TODO: Clear variables for next epoch
     this->time_step = 0;
+    // this->smooth_states.reset_zeros();
 }
