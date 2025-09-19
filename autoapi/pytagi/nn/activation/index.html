@@ -1,0 +1,800 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pytagi.nn.activation &#8212; pytagi  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/pytagi/nn/activation/index';</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="pytagi.nn.batch_norm" href="../batch_norm/index.html" />
+    <link rel="prev" title="pytagi.nn.base_layer" href="../base_layer/index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../_static/tagiml.png" class="logo__image only-light" alt="pytagi  documentation - Home"/>
+    <script>document.write(`<img src="../../../../_static/tagiml.png" class="logo__image only-dark" alt="pytagi  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/installations.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/theory.html">Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/examples.html">Examples</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../../../../api/pytagi_api.html">API Docs</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../metric/index.html">Metric</a></li>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="../../../../api/nn.html">Neural Network</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../data_struct/index.html">Data structure</a></li>
+<li class="toctree-l3 current active has-children"><a class="reference internal" href="../../../../api/nn_layers.html">Layers</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../base_layer/index.html">BaseLayer</a></li>
+<li class="toctree-l4 current active"><a class="current reference internal" href="#">Activations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../batch_norm/index.html">BatchNorm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../conv2d/index.html">Conv2D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../convtranspose2d/index.html">ConvTranspose2D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../layer_block/index.html">Layer Block</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../layer_norm/index.html">LayerNorm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../linear/index.html">Linear</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstm/index.html">LSTM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slinear/index.html">SLinear</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slstm/index.html">SLSTM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../pooling/index.html">Pooling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../resnet_block/index.html">ResNet Block</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../sequential/index.html">Sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../output_updater/index.html">Output Updater</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ddp/index.html">Ddp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tagi_utils/index.html">Tagi_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cuda/index.html">Cuda</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/dev_guides.html">Development guides</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/lhnguyen102/cuTAGI" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>pytagi.nn.activation</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#classes">Classes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ReLU"><code class="docutils literal notranslate"><span class="pre">ReLU</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ReLU.get_layer_info"><code class="docutils literal notranslate"><span class="pre">ReLU.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ReLU.get_layer_name"><code class="docutils literal notranslate"><span class="pre">ReLU.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Sigmoid"><code class="docutils literal notranslate"><span class="pre">Sigmoid</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Sigmoid.get_layer_info"><code class="docutils literal notranslate"><span class="pre">Sigmoid.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Sigmoid.get_layer_name"><code class="docutils literal notranslate"><span class="pre">Sigmoid.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Tanh"><code class="docutils literal notranslate"><span class="pre">Tanh</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Tanh.get_layer_info"><code class="docutils literal notranslate"><span class="pre">Tanh.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Tanh.get_layer_name"><code class="docutils literal notranslate"><span class="pre">Tanh.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureReLU"><code class="docutils literal notranslate"><span class="pre">MixtureReLU</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureReLU.get_layer_info"><code class="docutils literal notranslate"><span class="pre">MixtureReLU.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureReLU.get_layer_name"><code class="docutils literal notranslate"><span class="pre">MixtureReLU.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureSigmoid"><code class="docutils literal notranslate"><span class="pre">MixtureSigmoid</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureSigmoid.get_layer_info"><code class="docutils literal notranslate"><span class="pre">MixtureSigmoid.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureSigmoid.get_layer_name"><code class="docutils literal notranslate"><span class="pre">MixtureSigmoid.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureTanh"><code class="docutils literal notranslate"><span class="pre">MixtureTanh</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureTanh.get_layer_info"><code class="docutils literal notranslate"><span class="pre">MixtureTanh.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureTanh.get_layer_name"><code class="docutils literal notranslate"><span class="pre">MixtureTanh.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softplus"><code class="docutils literal notranslate"><span class="pre">Softplus</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softplus.get_layer_info"><code class="docutils literal notranslate"><span class="pre">Softplus.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softplus.get_layer_name"><code class="docutils literal notranslate"><span class="pre">Softplus.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.LeakyReLU"><code class="docutils literal notranslate"><span class="pre">LeakyReLU</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.LeakyReLU.get_layer_info"><code class="docutils literal notranslate"><span class="pre">LeakyReLU.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.LeakyReLU.get_layer_name"><code class="docutils literal notranslate"><span class="pre">LeakyReLU.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softmax"><code class="docutils literal notranslate"><span class="pre">Softmax</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softmax.get_layer_info"><code class="docutils literal notranslate"><span class="pre">Softmax.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softmax.get_layer_name"><code class="docutils literal notranslate"><span class="pre">Softmax.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.EvenExp"><code class="docutils literal notranslate"><span class="pre">EvenExp</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.EvenExp.get_layer_info"><code class="docutils literal notranslate"><span class="pre">EvenExp.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.EvenExp.get_layer_name"><code class="docutils literal notranslate"><span class="pre">EvenExp.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Remax"><code class="docutils literal notranslate"><span class="pre">Remax</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Remax.get_layer_info"><code class="docutils literal notranslate"><span class="pre">Remax.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Remax.get_layer_name"><code class="docutils literal notranslate"><span class="pre">Remax.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ClosedFormSoftmax"><code class="docutils literal notranslate"><span class="pre">ClosedFormSoftmax</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ClosedFormSoftmax.get_layer_info"><code class="docutils literal notranslate"><span class="pre">ClosedFormSoftmax.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ClosedFormSoftmax.get_layer_name"><code class="docutils literal notranslate"><span class="pre">ClosedFormSoftmax.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-pytagi.nn.activation">
+<span id="pytagi-nn-activation"></span><h1>pytagi.nn.activation<a class="headerlink" href="#module-pytagi.nn.activation" title="Link to this heading">#</a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pytagi.nn.activation.ReLU" title="pytagi.nn.activation.ReLU"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReLU</span></code></a></p></td>
+<td><p>ReLU</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pytagi.nn.activation.Sigmoid" title="pytagi.nn.activation.Sigmoid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sigmoid</span></code></a></p></td>
+<td><p>Sigmoid</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pytagi.nn.activation.Tanh" title="pytagi.nn.activation.Tanh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tanh</span></code></a></p></td>
+<td><p>Tanh</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pytagi.nn.activation.MixtureReLU" title="pytagi.nn.activation.MixtureReLU"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MixtureReLU</span></code></a></p></td>
+<td><p>Mixture ReLU</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pytagi.nn.activation.MixtureSigmoid" title="pytagi.nn.activation.MixtureSigmoid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MixtureSigmoid</span></code></a></p></td>
+<td><p>Mixture Sigmoid</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pytagi.nn.activation.MixtureTanh" title="pytagi.nn.activation.MixtureTanh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MixtureTanh</span></code></a></p></td>
+<td><p>Mixture Tanh</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pytagi.nn.activation.Softplus" title="pytagi.nn.activation.Softplus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Softplus</span></code></a></p></td>
+<td><p>Softplus</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pytagi.nn.activation.LeakyReLU" title="pytagi.nn.activation.LeakyReLU"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LeakyReLU</span></code></a></p></td>
+<td><p>Leaky ReLU</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pytagi.nn.activation.Softmax" title="pytagi.nn.activation.Softmax"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Softmax</span></code></a></p></td>
+<td><p>Softmax</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pytagi.nn.activation.EvenExp" title="pytagi.nn.activation.EvenExp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EvenExp</span></code></a></p></td>
+<td><p>EvenExp</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pytagi.nn.activation.Remax" title="pytagi.nn.activation.Remax"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Remax</span></code></a></p></td>
+<td><p>Remax</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pytagi.nn.activation.ClosedFormSoftmax" title="pytagi.nn.activation.ClosedFormSoftmax"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosedFormSoftmax</span></code></a></p></td>
+<td><p>ClosedFormSoftmax</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.ReLU">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">ReLU</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#ReLU"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.ReLU" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>ReLU</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.ReLU.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#ReLU.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.ReLU.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.ReLU.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#ReLU.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.ReLU.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Sigmoid">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">Sigmoid</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Sigmoid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Sigmoid" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>Sigmoid</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Sigmoid.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Sigmoid.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Sigmoid.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Sigmoid.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Sigmoid.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Sigmoid.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Tanh">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">Tanh</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Tanh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Tanh" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>Tanh</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Tanh.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Tanh.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Tanh.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Tanh.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Tanh.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Tanh.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.MixtureReLU">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">MixtureReLU</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#MixtureReLU"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.MixtureReLU" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>Mixture ReLU</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.MixtureReLU.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#MixtureReLU.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.MixtureReLU.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.MixtureReLU.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#MixtureReLU.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.MixtureReLU.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.MixtureSigmoid">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">MixtureSigmoid</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#MixtureSigmoid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.MixtureSigmoid" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>Mixture Sigmoid</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.MixtureSigmoid.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#MixtureSigmoid.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.MixtureSigmoid.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.MixtureSigmoid.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#MixtureSigmoid.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.MixtureSigmoid.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.MixtureTanh">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">MixtureTanh</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#MixtureTanh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.MixtureTanh" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>Mixture Tanh</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.MixtureTanh.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#MixtureTanh.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.MixtureTanh.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.MixtureTanh.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#MixtureTanh.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.MixtureTanh.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Softplus">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">Softplus</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Softplus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Softplus" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>Softplus</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Softplus.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Softplus.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Softplus.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Softplus.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Softplus.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Softplus.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.LeakyReLU">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">LeakyReLU</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#LeakyReLU"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.LeakyReLU" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>Leaky ReLU</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.LeakyReLU.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#LeakyReLU.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.LeakyReLU.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.LeakyReLU.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#LeakyReLU.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.LeakyReLU.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Softmax">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">Softmax</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Softmax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Softmax" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>Softmax</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Softmax.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Softmax.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Softmax.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Softmax.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Softmax.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Softmax.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.EvenExp">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">EvenExp</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#EvenExp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.EvenExp" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>EvenExp</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.EvenExp.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#EvenExp.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.EvenExp.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.EvenExp.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#EvenExp.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.EvenExp.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Remax">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">Remax</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Remax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Remax" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>Remax</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Remax.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Remax.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Remax.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.Remax.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#Remax.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.Remax.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.activation.ClosedFormSoftmax">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.activation.</span></span><span class="sig-name descname"><span class="pre">ClosedFormSoftmax</span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#ClosedFormSoftmax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.ClosedFormSoftmax" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_layer/index.html#pytagi.nn.base_layer.BaseLayer" title="pytagi.nn.base_layer.BaseLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytagi.nn.base_layer.BaseLayer</span></code></a></p>
+<p>ClosedFormSoftmax</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.ClosedFormSoftmax.get_layer_info">
+<span class="sig-name descname"><span class="pre">get_layer_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#ClosedFormSoftmax.get_layer_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.ClosedFormSoftmax.get_layer_info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.activation.ClosedFormSoftmax.get_layer_name">
+<span class="sig-name descname"><span class="pre">get_layer_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/activation.html#ClosedFormSoftmax.get_layer_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.activation.ClosedFormSoftmax.get_layer_name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../base_layer/index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">pytagi.nn.base_layer</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../batch_norm/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">pytagi.nn.batch_norm</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#classes">Classes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ReLU"><code class="docutils literal notranslate"><span class="pre">ReLU</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ReLU.get_layer_info"><code class="docutils literal notranslate"><span class="pre">ReLU.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ReLU.get_layer_name"><code class="docutils literal notranslate"><span class="pre">ReLU.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Sigmoid"><code class="docutils literal notranslate"><span class="pre">Sigmoid</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Sigmoid.get_layer_info"><code class="docutils literal notranslate"><span class="pre">Sigmoid.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Sigmoid.get_layer_name"><code class="docutils literal notranslate"><span class="pre">Sigmoid.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Tanh"><code class="docutils literal notranslate"><span class="pre">Tanh</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Tanh.get_layer_info"><code class="docutils literal notranslate"><span class="pre">Tanh.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Tanh.get_layer_name"><code class="docutils literal notranslate"><span class="pre">Tanh.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureReLU"><code class="docutils literal notranslate"><span class="pre">MixtureReLU</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureReLU.get_layer_info"><code class="docutils literal notranslate"><span class="pre">MixtureReLU.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureReLU.get_layer_name"><code class="docutils literal notranslate"><span class="pre">MixtureReLU.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureSigmoid"><code class="docutils literal notranslate"><span class="pre">MixtureSigmoid</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureSigmoid.get_layer_info"><code class="docutils literal notranslate"><span class="pre">MixtureSigmoid.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureSigmoid.get_layer_name"><code class="docutils literal notranslate"><span class="pre">MixtureSigmoid.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureTanh"><code class="docutils literal notranslate"><span class="pre">MixtureTanh</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureTanh.get_layer_info"><code class="docutils literal notranslate"><span class="pre">MixtureTanh.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.MixtureTanh.get_layer_name"><code class="docutils literal notranslate"><span class="pre">MixtureTanh.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softplus"><code class="docutils literal notranslate"><span class="pre">Softplus</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softplus.get_layer_info"><code class="docutils literal notranslate"><span class="pre">Softplus.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softplus.get_layer_name"><code class="docutils literal notranslate"><span class="pre">Softplus.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.LeakyReLU"><code class="docutils literal notranslate"><span class="pre">LeakyReLU</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.LeakyReLU.get_layer_info"><code class="docutils literal notranslate"><span class="pre">LeakyReLU.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.LeakyReLU.get_layer_name"><code class="docutils literal notranslate"><span class="pre">LeakyReLU.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softmax"><code class="docutils literal notranslate"><span class="pre">Softmax</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softmax.get_layer_info"><code class="docutils literal notranslate"><span class="pre">Softmax.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Softmax.get_layer_name"><code class="docutils literal notranslate"><span class="pre">Softmax.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.EvenExp"><code class="docutils literal notranslate"><span class="pre">EvenExp</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.EvenExp.get_layer_info"><code class="docutils literal notranslate"><span class="pre">EvenExp.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.EvenExp.get_layer_name"><code class="docutils literal notranslate"><span class="pre">EvenExp.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Remax"><code class="docutils literal notranslate"><span class="pre">Remax</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Remax.get_layer_info"><code class="docutils literal notranslate"><span class="pre">Remax.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.Remax.get_layer_name"><code class="docutils literal notranslate"><span class="pre">Remax.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ClosedFormSoftmax"><code class="docutils literal notranslate"><span class="pre">ClosedFormSoftmax</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ClosedFormSoftmax.get_layer_info"><code class="docutils literal notranslate"><span class="pre">ClosedFormSoftmax.get_layer_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.activation.ClosedFormSoftmax.get_layer_name"><code class="docutils literal notranslate"><span class="pre">ClosedFormSoftmax.get_layer_name()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Luong-Ha Nguyen and James-A. Goulet
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, Luong-Ha Nguyen and James-A. Goulet.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

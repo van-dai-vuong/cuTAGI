@@ -1,0 +1,799 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Development Guide &#8212; pytagi  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'dev_guide';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/tagiml.png" class="logo__image only-light" alt="pytagi  documentation - Home"/>
+    <script>document.write(`<img src="_static/tagiml.png" class="logo__image only-dark" alt="pytagi  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="api/installations.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/theory.html">Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/examples.html">Examples</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/pytagi_api.html">API Docs</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="autoapi/pytagi/metric/index.html">Metric</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="api/nn.html">Neural Network</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="autoapi/pytagi/nn/data_struct/index.html">Data structure</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="api/nn_layers.html">Layers</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/base_layer/index.html">BaseLayer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/activation/index.html">Activations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/batch_norm/index.html">BatchNorm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/conv2d/index.html">Conv2D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/convtranspose2d/index.html">ConvTranspose2D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/layer_block/index.html">Layer Block</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/layer_norm/index.html">LayerNorm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/linear/index.html">Linear</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/lstm/index.html">LSTM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/slinear/index.html">SLinear</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/slstm/index.html">SLSTM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/pooling/index.html">Pooling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/pytagi/nn/resnet_block/index.html">ResNet Block</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="autoapi/pytagi/nn/sequential/index.html">Sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="autoapi/pytagi/nn/output_updater/index.html">Output Updater</a></li>
+<li class="toctree-l3"><a class="reference internal" href="autoapi/pytagi/nn/ddp/index.html">Ddp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="autoapi/pytagi/tagi_utils/index.html">Tagi_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autoapi/pytagi/cuda/index.html">Cuda</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="api/dev_guides.html">Development guides</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/lhnguyen102/cuTAGI" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Development Guide</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#features">Features</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#supported-tasks">Supported Tasks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#supported-layers">Supported Layers</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-development-tools">Model Development Tools</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites-for-local-installation">Prerequisites for Local Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installing-pytagi">Installing <code class="docutils literal notranslate"><span class="pre">pytagi</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-up-a-conda-environment">Setting Up a Conda Environment</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pypi-installation">PyPI Installation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#local-installation">Local Installation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installing-cutagi">Installing <code class="docutils literal notranslate"><span class="pre">cuTAGI</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#docker-build">Docker Build</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ubuntu-22-04-installation-without-docker">Ubuntu 22.04 Installation (Without Docker)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#macos-cpu-version">macOS (CPU Version)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-unit-tests">Running Unit Tests</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation-guide-cmake-on-macos">Installation Guide: CMake on macOS</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-uninstall-previous-cmake-versions-optional">Step 1: Uninstall Previous CMake Versions (Optional)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-install-cmake">Step 2: Install CMake</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tips-and-tools">Tips and Tools</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#enable-git-autocomplete-on-macos">Enable Git Autocomplete on macOS</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-memory-check-on-macos">Run Memory Check on macOS</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#code-formatting-in-vs-code">Code Formatting in VS Code</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="development-guide">
+<h1>Development Guide<a class="headerlink" href="#development-guide" title="Link to this heading">#</a></h1>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading">#</a></h2>
+<section id="supported-tasks">
+<h3>Supported Tasks<a class="headerlink" href="#supported-tasks" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>[x] Epistemic uncertainty estimation</p></li>
+<li><p>[ ] Aleatoric uncertainty estimation (WIP)</p></li>
+<li><p>[ ] Derivative estimation of a function (WIP)</p></li>
+<li><p>[x] Regression</p></li>
+<li><p>[x] Image generation (e.g., Autoencoder)</p></li>
+<li><p>[x] Time-series forecasting</p></li>
+<li><p>[ ] Decision making (e.g., reinforcement learning)</p></li>
+</ul>
+</section>
+<section id="supported-layers">
+<h3>Supported Layers<a class="headerlink" href="#supported-layers" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>[x] Linear</p></li>
+<li><p>[x] CNNs</p></li>
+<li><p>[x] Transposed CNNs</p></li>
+<li><p>[x] LSTM</p></li>
+<li><p>[x] Average Pooling</p></li>
+<li><p>[x] Batch Normalization</p></li>
+<li><p>[x] Layer Normalization</p></li>
+<li><p>[ ] GRU</p></li>
+</ul>
+</section>
+<section id="model-development-tools">
+<h3>Model Development Tools<a class="headerlink" href="#model-development-tools" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>[x] Sequential Model Construction</p></li>
+<li><p>[ ] Eager Execution (WIP)</p></li>
+</ul>
+</section>
+</section>
+<section id="prerequisites-for-local-installation">
+<h2>Prerequisites for Local Installation<a class="headerlink" href="#prerequisites-for-local-installation" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Compiler</strong>: C++14 support</p></li>
+<li><p><strong>CMake</strong>: Version &gt;= 3.23</p></li>
+<li><p><strong>CUDA Toolkit</strong>: Optional for GPU support</p></li>
+<li><p><strong>Python Version</strong>: Python &gt;= 3.9 (Python 3.10 recommended)</p></li>
+</ul>
+</section>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cuTAGI</span></code> is a high-performance C++/CUDA implementation of the TAGI (Tractable Approximate Gaussian Inference) method. Python users can utilize <code class="docutils literal notranslate"><span class="pre">pytagi</span></code>, a Python wrapper around the <code class="docutils literal notranslate"><span class="pre">cuTAGI</span></code> backend, for seamless integration within Python environments.</p>
+<p>This guide covers detailed instructions on installing both <code class="docutils literal notranslate"><span class="pre">pytagi</span></code> and <code class="docutils literal notranslate"><span class="pre">cuTAGI</span></code> on various platforms.</p>
+</section>
+<section id="installing-pytagi">
+<h2>Installing <code class="docutils literal notranslate"><span class="pre">pytagi</span></code><a class="headerlink" href="#installing-pytagi" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">pytagi</span></code> is the Python interface for the <code class="docutils literal notranslate"><span class="pre">cuTAGI</span></code> backend. You can install it via PyPI or locally from the source code.</p>
+<section id="setting-up-a-conda-environment">
+<h3>Setting Up a Conda Environment<a class="headerlink" href="#setting-up-a-conda-environment" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p><strong>Install Miniconda</strong>: Follow the <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html#system-requirements">official instructions</a>.</p></li>
+<li><p><strong>Create a New Conda Environment</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>your_env_name<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10
+</pre></div>
+</div>
+</li>
+<li><p><strong>Activate the Environment</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>your_env_name
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="pypi-installation">
+<h3>PyPI Installation<a class="headerlink" href="#pypi-installation" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p><strong>Ensure Conda Environment is Activated</strong>.</p></li>
+<li><p><strong>Install Required Packages</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</pre></div>
+</div>
+</li>
+<li><p><strong>Install <code class="docutils literal notranslate"><span class="pre">pytagi</span></code> from PyPI</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pytagi
+</pre></div>
+</div>
+</li>
+<li><p><strong>Test the Installation</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>examples.classification
+</pre></div>
+</div>
+<p><strong>Note</strong>: You can develop your own applications using the provided examples (see <a class="reference internal" href="#python_examples"><span class="xref myst">python_examples</span></a>).</p>
+</li>
+</ol>
+</section>
+<section id="local-installation">
+<h3>Local Installation<a class="headerlink" href="#local-installation" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p><strong>Clone the Repository</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/lhnguyen102/cuTAGI.git
+<span class="nb">cd</span><span class="w"> </span>cuTAGI
+git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>--recursive
+</pre></div>
+</div>
+<p><strong>Note</strong>: The <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">submodule</span></code> command clones the <a class="reference external" href="https://github.com/pybind/pybind11">pybind11</a> repository, required for binding Python with C++/CUDA.</p>
+</li>
+<li><p><strong>Ensure Conda Environment is Activated</strong>.</p></li>
+<li><p><strong>Install Required Packages</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</pre></div>
+</div>
+</li>
+<li><p><strong>Install <code class="docutils literal notranslate"><span class="pre">pytagi</span></code> Locally</strong>:</p>
+<p>Remove cache</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>cache<span class="w"> </span>purge
+</pre></div>
+</div>
+<p>Install package</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>.
+</pre></div>
+</div>
+</li>
+<li><p><strong>Test the Installation</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>build/run_tests
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="installing-cutagi">
+<h2>Installing <code class="docutils literal notranslate"><span class="pre">cuTAGI</span></code><a class="headerlink" href="#installing-cutagi" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cuTAGI</span></code> is the native C++/CUDA implementation of the TAGI method. We recommend using Docker for installation to simplify the setup process.</p>
+<section id="docker-build">
+<h3>Docker Build<a class="headerlink" href="#docker-build" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p><strong>Install Docker</strong>: Follow the <a class="reference external" href="https://docs.docker.com/get-docker/">official instructions</a>.</p></li>
+<li><p><strong>Ensure CUDA Compatibility</strong>:</p>
+<ul>
+<li><p>Ensure the host machine’s CUDA version is compatible with the Docker image’s CUDA version (&gt;=12.2).</p></li>
+<li><p>Install the NVIDIA Container Toolkit to enable Docker to use the NVIDIA GPU:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>dpkg<span class="w"> </span>-l<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nvidia-container-toolkit
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p><strong>Build the Docker Image</strong>:</p>
+<ul>
+<li><p><strong>CPU Build</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>scripts/docker_build.sh
+</pre></div>
+</div>
+</li>
+<li><p><strong>CUDA Build</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>scripts/docker_build.sh<span class="w"> </span><span class="nv">device</span><span class="o">=</span>cuda<span class="w"> </span><span class="nv">version</span><span class="o">=</span>latest
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p><strong>Run Unit Tests</strong>:</p>
+<ul>
+<li><p><strong>For CPU</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>scripts/docker_run.sh
+</pre></div>
+</div>
+</li>
+<li><p><strong>For CUDA (GPU)</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>scripts/docker_run.sh<span class="w"> </span><span class="nv">device</span><span class="o">=</span>cuda<span class="w"> </span><span class="nv">version</span><span class="o">=</span>latest
+</pre></div>
+</div>
+</li>
+</ul>
+<p><strong>Note</strong>: Ensure Docker is running during the build and run processes.</p>
+</li>
+</ol>
+</section>
+<section id="ubuntu-22-04-installation-without-docker">
+<h3>Ubuntu 22.04 Installation (Without Docker)<a class="headerlink" href="#ubuntu-22-04-installation-without-docker" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p><strong>Install CUDA Toolkit</strong>:</p>
+<ul>
+<li><p>Download and install the <a class="reference external" href="https://developer.nvidia.com/cuda-toolkit">CUDA Toolkit</a> (version &gt;= 12.2).</p></li>
+<li><p>Add the following to your <code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code> file to update your PATH:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;/usr/local/cuda-12.2/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span><span class="s2">&quot;/usr/local/cuda-12.2/lib64:</span><span class="nv">$LD_LIBRARY_PATH</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p><strong>Install GCC Compiler</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>g++
+</pre></div>
+</div>
+</li>
+<li><p><strong>Install CMake</strong>:</p>
+<p>Follow the <a class="reference external" href="https://cmake.org/install/">official instructions</a> to install CMake.</p>
+</li>
+<li><p><strong>Build the Project</strong>:</p>
+<p>Navigate to the <code class="docutils literal notranslate"><span class="pre">cuTAGI</span></code> folder and run:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>scripts/compile.sh<span class="w"> </span><span class="o">[</span>option<span class="o">]</span>
+</pre></div>
+</div>
+<p>Replace <code class="docutils literal notranslate"><span class="pre">[option]</span></code> with one of the following:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Release</span></code>: For optimized release build (Default)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ReleaseWithInfo</span></code>: For release build with debug information</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Debug</span></code>: For debug build using GDB Debugger</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="macos-cpu-version">
+<h3>macOS (CPU Version)<a class="headerlink" href="#macos-cpu-version" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">cuTAGI</span></code> supports CPU-only builds on macOS.</p>
+<ol class="arabic">
+<li><p><strong>Install Xcode</strong></p></li>
+<li><p><strong>Install CMake</strong>:</p>
+<p>Refer to the <a class="reference internal" href="#installation-guide-cmake-on-macos"><span class="xref myst">Installation Guide: CMake on macOS</span></a> below.</p>
+</li>
+<li><p><strong>Build the Project</strong>:</p>
+<p>Navigate to the <code class="docutils literal notranslate"><span class="pre">cuTAGI</span></code> folder and run:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>scripts/compile.sh<span class="w"> </span><span class="o">[</span>option<span class="o">]</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="running-unit-tests">
+<h3>Running Unit Tests<a class="headerlink" href="#running-unit-tests" title="Link to this heading">#</a></h3>
+<ul>
+<li><p><strong>For C++</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>build/run_tests
+</pre></div>
+</div>
+</li>
+<li><p><strong>For Python</strong>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>test.py_unit.main
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+</section>
+<section id="installation-guide-cmake-on-macos">
+<h2>Installation Guide: CMake on macOS<a class="headerlink" href="#installation-guide-cmake-on-macos" title="Link to this heading">#</a></h2>
+<section id="step-1-uninstall-previous-cmake-versions-optional">
+<h3>Step 1: Uninstall Previous CMake Versions (Optional)<a class="headerlink" href="#step-1-uninstall-previous-cmake-versions-optional" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>find<span class="w"> </span>/usr/local/bin<span class="w"> </span>-type<span class="w"> </span>l<span class="w"> </span>-lname<span class="w"> </span><span class="s1">&#39;/Applications/CMake.app/*&#39;</span><span class="w"> </span>-delete
+sudo<span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span>/Applications/CMake.app
+</pre></div>
+</div>
+</section>
+<section id="step-2-install-cmake">
+<h3>Step 2: Install CMake<a class="headerlink" href="#step-2-install-cmake" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p>Download the installer:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>~/Downloads/CMake
+curl<span class="w"> </span>--silent<span class="w"> </span>--location<span class="w"> </span>--retry<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="s2">&quot;https://github.com/Kitware/CMake/releases/download/v3.30.5/cmake-3.30.5-macos-universal.dmg&quot;</span><span class="w"> </span>--output<span class="w"> </span>~/Downloads/CMake/cmake-macos.dmg
+</pre></div>
+</div>
+</li>
+<li><p>Mount the image:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>yes<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="nv">PAGER</span><span class="o">=</span>cat<span class="w"> </span>hdiutil<span class="w"> </span>attach<span class="w"> </span>-quiet<span class="w"> </span>-mountpoint<span class="w"> </span>/Volumes/cmake-macos<span class="w"> </span>~/Downloads/CMake/cmake-macos.dmg
+</pre></div>
+</div>
+</li>
+<li><p>Copy CMake app to Applications:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>-R<span class="w"> </span>/Volumes/cmake-macos/CMake.app<span class="w"> </span>/Applications/
+</pre></div>
+</div>
+</li>
+<li><p>Unmount the image:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>hdiutil<span class="w"> </span>detach<span class="w"> </span>/Volumes/cmake-macos
+</pre></div>
+</div>
+</li>
+<li><p>Add CMake to the PATH:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span><span class="s2">&quot;/Applications/CMake.app/Contents/bin/cmake-gui&quot;</span><span class="w"> </span>--install<span class="o">=</span>/usr/local/bin
+</pre></div>
+</div>
+</li>
+<li><p>Verify the installation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>--version
+</pre></div>
+</div>
+</li>
+<li><p>Clean up:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm<span class="w"> </span>-rf<span class="w"> </span>~/Downloads/CMake
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="tips-and-tools">
+<h2>Tips and Tools<a class="headerlink" href="#tips-and-tools" title="Link to this heading">#</a></h2>
+<section id="enable-git-autocomplete-on-macos">
+<h3>Enable Git Autocomplete on macOS<a class="headerlink" href="#enable-git-autocomplete-on-macos" title="Link to this heading">#</a></h3>
+<ol class="arabic">
+<li><p>Add the following command to <code class="docutils literal notranslate"><span class="pre">~/.zshrc</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>autoload<span class="w"> </span>-Uz<span class="w"> </span>compinit<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>compinit
+</pre></div>
+</div>
+</li>
+<li><p>Activate the changes:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>~/.zshrc
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="run-memory-check-on-macos">
+<h3>Run Memory Check on macOS<a class="headerlink" href="#run-memory-check-on-macos" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>leaks<span class="w"> </span>--atExit<span class="w"> </span>--<span class="w"> </span>bin/run_tests
+</pre></div>
+</div>
+</section>
+<section id="code-formatting-in-vs-code">
+<h3>Code Formatting in VS Code<a class="headerlink" href="#code-formatting-in-vs-code" title="Link to this heading">#</a></h3>
+<p>To maintain code consistency, add the following settings to your <code class="docutils literal notranslate"><span class="pre">.vscode/settings.json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;C_Cpp.clang_format_fallbackStyle&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{ BasedOnStyle: Google, IndentWidth: 4, ColumnLimit: 80 }&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;editor.rulers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">80</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;editor.formatOnSave&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;python.formatting.provider&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;python.formatting.blackArgs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;--line-length&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">80</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;editor.trimAutoWhitespace&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;files.trimTrailingWhitespace&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;C_Cpp.errorSquiggles&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;disabled&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#features">Features</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#supported-tasks">Supported Tasks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#supported-layers">Supported Layers</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-development-tools">Model Development Tools</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites-for-local-installation">Prerequisites for Local Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installing-pytagi">Installing <code class="docutils literal notranslate"><span class="pre">pytagi</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-up-a-conda-environment">Setting Up a Conda Environment</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pypi-installation">PyPI Installation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#local-installation">Local Installation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installing-cutagi">Installing <code class="docutils literal notranslate"><span class="pre">cuTAGI</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#docker-build">Docker Build</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ubuntu-22-04-installation-without-docker">Ubuntu 22.04 Installation (Without Docker)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#macos-cpu-version">macOS (CPU Version)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-unit-tests">Running Unit Tests</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation-guide-cmake-on-macos">Installation Guide: CMake on macOS</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-uninstall-previous-cmake-versions-optional">Step 1: Uninstall Previous CMake Versions (Optional)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-install-cmake">Step 2: Install CMake</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tips-and-tools">Tips and Tools</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#enable-git-autocomplete-on-macos">Enable Git Autocomplete on macOS</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-memory-check-on-macos">Run Memory Check on macOS</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#code-formatting-in-vs-code">Code Formatting in VS Code</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Luong-Ha Nguyen and James-A. Goulet
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, Luong-Ha Nguyen and James-A. Goulet.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

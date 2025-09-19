@@ -1,0 +1,594 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pytagi.nn.ddp &#8212; pytagi  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/pytagi/nn/ddp/index';</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="pytagi.tagi_utils" href="../../tagi_utils/index.html" />
+    <link rel="prev" title="pytagi.nn.output_updater" href="../output_updater/index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../_static/tagiml.png" class="logo__image only-light" alt="pytagi  documentation - Home"/>
+    <script>document.write(`<img src="../../../../_static/tagiml.png" class="logo__image only-dark" alt="pytagi  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/installations.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/theory.html">Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/examples.html">Examples</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../../../../api/pytagi_api.html">API Docs</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../metric/index.html">Metric</a></li>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="../../../../api/nn.html">Neural Network</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../data_struct/index.html">Data structure</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../api/nn_layers.html">Layers</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../base_layer/index.html">BaseLayer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../activation/index.html">Activations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../batch_norm/index.html">BatchNorm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../conv2d/index.html">Conv2D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../convtranspose2d/index.html">ConvTranspose2D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../layer_block/index.html">Layer Block</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../layer_norm/index.html">LayerNorm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../linear/index.html">Linear</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lstm/index.html">LSTM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slinear/index.html">SLinear</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../slstm/index.html">SLSTM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../pooling/index.html">Pooling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../resnet_block/index.html">ResNet Block</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../sequential/index.html">Sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../output_updater/index.html">Output Updater</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">Ddp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tagi_utils/index.html">Tagi_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cuda/index.html">Cuda</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/dev_guides.html">Development guides</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/lhnguyen102/cuTAGI" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>pytagi.nn.ddp</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#classes">Classes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPConfig"><code class="docutils literal notranslate"><span class="pre">DDPConfig</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPConfig.device_ids"><code class="docutils literal notranslate"><span class="pre">DDPConfig.device_ids</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPConfig.backend"><code class="docutils literal notranslate"><span class="pre">DDPConfig.backend</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPConfig.rank"><code class="docutils literal notranslate"><span class="pre">DDPConfig.rank</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPConfig.world_size"><code class="docutils literal notranslate"><span class="pre">DDPConfig.world_size</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential"><code class="docutils literal notranslate"><span class="pre">DDPSequential</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.output_z_buffer"><code class="docutils literal notranslate"><span class="pre">DDPSequential.output_z_buffer</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.input_delta_z_buffer"><code class="docutils literal notranslate"><span class="pre">DDPSequential.input_delta_z_buffer</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.__call__"><code class="docutils literal notranslate"><span class="pre">DDPSequential.__call__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.forward"><code class="docutils literal notranslate"><span class="pre">DDPSequential.forward()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.backward"><code class="docutils literal notranslate"><span class="pre">DDPSequential.backward()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.step"><code class="docutils literal notranslate"><span class="pre">DDPSequential.step()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.train"><code class="docutils literal notranslate"><span class="pre">DDPSequential.train()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.eval"><code class="docutils literal notranslate"><span class="pre">DDPSequential.eval()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.barrier"><code class="docutils literal notranslate"><span class="pre">DDPSequential.barrier()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.get_outputs"><code class="docutils literal notranslate"><span class="pre">DDPSequential.get_outputs()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.output_to_host"><code class="docutils literal notranslate"><span class="pre">DDPSequential.output_to_host()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.get_device_with_index"><code class="docutils literal notranslate"><span class="pre">DDPSequential.get_device_with_index()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-pytagi.nn.ddp">
+<span id="pytagi-nn-ddp"></span><h1>pytagi.nn.ddp<a class="headerlink" href="#module-pytagi.nn.ddp" title="Link to this heading">#</a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pytagi.nn.ddp.DDPConfig" title="pytagi.nn.ddp.DDPConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DDPConfig</span></code></a></p></td>
+<td><p>Configuration for distributed training</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pytagi.nn.ddp.DDPSequential" title="pytagi.nn.ddp.DDPSequential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DDPSequential</span></code></a></p></td>
+<td><p>Distributed training wrapper for Sequential models</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.ddp.</span></span><span class="sig-name descname"><span class="pre">DDPConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'nccl'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rank</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">world_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPConfig" title="Link to this definition">#</a></dt>
+<dd><p>Configuration for distributed training</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPConfig.device_ids">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device_ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPConfig.device_ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPConfig.device_ids" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPConfig.backend">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">backend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPConfig.backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPConfig.backend" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPConfig.rank">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rank</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPConfig.rank"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPConfig.rank" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPConfig.world_size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">world_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPConfig.world_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPConfig.world_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytagi.nn.ddp.</span></span><span class="sig-name descname"><span class="pre">DDPSequential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../sequential/index.html#pytagi.nn.sequential.Sequential" title="pytagi.nn.sequential.Sequential"><span class="pre">pytagi.nn.sequential.Sequential</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pytagi.nn.ddp.DDPConfig" title="pytagi.nn.ddp.DDPConfig"><span class="pre">DDPConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">average</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential" title="Link to this definition">#</a></dt>
+<dd><p>Distributed training wrapper for Sequential models</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.output_z_buffer">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output_z_buffer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../data_struct/index.html#pytagi.nn.data_struct.BaseHiddenStates" title="pytagi.nn.data_struct.BaseHiddenStates"><span class="pre">pytagi.nn.data_struct.BaseHiddenStates</span></a></em><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.output_z_buffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.output_z_buffer" title="Link to this definition">#</a></dt>
+<dd><p>Get the output hidden states</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.input_delta_z_buffer">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_delta_z_buffer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../data_struct/index.html#pytagi.nn.data_struct.BaseDeltaStates" title="pytagi.nn.data_struct.BaseDeltaStates"><span class="pre">pytagi.nn.data_struct.BaseDeltaStates</span></a></em><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.input_delta_z_buffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.input_delta_z_buffer" title="Link to this definition">#</a></dt>
+<dd><p>Get the delta hidden states</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.__call__">
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.__call__" title="Link to this definition">#</a></dt>
+<dd><p>Perform a forward pass</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mu_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.forward" title="Link to this definition">#</a></dt>
+<dd><p>Perform a forward pass</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.backward">
+<span class="sig-name descname"><span class="pre">backward</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.backward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.backward" title="Link to this definition">#</a></dt>
+<dd><p>Perform a backward pass</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.step" title="Link to this definition">#</a></dt>
+<dd><p>Perform a parameter update step</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.train" title="Link to this definition">#</a></dt>
+<dd><p>Set the model in training mode</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.eval">
+<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.eval" title="Link to this definition">#</a></dt>
+<dd><p>Set the model in evaluation mode</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.barrier">
+<span class="sig-name descname"><span class="pre">barrier</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.barrier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.barrier" title="Link to this definition">#</a></dt>
+<dd><p>Synchronize all processes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.get_outputs">
+<span class="sig-name descname"><span class="pre">get_outputs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.get_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.get_outputs" title="Link to this definition">#</a></dt>
+<dd><p>Get the outputs of the model</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.output_to_host">
+<span class="sig-name descname"><span class="pre">output_to_host</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.output_to_host"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.output_to_host" title="Link to this definition">#</a></dt>
+<dd><p>Copy the output to the host</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytagi.nn.ddp.DDPSequential.get_device_with_index">
+<span class="sig-name descname"><span class="pre">get_device_with_index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/pytagi/nn/ddp.html#DDPSequential.get_device_with_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytagi.nn.ddp.DDPSequential.get_device_with_index" title="Link to this definition">#</a></dt>
+<dd><p>Get the device with index</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../output_updater/index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">pytagi.nn.output_updater</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../../tagi_utils/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">pytagi.tagi_utils</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#classes">Classes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPConfig"><code class="docutils literal notranslate"><span class="pre">DDPConfig</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPConfig.device_ids"><code class="docutils literal notranslate"><span class="pre">DDPConfig.device_ids</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPConfig.backend"><code class="docutils literal notranslate"><span class="pre">DDPConfig.backend</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPConfig.rank"><code class="docutils literal notranslate"><span class="pre">DDPConfig.rank</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPConfig.world_size"><code class="docutils literal notranslate"><span class="pre">DDPConfig.world_size</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential"><code class="docutils literal notranslate"><span class="pre">DDPSequential</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.output_z_buffer"><code class="docutils literal notranslate"><span class="pre">DDPSequential.output_z_buffer</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.input_delta_z_buffer"><code class="docutils literal notranslate"><span class="pre">DDPSequential.input_delta_z_buffer</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.__call__"><code class="docutils literal notranslate"><span class="pre">DDPSequential.__call__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.forward"><code class="docutils literal notranslate"><span class="pre">DDPSequential.forward()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.backward"><code class="docutils literal notranslate"><span class="pre">DDPSequential.backward()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.step"><code class="docutils literal notranslate"><span class="pre">DDPSequential.step()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.train"><code class="docutils literal notranslate"><span class="pre">DDPSequential.train()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.eval"><code class="docutils literal notranslate"><span class="pre">DDPSequential.eval()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.barrier"><code class="docutils literal notranslate"><span class="pre">DDPSequential.barrier()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.get_outputs"><code class="docutils literal notranslate"><span class="pre">DDPSequential.get_outputs()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.output_to_host"><code class="docutils literal notranslate"><span class="pre">DDPSequential.output_to_host()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pytagi.nn.ddp.DDPSequential.get_device_with_index"><code class="docutils literal notranslate"><span class="pre">DDPSequential.get_device_with_index()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Luong-Ha Nguyen and James-A. Goulet
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, Luong-Ha Nguyen and James-A. Goulet.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

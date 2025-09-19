@@ -1,0 +1,763 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pytagi.nn.sequential &#8212; pytagi  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pytagi/nn/sequential';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/tagiml.png" class="logo__image only-light" alt="pytagi  documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/tagiml.png" class="logo__image only-dark" alt="pytagi  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../api/installations.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/theory.html">Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/examples.html">Examples</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../api/pytagi_api.html">API Docs</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../autoapi/pytagi/metric/index.html">Metric</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/nn.html">Neural Network</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../autoapi/pytagi/nn/data_struct/index.html">Data structure</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../api/nn_layers.html">Layers</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/base_layer/index.html">BaseLayer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/activation/index.html">Activations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/batch_norm/index.html">BatchNorm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/conv2d/index.html">Conv2D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/convtranspose2d/index.html">ConvTranspose2D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/layer_block/index.html">Layer Block</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/layer_norm/index.html">LayerNorm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/linear/index.html">Linear</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/lstm/index.html">LSTM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/slinear/index.html">SLinear</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/slstm/index.html">SLSTM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/pooling/index.html">Pooling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../autoapi/pytagi/nn/resnet_block/index.html">ResNet Block</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../autoapi/pytagi/nn/sequential/index.html">Sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../autoapi/pytagi/nn/output_updater/index.html">Output Updater</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../autoapi/pytagi/nn/ddp/index.html">Ddp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../autoapi/pytagi/tagi_utils/index.html">Tagi_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../autoapi/pytagi/cuda/index.html">Cuda</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/dev_guides.html">Development guides</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/lhnguyen102/cuTAGI" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for pytagi.nn.sequential</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">cutagi</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pytagi.nn.base_layer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseLayer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pytagi.nn.data_struct</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDeltaStates</span><span class="p">,</span> <span class="n">BaseHiddenStates</span>
+
+
+<div class="viewcode-block" id="Sequential">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Sequential</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adding neural networks in a sequence mode&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">layers</span><span class="p">:</span> <span class="n">BaseLayer</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the Sequential model with the given layers.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            layers: A variable number of layers (instances of BaseLayer or derived classes).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">backend_layers</span> <span class="o">=</span> <span class="p">[</span><span class="n">layer</span><span class="o">.</span><span class="n">_cpp_backend</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span> <span class="o">=</span> <span class="n">cutagi</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">backend_layers</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Sequential.__call__">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.__call__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">mu_x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">var_x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">mu_x</span><span class="p">,</span> <span class="n">var_x</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Sequential.layers">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.layers">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">layers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseLayer</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the layers of the model.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">layers</span></div>
+
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Sequential.output_z_buffer">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.output_z_buffer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">output_z_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseHiddenStates</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the output hidden states&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">output_z_buffer</span></div>
+
+
+    <span class="nd">@output_z_buffer</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">output_z_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">BaseHiddenStates</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the output hidden states.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">output_z_buffer</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Sequential.input_delta_z_buffer">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.input_delta_z_buffer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">input_delta_z_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseDeltaStates</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the delta hidden states&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">input_delta_z_buffer</span></div>
+
+
+    <span class="nd">@input_delta_z_buffer</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">input_delta_z_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">BaseDeltaStates</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the delta hidden states.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">input_delta_z_buffer</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Sequential.output_delta_z_buffer">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.output_delta_z_buffer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">output_delta_z_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseDeltaStates</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the delta hidden states&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">output_delta_z_buffer</span></div>
+
+
+    <span class="nd">@output_delta_z_buffer</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">output_delta_z_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">BaseDeltaStates</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the delta hidden states.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">output_delta_z_buffer</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Sequential.z_buffer_size">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.z_buffer_size">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">z_buffer_size</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the z_buffer_size.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">z_buffer_size</span></div>
+
+
+    <span class="nd">@z_buffer_size</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">z_buffer_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the z_buffer_size.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">z_buffer_size</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Sequential.z_buffer_block_size">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.z_buffer_block_size">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">z_buffer_block_size</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the z_buffer_block_size.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">z_buffer_block_size</span></div>
+
+
+    <span class="nd">@z_buffer_block_size</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">z_buffer_block_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the z_buffer_block_size.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">z_buffer_block_size</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Sequential.device">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.device">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">device</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the device&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">device</span></div>
+
+
+    <span class="nd">@device</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the sevice&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Sequential.input_state_update">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.input_state_update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">input_state_update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the device&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">input_state_update</span></div>
+
+
+    <span class="nd">@input_state_update</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">input_state_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the sevice&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">input_state_update</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Sequential.num_samples">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.num_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the num_samples.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">num_samples</span></div>
+
+
+    <span class="nd">@num_samples</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">num_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the num_samples.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="Sequential.to_device">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.to_device">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Move the model to a specific device.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">to_device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sequential.params_to_device">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.params_to_device">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">params_to_device</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Move the model parameters to a specific cuda device.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">params_to_device</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.params_to_host">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.params_to_host">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">params_to_host</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Move the model parameters from cuda device to the host.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">params_to_host</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.set_threads">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.set_threads">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_threads</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_threads</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the number of threads to use.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">set_threads</span><span class="p">(</span><span class="n">num_threads</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sequential.train">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.train">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the number of threads to use.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">train</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.eval">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.eval">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the number of threads to use.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.forward">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">mu_x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">var_x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a forward pass.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">mu_x</span><span class="p">,</span> <span class="n">var_x</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.backward">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.backward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backward</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a backward pass.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.smoother">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.smoother">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">smoother</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a smoother pass.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">smoother</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_outputs_smoother</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.step">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.step">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a step of inference.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">step</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.reset_lstm_states">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.reset_lstm_states">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset_lstm_states</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset lstm states&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">reset_lstm_states</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.output_to_host">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.output_to_host">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">output_to_host</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy the output data to the host.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">output_to_host</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.delta_z_to_host">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.delta_z_to_host">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delta_z_to_host</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy the delta Z data to the host.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">delta_z_to_host</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.set_delta_z">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.set_delta_z">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_delta_z</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_mu</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">delta_var</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send the delta Z to device&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">set_delta_z</span><span class="p">(</span><span class="n">delta_mu</span><span class="p">,</span> <span class="n">delta_var</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sequential.get_layer_stack_info">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.get_layer_stack_info">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_layer_stack_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get information about the layer stack.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">get_layer_stack_info</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.preinit_layer">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.preinit_layer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">preinit_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preinitialize the layer.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">preinit_layer</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.get_neg_var_w_counter">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.get_neg_var_w_counter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_neg_var_w_counter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the number of negative variance weights.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">get_neg_var_w_counter</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.save">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the model to a file.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sequential.load">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.load">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the model from a file.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sequential.save_csv">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.save_csv">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the model parameters to a CSV file.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">save_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sequential.load_csv">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.load_csv">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the model parameters from a CSV file.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">load_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sequential.parameters">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.parameters">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the model parameters. Stored tuple (mu_w, var_w, mu_b, var_b) in a list&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.load_state_dict">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.load_state_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the model parameters from a state dict.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sequential.state_dict">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.state_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the model parameters as a state dict where key is the layer name</span>
+<span class="sd">        and value is a tuple of 4 arrays (mu_w, var_w, mu_b, var_b)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.params_from">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.params_from">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">params_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;Sequential&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy parameters from another model.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">params_from</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Sequential.get_outputs">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.get_outputs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.get_outputs_smoother">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.get_outputs_smoother">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_outputs_smoother</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">get_outputs_smoother</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.get_input_states">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.get_input_states">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_input_states</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the input states.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">get_input_states</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.get_norm_mean_var">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.get_norm_mean_var">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_norm_mean_var</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the mean and variance of the normalization layer.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A dictionary containing the mean and variance of the normalization layer.</span>
+<span class="sd">            each key is the layer name and the value is a tuple of 4 arrays:</span>
+<span class="sd">            mu_batch: mean of the batch</span>
+<span class="sd">            var_batch: variance of the batch</span>
+<span class="sd">            mu_ema_batch: mean of the exponential moving average (ema) of the batch</span>
+<span class="sd">            var_ema_batch: variance of the ema of the batch</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">get_norm_mean_var</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.get_lstm_states">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.get_lstm_states">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_lstm_states</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the LSTM states for all LSTM layers as a dictionary.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: A dictionary where each key is the layer index (int) and each value is a 4-tuple</span>
+<span class="sd">                of numpy arrays (mu_h_prior, var_h_prior, mu_c_prior, var_c_prior).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">get_lstm_states</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Sequential.set_lstm_states">
+<a class="viewcode-back" href="../../../autoapi/pytagi/nn/sequential/index.html#pytagi.nn.Sequential.set_lstm_states">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_lstm_states</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">states</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the LSTM states for all LSTM layers using a dictionary.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            states (dict): A dictionary mapping layer indices (int) to a 4-tuple of numpy arrays:</span>
+<span class="sd">                        (mu_h_prior, var_h_prior, mu_c_prior, var_c_prior).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">set_lstm_states</span><span class="p">(</span><span class="n">states</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Luong-Ha Nguyen and James-A. Goulet
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, Luong-Ha Nguyen and James-A. Goulet.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,756 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pytagi.tagi_utils &#8212; pytagi  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pytagi/tagi_utils';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/tagiml.png" class="logo__image only-light" alt="pytagi  documentation - Home"/>
+    <script>document.write(`<img src="../../_static/tagiml.png" class="logo__image only-dark" alt="pytagi  documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../api/installations.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/theory.html">Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/examples.html">Examples</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../api/pytagi_api.html">API Docs</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../autoapi/pytagi/metric/index.html">Metric</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../api/nn.html">Neural Network</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../autoapi/pytagi/nn/data_struct/index.html">Data structure</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../api/nn_layers.html">Layers</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/base_layer/index.html">BaseLayer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/activation/index.html">Activations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/batch_norm/index.html">BatchNorm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/conv2d/index.html">Conv2D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/convtranspose2d/index.html">ConvTranspose2D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/layer_block/index.html">Layer Block</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/layer_norm/index.html">LayerNorm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/linear/index.html">Linear</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/lstm/index.html">LSTM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/slinear/index.html">SLinear</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/slstm/index.html">SLSTM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/pooling/index.html">Pooling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../autoapi/pytagi/nn/resnet_block/index.html">ResNet Block</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../autoapi/pytagi/nn/sequential/index.html">Sequential</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../autoapi/pytagi/nn/output_updater/index.html">Output Updater</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../autoapi/pytagi/nn/ddp/index.html">Ddp</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../autoapi/pytagi/tagi_utils/index.html">Tagi_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../autoapi/pytagi/cuda/index.html">Cuda</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/dev_guides.html">Development guides</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/lhnguyen102/cuTAGI" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for pytagi.tagi_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">cutagi</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pytagi.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">HRCSoftmax</span>
+
+
+<div class="viewcode-block" id="Utils">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Utils</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Frontend for utility functions from C++/CUDA backend</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        _cpp_backend: Utility functionalities from the backend</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="Utils._cpp_backend">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils._cpp_backend">[docs]</a>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span> <span class="o">=</span> <span class="n">cutagi</span><span class="o">.</span><span class="n">Utils</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Utils.label_to_obs">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils.label_to_obs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">label_to_obs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get observations and observation indices of the binary tree for</span>
+<span class="sd">            classification</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            labels: Labels of dataset</span>
+<span class="sd">            num_classes: Total number of classes</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            obs: Encoded observations of the labels</span>
+<span class="sd">            obs_idx: Indices of the encoded observations in the output vector</span>
+<span class="sd">            num_obs: Number of encoded observations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">obs</span><span class="p">,</span> <span class="n">obs_idx</span><span class="p">,</span> <span class="n">num_obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">label_to_obs_wrapper</span><span class="p">(</span>
+            <span class="n">labels</span><span class="p">,</span> <span class="n">num_classes</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obs</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obs_idx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">num_obs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Utils.label_to_one_hot">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils.label_to_one_hot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">label_to_one_hot</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the one hot encoder for each class</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            labels: Labels of dataset</span>
+<span class="sd">            num_classes: Total number of classes</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            one_hot: One hot encoder</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">label_to_one_hot_wrapper</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Utils.load_mnist_images">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils.load_mnist_images">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_mnist_images</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">image_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">label_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">num_images</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load mnist dataset</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image_file: Location of the Mnist image file</span>
+<span class="sd">            label_file: Location of the Mnist label file</span>
+<span class="sd">            num_images: Number of images to be loaded</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            images: Image dataset</span>
+<span class="sd">            labels: Label dataset</span>
+<span class="sd">            num_images: Total number of images</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">load_mnist_dataset_wrapper</span><span class="p">(</span>
+            <span class="n">image_file</span><span class="p">,</span> <span class="n">label_file</span><span class="p">,</span> <span class="n">num_images</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span></div>
+
+
+<div class="viewcode-block" id="Utils.load_cifar_images">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils.load_cifar_images">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_cifar_images</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">image_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">num</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load cifar dataset</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image_file: Location of image file</span>
+<span class="sd">            num: Number of images to be loaded</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            images: Image dataset</span>
+<span class="sd">            labels: Label dataset</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">load_cifar_dataset_wrapper</span><span class="p">(</span>
+            <span class="n">image_file</span><span class="p">,</span> <span class="n">num</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">images</span><span class="p">,</span> <span class="n">labels</span></div>
+
+
+<div class="viewcode-block" id="Utils.get_labels">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils.get_labels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_labels</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">Sa</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">hr_softmax</span><span class="p">:</span> <span class="n">HRCSoftmax</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert last layer&#39;s hidden state to labels</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ma: Mean of activation units for the output layer</span>
+<span class="sd">            Sa: Variance of activation units for the output layer</span>
+<span class="sd">            hr_softmax: Hierarchical softmax</span>
+<span class="sd">            num_classes: Total number of classes</span>
+<span class="sd">            batch_size: Number of data in a batch</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pred: Label prediciton</span>
+<span class="sd">            prob: Probability for each label</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">pred</span><span class="p">,</span> <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">get_labels_wrapper</span><span class="p">(</span>
+            <span class="n">ma</span><span class="p">,</span> <span class="n">Sa</span><span class="p">,</span> <span class="n">hr_softmax</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">batch_size</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pred</span><span class="p">,</span> <span class="n">prob</span></div>
+
+
+<div class="viewcode-block" id="Utils.get_errors">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils.get_errors">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_errors</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">Sa</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">hr_softmax</span><span class="p">:</span> <span class="n">HRCSoftmax</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert last layer&#39;s hidden state to labels</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ma: Mean of activation units for the output layer</span>
+<span class="sd">            Sa: Variance of activation units for the output layer</span>
+<span class="sd">            labels: Label dataset</span>
+<span class="sd">            hr_softmax: Hierarchical softmax</span>
+<span class="sd">            num_classes: Total number of classes</span>
+<span class="sd">            batch_size: Number of data in a batch</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pred: Label prediction</span>
+<span class="sd">            prob: Probability for each label</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">pred</span><span class="p">,</span> <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">get_error_wrapper</span><span class="p">(</span>
+            <span class="n">ma</span><span class="p">,</span> <span class="n">Sa</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">hr_softmax</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">batch_size</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pred</span><span class="p">,</span> <span class="n">prob</span></div>
+
+
+<div class="viewcode-block" id="Utils.get_hierarchical_softmax">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils.get_hierarchical_softmax">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_hierarchical_softmax</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HRCSoftmax</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert labels to binary tree</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            num_classes: Total number of classes</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            hr_softmax: Hierarchical softmax</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hr_softmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">hierarchical_softmax_wrapper</span><span class="p">(</span><span class="n">num_classes</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">hr_softmax</span></div>
+
+
+<div class="viewcode-block" id="Utils.obs_to_label_prob">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils.obs_to_label_prob">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">obs_to_label_prob</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">Sa</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">hr_softmax</span><span class="p">:</span> <span class="n">HRCSoftmax</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert observation to label probabilities</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ma: Mean of activation units for the output layer</span>
+<span class="sd">            Sa: Variance of activation units for the output layer</span>
+<span class="sd">            hr_softmax: Hierarchical softmax</span>
+<span class="sd">            num_classes: Total number of classes</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            prob: Probability for each label</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">obs_to_label_prob_wrapper</span><span class="p">(</span>
+            <span class="n">ma</span><span class="p">,</span> <span class="n">Sa</span><span class="p">,</span> <span class="n">hr_softmax</span><span class="p">,</span> <span class="n">num_classes</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">prob</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Utils.create_rolling_window">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils.create_rolling_window">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_rolling_window</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">output_col</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">input_seq_len</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">output_seq_len</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create rolling window for time series data</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data: dataset</span>
+<span class="sd">            output_col: Indices of the output columns</span>
+<span class="sd">            input_seq_len: Length of the input sequence</span>
+<span class="sd">            output_seq_len: Length of the output sequence</span>
+<span class="sd">            num_features: Number of features</span>
+<span class="sd">            stride: Controls number of steps for the window movements</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            input_data: Input data for neural networks in sequence</span>
+<span class="sd">            output_data: Output data for neural networks in sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_data</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="c1"># (len(data) / num_features - input_seq_len - output_seq_len) / stride + 1</span>
+            <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="n">input_seq_len</span> <span class="o">-</span> <span class="n">output_seq_len</span><span class="p">)</span> <span class="o">/</span> <span class="n">stride</span>
+            <span class="o">+</span> <span class="mi">1</span>
+        <span class="p">)</span>
+
+        <span class="n">input_data</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">create_rolling_window_wrapper</span><span class="p">(</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+                <span class="n">output_col</span><span class="p">,</span>
+                <span class="n">input_seq_len</span><span class="p">,</span>
+                <span class="n">output_seq_len</span><span class="p">,</span>
+                <span class="n">num_features</span><span class="p">,</span>
+                <span class="n">stride</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="c1"># input_data = input_data.reshape((num_data, input_seq_len))</span>
+        <span class="n">input_data</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">num_data</span><span class="p">,</span> <span class="n">input_seq_len</span> <span class="o">*</span> <span class="n">num_features</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">output_data</span> <span class="o">=</span> <span class="n">output_data</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">num_data</span><span class="p">,</span> <span class="n">output_seq_len</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">output_data</span></div>
+
+
+<div class="viewcode-block" id="Utils.get_upper_triu_cov">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Utils.get_upper_triu_cov">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_upper_triu_cov</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_data</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an upper triangle covriance matrix for inputs&quot;&quot;&quot;</span>
+
+        <span class="n">vx_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cpp_backend</span><span class="o">.</span><span class="n">get_upper_triu_cov_wrapper</span><span class="p">(</span>
+            <span class="n">batch_size</span><span class="p">,</span> <span class="n">num_data</span><span class="p">,</span> <span class="n">sigma</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vx_f</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="exponential_scheduler">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.exponential_scheduler">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">exponential_scheduler</span><span class="p">(</span>
+    <span class="n">curr_v</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">min_v</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">decaying_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">curr_iter</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exponentially decaying&quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">curr_v</span> <span class="o">*</span> <span class="p">(</span><span class="n">decaying_factor</span><span class="o">**</span><span class="n">curr_iter</span><span class="p">),</span> <span class="n">min_v</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Normalizer">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Normalizer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Normalizer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Different method to normalize the data before feeding</span>
+<span class="sd">    to neural networks&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Normalizer.standardize">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Normalizer.standardize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">standardize</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mu</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">std</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Z-score normalization where</span>
+<span class="sd">        data_norm = (data - data_mean) / data_std&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">std</span> <span class="o">+</span> <span class="mf">1e-10</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Normalizer.unstandardize">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Normalizer.unstandardize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unstandardize</span><span class="p">(</span>
+        <span class="n">norm_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mu</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">std</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform standardized data to original space&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">norm_data</span> <span class="o">*</span> <span class="p">(</span><span class="n">std</span> <span class="o">+</span> <span class="mf">1e-10</span><span class="p">)</span> <span class="o">+</span> <span class="n">mu</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Normalizer.unstandardize_std">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Normalizer.unstandardize_std">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unstandardize_std</span><span class="p">(</span><span class="n">norm_std</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">std</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform standardized std to original space&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">norm_std</span> <span class="o">*</span> <span class="p">(</span><span class="n">std</span> <span class="o">+</span> <span class="mf">1e-10</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Normalizer.max_min_norm">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Normalizer.max_min_norm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_min_norm</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">max_value</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">min_value</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Normalize the data between 0 and 1&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">max_value</span> <span class="o">&gt;</span> <span class="n">min_value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">min_value</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">max_value</span> <span class="o">-</span> <span class="n">min_value</span> <span class="o">+</span> <span class="mf">1e-10</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Normalizer.max_min_unnorm">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Normalizer.max_min_unnorm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_min_unnorm</span><span class="p">(</span>
+        <span class="n">norm_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">max_value</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">min_value</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform max-min normalized data to original space&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">norm_data</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_value</span> <span class="o">-</span> <span class="n">min_value</span> <span class="o">+</span> <span class="mf">1e-10</span><span class="p">))</span> <span class="o">+</span> <span class="n">min_value</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Normalizer.max_min_unnorm_std">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Normalizer.max_min_unnorm_std">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_min_unnorm_std</span><span class="p">(</span>
+        <span class="n">norm_std</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">max_value</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">min_value</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform max-min normalized std to original space&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">norm_std</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_value</span> <span class="o">-</span> <span class="n">min_value</span> <span class="o">+</span> <span class="mf">1e-10</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Normalizer.compute_mean_std">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Normalizer.compute_mean_std">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_mean_std</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute sample mean and standard deviation&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Normalizer.compute_max_min">
+<a class="viewcode-back" href="../../autoapi/pytagi/tagi_utils/index.html#pytagi.Normalizer.compute_max_min">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_max_min</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute max min values&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Luong-Ha Nguyen and James-A. Goulet
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, Luong-Ha Nguyen and James-A. Goulet.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
