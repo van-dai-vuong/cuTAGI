@@ -1,0 +1,6 @@
+    sphinx>=7.0
+    sphinx-book-theme>=1.1      # web's theme
+    myst-parser>=2.0
+    sphinx-autoapi>=3.0         # auto generate docs
+    sphinx_autodoc_typehints    # auto generate docs
+    nbsphinx>=0.8.8             # include jupiter notebooks
