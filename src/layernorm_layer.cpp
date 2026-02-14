@@ -731,9 +731,11 @@ void LayerNorm::forward(BaseHiddenStates &input_states,
     }
 
     int batch_size = input_states.block_size;
-    if (this->_batch_size != batch_size) {
-        this->_batch_size = batch_size;
-        this->set_cap_factor_udapte(batch_size);
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
+    if (this->_batch_size != effective_batch) {
+        this->_batch_size = effective_batch;
+        this->set_cap_factor_udapte(effective_batch);
         this->allocate_running_mean_var();
     }
 
@@ -742,52 +744,54 @@ void LayerNorm::forward(BaseHiddenStates &input_states,
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
+    output_states.seq_len = seq_len;
     output_states.actual_size = this->output_size;
 
     if (this->num_threads <= 1) {
         layernorm_stat_mean_var(input_states.mu_a, input_states.var_a,
-                                this->input_size, 0, batch_size, this->mu_ra,
-                                temp_states.tmp_2);
+                                this->input_size, 0, effective_batch,
+                                this->mu_ra, temp_states.tmp_2);
 
         layernorm_sample_var(input_states.mu_a, this->mu_ra, temp_states.tmp_2,
-                             this->input_size, 0, batch_size, this->var_ra);
+                             this->input_size, 0, effective_batch,
+                             this->var_ra);
 
         if (this->normalized_shape.size() == 1) {
             layernorm_fwd_mean_var(
                 this->mu_w, this->var_w, this->mu_b, this->var_b,
                 input_states.mu_a, input_states.var_a, this->mu_ra,
                 this->var_ra, this->bias, this->epsilon, this->input_size, 0,
-                batch_size, output_states.mu_a, output_states.var_a);
+                effective_batch, output_states.mu_a, output_states.var_a);
         } else {
             int wihi = this->in_height * this->in_width;
             layernorm2d_fwd_mean_var(
                 this->mu_w, this->var_w, this->mu_b, this->var_b,
                 input_states.mu_a, input_states.var_a, this->mu_ra,
                 this->var_ra, this->bias, this->epsilon, wihi, this->input_size,
-                0, batch_size, output_states.mu_a, output_states.var_a);
+                0, effective_batch, output_states.mu_a, output_states.var_a);
         }
     } else {
         layernorm_stat_mean_var_mp(
-            input_states.mu_a, input_states.var_a, this->input_size, batch_size,
-            this->num_threads, this->mu_ra, temp_states.tmp_2);
+            input_states.mu_a, input_states.var_a, this->input_size,
+            effective_batch, this->num_threads, this->mu_ra, temp_states.tmp_2);
 
-        layernorm_sample_var_mp(input_states.mu_a, this->mu_ra,
-                                temp_states.tmp_2, this->input_size, batch_size,
-                                this->num_threads, this->var_ra);
+        layernorm_sample_var_mp(
+            input_states.mu_a, this->mu_ra, temp_states.tmp_2, this->input_size,
+            effective_batch, this->num_threads, this->var_ra);
 
         if (this->normalized_shape.size() == 1) {
             layernorm_fwd_mean_var_mp(
                 this->mu_w, this->var_w, this->mu_b, this->var_b,
                 input_states.mu_a, input_states.var_a, this->mu_ra,
                 this->var_ra, this->bias, this->epsilon, this->input_size,
-                batch_size, this->num_threads, output_states.mu_a,
+                effective_batch, this->num_threads, output_states.mu_a,
                 output_states.var_a);
         } else {
             int wihi = this->in_height * this->in_width;
             layernorm2d_fwd_mean_var_mp(
                 this->mu_w, this->var_w, this->mu_b, this->var_b,
                 input_states.mu_a, input_states.var_a, this->mu_ra,
-                this->var_ra, this->bias, this->epsilon, wihi, batch_size,
+                this->var_ra, this->bias, this->epsilon, wihi, effective_batch,
                 this->input_size, this->num_threads, output_states.mu_a,
                 output_states.var_a);
         }
@@ -805,23 +809,25 @@ void LayerNorm::backward(BaseDeltaStates &input_delta_states,
  */
 {
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
     if (state_udapte) {
         if (this->num_threads <= 1) {
             if (this->normalized_shape.size() == 1) {
-                layernorm_bwd_delta_z(this->mu_w, this->bwd_states->jcb,
-                                      this->var_ra, input_delta_states.delta_mu,
-                                      input_delta_states.delta_var,
-                                      this->epsilon, this->input_size, 0,
-                                      batch_size, output_delta_states.delta_mu,
-                                      output_delta_states.delta_var);
+                layernorm_bwd_delta_z(
+                    this->mu_w, this->bwd_states->jcb, this->var_ra,
+                    input_delta_states.delta_mu, input_delta_states.delta_var,
+                    this->epsilon, this->input_size, 0, effective_batch,
+                    output_delta_states.delta_mu,
+                    output_delta_states.delta_var);
             } else {
                 int wihi = this->in_height * this->in_width;
 
                 layernorm2d_bwd_delta_z(
                     this->mu_w, this->bwd_states->jcb, this->var_ra,
                     input_delta_states.delta_mu, input_delta_states.delta_var,
-                    this->epsilon, wihi, this->in_channels, 0, batch_size,
+                    this->epsilon, wihi, this->in_channels, 0, effective_batch,
                     output_delta_states.delta_mu,
                     output_delta_states.delta_var);
             }
@@ -830,7 +836,7 @@ void LayerNorm::backward(BaseDeltaStates &input_delta_states,
                 layernorm_bwd_delta_z_mp(
                     this->mu_w, this->bwd_states->jcb, this->var_ra,
                     input_delta_states.delta_mu, input_delta_states.delta_var,
-                    this->epsilon, this->input_size, batch_size,
+                    this->epsilon, this->input_size, effective_batch,
                     this->num_threads, output_delta_states.delta_mu,
                     output_delta_states.delta_var);
             } else {
@@ -839,7 +845,7 @@ void LayerNorm::backward(BaseDeltaStates &input_delta_states,
                 layernorm2d_bwd_delta_z_mp(
                     this->mu_w, this->bwd_states->jcb, this->var_ra,
                     input_delta_states.delta_mu, input_delta_states.delta_var,
-                    this->epsilon, wihi, this->in_channels, batch_size,
+                    this->epsilon, wihi, this->in_channels, effective_batch,
                     this->num_threads, output_delta_states.delta_mu,
                     output_delta_states.delta_var);
             }
@@ -852,14 +858,14 @@ void LayerNorm::backward(BaseDeltaStates &input_delta_states,
                     this->var_w, this->bwd_states->mu_a, this->mu_ra,
                     this->var_ra, input_delta_states.delta_mu,
                     input_delta_states.delta_var, this->epsilon,
-                    this->input_size, batch_size, 0, this->input_size,
+                    this->input_size, effective_batch, 0, this->input_size,
                     this->delta_mu_w, this->delta_var_w);
 
                 if (this->bias) {
                     layernorm_bwd_delta_b(
                         this->var_b, input_delta_states.delta_mu,
                         input_delta_states.delta_var, this->epsilon,
-                        this->input_size, batch_size, 0, this->input_size,
+                        this->input_size, effective_batch, 0, this->input_size,
                         this->delta_mu_b, this->delta_var_b);
                 }
             } else {
@@ -869,22 +875,22 @@ void LayerNorm::backward(BaseDeltaStates &input_delta_states,
                     this->var_w, this->bwd_states->mu_a, this->mu_ra,
                     this->var_ra, input_delta_states.delta_mu,
                     input_delta_states.delta_var, this->epsilon, wihi,
-                    this->in_channels, 0, batch_size, temp_states.tmp_1,
+                    this->in_channels, 0, effective_batch, temp_states.tmp_1,
                     temp_states.tmp_2);
 
                 delta_param_sum(temp_states.tmp_1, temp_states.tmp_2, wihi,
-                                this->in_channels, batch_size, this->delta_mu_w,
-                                this->delta_var_w);
+                                this->in_channels, effective_batch,
+                                this->delta_mu_w, this->delta_var_w);
 
                 if (this->bias) {
                     layernorm2d_bwd_delta_b(
                         this->var_b, input_delta_states.delta_mu,
                         input_delta_states.delta_var, this->epsilon, wihi,
-                        this->in_channels, 0, batch_size, temp_states.tmp_1,
-                        temp_states.tmp_2);
+                        this->in_channels, 0, effective_batch,
+                        temp_states.tmp_1, temp_states.tmp_2);
 
                     delta_param_sum(temp_states.tmp_1, temp_states.tmp_2, wihi,
-                                    this->in_channels, batch_size,
+                                    this->in_channels, effective_batch,
                                     this->delta_mu_b, this->delta_var_b);
                 }
             }
@@ -894,14 +900,14 @@ void LayerNorm::backward(BaseDeltaStates &input_delta_states,
                     this->var_w, this->bwd_states->mu_a, this->mu_ra,
                     this->var_ra, input_delta_states.delta_mu,
                     input_delta_states.delta_var, this->epsilon,
-                    this->input_size, batch_size, this->num_threads,
+                    this->input_size, effective_batch, this->num_threads,
                     this->delta_mu_w, this->delta_var_w);
 
                 if (this->bias) {
                     layernorm_bwd_delta_b_mp(
                         this->var_b, input_delta_states.delta_mu,
                         input_delta_states.delta_var, this->epsilon,
-                        this->input_size, batch_size, this->num_threads,
+                        this->input_size, effective_batch, this->num_threads,
                         this->delta_mu_b, this->delta_var_b);
                 }
             } else {
@@ -911,22 +917,22 @@ void LayerNorm::backward(BaseDeltaStates &input_delta_states,
                     this->var_w, this->bwd_states->mu_a, this->mu_ra,
                     this->var_ra, input_delta_states.delta_mu,
                     input_delta_states.delta_var, this->epsilon, wihi,
-                    this->in_channels, batch_size, this->num_threads,
+                    this->in_channels, effective_batch, this->num_threads,
                     temp_states.tmp_1, temp_states.tmp_2);
 
                 delta_param_sum(temp_states.tmp_1, temp_states.tmp_2, wihi,
-                                this->in_channels, batch_size, this->delta_mu_w,
-                                this->delta_var_w);
+                                this->in_channels, effective_batch,
+                                this->delta_mu_w, this->delta_var_w);
 
                 if (this->bias) {
                     layernorm2d_bwd_delta_b_mp(
                         this->var_b, input_delta_states.delta_mu,
                         input_delta_states.delta_var, this->epsilon, wihi,
-                        this->in_channels, batch_size, this->num_threads,
+                        this->in_channels, effective_batch, this->num_threads,
                         temp_states.tmp_1, temp_states.tmp_2);
 
                     delta_param_sum(temp_states.tmp_1, temp_states.tmp_2, wihi,
-                                    this->in_channels, batch_size,
+                                    this->in_channels, effective_batch,
                                     this->delta_mu_b, this->delta_var_b);
                 }
             }

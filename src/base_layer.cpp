@@ -74,7 +74,8 @@ void BaseLayer::allocate_bwd_vector(int new_size)
 void BaseLayer::fill_output_states(BaseHiddenStates &output_states)
 /**/
 {
-    for (int j = 0; j < output_states.actual_size * output_states.block_size;
+    for (int j = 0; j < output_states.actual_size * output_states.block_size *
+                            output_states.seq_len;
          j++) {
         output_states.jcb[j] = 1.0f;
     }
@@ -84,7 +85,8 @@ void BaseLayer::fill_bwd_vector(BaseHiddenStates &input_states)
 /*
  */
 {
-    for (int i = 0; i < input_states.actual_size * input_states.block_size;
+    for (int i = 0; i < input_states.actual_size * input_states.block_size *
+                            input_states.seq_len;
          i++) {
         this->bwd_states->mu_a[i] = input_states.mu_a[i];
         this->bwd_states->jcb[i] = input_states.jcb[i];
@@ -214,7 +216,8 @@ void BaseLayer::storing_states_for_training(BaseHiddenStates &input_states,
 /*
  */
 {
-    int act_size = input_states.actual_size * input_states.block_size;
+    int act_size = input_states.actual_size * input_states.block_size *
+                   input_states.seq_len;
     if (this->bwd_states->size != act_size) {
         this->allocate_bwd_vector(act_size);
     }

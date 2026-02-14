@@ -93,7 +93,6 @@ void SLinear::forward(BaseHiddenStates &input_states,
 /*
  */
 {
-    // Checkout input size
     if (this->input_size != input_states.actual_size) {
         std::string message =
             "Input size mismatch: " + std::to_string(this->input_size) +
@@ -101,17 +100,16 @@ void SLinear::forward(BaseHiddenStates &input_states,
         LOG(LogLevel::ERROR, message);
     }
 
-    // New poitner will point to the same memory location when casting
     SmoothingHiddenStates *smooth_input_states =
         dynamic_cast<SmoothingHiddenStates *>(&input_states);
     SmoothingHiddenStates *smooth_output_states =
         dynamic_cast<SmoothingHiddenStates *>(&output_states);
 
-    // Initialization
     int batch_size = smooth_input_states->block_size;
+    int seq_len = smooth_input_states->seq_len;
+    int effective_batch = batch_size * seq_len;
     this->set_cap_factor_udapte(batch_size);
 
-    // Initialize smoothing hidden states for SLinear layer
     if (this->smooth_states.num_timesteps !=
         smooth_input_states->num_timesteps) {
         this->smooth_states.set_num_states(smooth_input_states->num_timesteps);
@@ -122,18 +120,18 @@ void SLinear::forward(BaseHiddenStates &input_states,
         linear_fwd_mean_var_mp(this->mu_w, this->var_w, this->mu_b, this->var_b,
                                smooth_input_states->mu_a,
                                smooth_input_states->var_a, this->input_size,
-                               this->output_size, batch_size, this->bias,
+                               this->output_size, effective_batch, this->bias,
                                this->num_threads, smooth_output_states->mu_a,
                                smooth_output_states->var_a);
     } else {
         int start_chunk = 0;
-        int end_chunk = this->output_size * batch_size;
-        linear_fwd_mean_var(this->mu_w, this->var_w, this->mu_b, this->var_b,
-                            smooth_input_states->mu_a,
-                            smooth_input_states->var_a, start_chunk, end_chunk,
-                            this->input_size, this->output_size, batch_size,
-                            this->bias, smooth_output_states->mu_a,
-                            smooth_output_states->var_a);
+        int end_chunk = this->output_size * effective_batch;
+        linear_fwd_mean_var(
+            this->mu_w, this->var_w, this->mu_b, this->var_b,
+            smooth_input_states->mu_a, smooth_input_states->var_a, start_chunk,
+            end_chunk, this->input_size, this->output_size, effective_batch,
+            this->bias, smooth_output_states->mu_a,
+            smooth_output_states->var_a);
     }
     // Update number of actual states.
     smooth_output_states->width = this->out_width;
@@ -141,6 +139,7 @@ void SLinear::forward(BaseHiddenStates &input_states,
     smooth_output_states->depth = this->out_channels;
     smooth_output_states->block_size = batch_size;
     smooth_output_states->actual_size = this->output_size;
+    smooth_output_states->seq_len = smooth_input_states->seq_len;
 
     // save z_output prior for smoothing
     if (this->training) {
@@ -164,6 +163,8 @@ void SLinear::backward(BaseDeltaStates &input_delta_states,
 {
     // Initialization
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
     // Compute inovation vector
     if (state_udapte) {
@@ -171,15 +172,15 @@ void SLinear::backward(BaseDeltaStates &input_delta_states,
             linear_bwd_fc_delta_z_mp(
                 this->mu_w, this->bwd_states->jcb, input_delta_states.delta_mu,
                 input_delta_states.delta_var, this->input_size,
-                this->output_size, batch_size, this->num_threads,
+                this->output_size, effective_batch, this->num_threads,
                 output_delta_states.delta_mu, output_delta_states.delta_var);
         } else {
             int start_chunk = 0;
-            int end_chunk = batch_size * this->input_size;
+            int end_chunk = effective_batch * this->input_size;
             linear_bwd_fc_delta_z(
                 this->mu_w, this->bwd_states->jcb, input_delta_states.delta_mu,
                 input_delta_states.delta_var, this->input_size,
-                this->output_size, batch_size, start_chunk, end_chunk,
+                this->output_size, effective_batch, start_chunk, end_chunk,
                 output_delta_states.delta_mu, output_delta_states.delta_var);
         }
 
@@ -196,14 +197,15 @@ void SLinear::backward(BaseDeltaStates &input_delta_states,
             linear_bwd_fc_delta_w_mp(
                 this->var_w, this->bwd_states->mu_a,
                 input_delta_states.delta_mu, input_delta_states.delta_var,
-                this->input_size, this->output_size, batch_size,
+                this->input_size, this->output_size, effective_batch,
                 this->num_threads, this->delta_mu_w, this->delta_var_w);
 
             if (this->bias) {
                 linear_bwd_fc_delta_b_mp(
                     this->var_b, input_delta_states.delta_mu,
-                    input_delta_states.delta_var, this->output_size, batch_size,
-                    this->num_threads, this->delta_mu_b, this->delta_var_b);
+                    input_delta_states.delta_var, this->output_size,
+                    effective_batch, this->num_threads, this->delta_mu_b,
+                    this->delta_var_b);
             }
         } else {
             int start_chunk = 0;
@@ -211,13 +213,13 @@ void SLinear::backward(BaseDeltaStates &input_delta_states,
             linear_bwd_fc_delta_w(
                 this->var_w, this->bwd_states->mu_a,
                 input_delta_states.delta_mu, input_delta_states.delta_var,
-                this->input_size, this->output_size, batch_size, start_chunk,
-                end_chunk, this->delta_mu_w, this->delta_var_w);
+                this->input_size, this->output_size, effective_batch,
+                start_chunk, end_chunk, this->delta_mu_w, this->delta_var_w);
 
             if (this->bias) {
                 linear_bwd_fc_delta_b(this->var_b, input_delta_states.delta_mu,
                                       input_delta_states.delta_var,
-                                      this->output_size, batch_size,
+                                      this->output_size, effective_batch,
                                       start_chunk, this->output_size,
                                       this->delta_mu_b, this->delta_var_b);
             }

@@ -469,7 +469,8 @@ void BaseLayerCuda::store_states_for_training_cuda(
     BackwardStateCuda *cu_bwd_states =
         dynamic_cast<BackwardStateCuda *>(this->bwd_states.get());
     int batch_size = input_states.block_size;
-    int act_size = input_states.actual_size * batch_size;
+    int seq_len = input_states.seq_len;
+    int act_size = input_states.actual_size * batch_size * seq_len;
     if (cu_bwd_states->size != act_size) {
         cu_bwd_states->size = act_size;
         cu_bwd_states->set_device_idx(input_states.device_idx);
@@ -478,7 +479,7 @@ void BaseLayerCuda::store_states_for_training_cuda(
     cu_bwd_states->copy_from(input_states, act_size);
 
     constexpr unsigned int THREADS = 256;
-    int out_size = this->output_size * batch_size;
+    int out_size = this->output_size * batch_size * seq_len;
     unsigned int out_blocks = (out_size + THREADS - 1) / THREADS;
 
     fill_output_states_on_device<<<out_blocks, THREADS>>>(out_size,

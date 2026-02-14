@@ -527,35 +527,34 @@ void Linear::forward(BaseHiddenStates &input_states,
 /*
  */
 {
-    // TODO: what if the previous layer is not LSTM or Attention?
     int batch_size = input_states.block_size;
-    if (this->input_size != input_states.actual_size) {
-        int seq_len = input_states.actual_size / this->input_size;
-        batch_size = batch_size * seq_len;
-    }
-    this->set_cap_factor_udapte(batch_size);
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
+
+    this->set_cap_factor_udapte(effective_batch);
 
     // Forward pass
     if (this->num_threads > 1) {
         linear_fwd_mean_var_mp(this->mu_w, this->var_w, this->mu_b, this->var_b,
                                input_states.mu_a, input_states.var_a,
-                               this->input_size, this->output_size, batch_size,
-                               this->bias, this->num_threads,
+                               this->input_size, this->output_size,
+                               effective_batch, this->bias, this->num_threads,
                                output_states.mu_a, output_states.var_a);
     } else {
         int start_chunk = 0;
-        int end_chunk = this->output_size * batch_size;
+        int end_chunk = this->output_size * effective_batch;
         linear_fwd_mean_var(this->mu_w, this->var_w, this->mu_b, this->var_b,
                             input_states.mu_a, input_states.var_a, start_chunk,
                             end_chunk, this->input_size, this->output_size,
-                            batch_size, this->bias, output_states.mu_a,
+                            effective_batch, this->bias, output_states.mu_a,
                             output_states.var_a);
     }
-    // Update number of actual states.
+
     output_states.width = this->out_width;
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
-    output_states.block_size = input_states.block_size;
+    output_states.block_size = batch_size;
+    output_states.seq_len = seq_len;
     output_states.actual_size = this->output_size;
 
     if (this->training) {
@@ -569,42 +568,43 @@ void Linear::backward(BaseDeltaStates &input_delta_states,
 /*
  */
 {
-    // Initialization
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
-    // Compute inovation vector
     if (state_udapte) {
         if (this->num_threads > 1) {
             linear_bwd_fc_delta_z_mp(
                 this->mu_w, this->bwd_states->jcb, input_delta_states.delta_mu,
                 input_delta_states.delta_var, this->input_size,
-                this->output_size, batch_size, this->num_threads,
+                this->output_size, effective_batch, this->num_threads,
                 output_delta_states.delta_mu, output_delta_states.delta_var);
         } else {
             int start_chunk = 0;
-            int end_chunk = batch_size * this->input_size;
+            int end_chunk = effective_batch * this->input_size;
             linear_bwd_fc_delta_z(
                 this->mu_w, this->bwd_states->jcb, input_delta_states.delta_mu,
                 input_delta_states.delta_var, this->input_size,
-                this->output_size, batch_size, start_chunk, end_chunk,
+                this->output_size, effective_batch, start_chunk, end_chunk,
                 output_delta_states.delta_mu, output_delta_states.delta_var);
         }
+        output_delta_states.seq_len = seq_len;
     }
 
-    // Update values for weights & biases
     if (this->param_update) {
         if (this->num_threads > 1) {
             linear_bwd_fc_delta_w_mp(
                 this->var_w, this->bwd_states->mu_a,
                 input_delta_states.delta_mu, input_delta_states.delta_var,
-                this->input_size, this->output_size, batch_size,
+                this->input_size, this->output_size, effective_batch,
                 this->num_threads, this->delta_mu_w, this->delta_var_w);
 
             if (this->bias) {
                 linear_bwd_fc_delta_b_mp(
                     this->var_b, input_delta_states.delta_mu,
-                    input_delta_states.delta_var, this->output_size, batch_size,
-                    this->num_threads, this->delta_mu_b, this->delta_var_b);
+                    input_delta_states.delta_var, this->output_size,
+                    effective_batch, this->num_threads, this->delta_mu_b,
+                    this->delta_var_b);
             }
         } else {
             int start_chunk = 0;
@@ -612,13 +612,13 @@ void Linear::backward(BaseDeltaStates &input_delta_states,
             linear_bwd_fc_delta_w(
                 this->var_w, this->bwd_states->mu_a,
                 input_delta_states.delta_mu, input_delta_states.delta_var,
-                this->input_size, this->output_size, batch_size, start_chunk,
-                end_chunk, this->delta_mu_w, this->delta_var_w);
+                this->input_size, this->output_size, effective_batch,
+                start_chunk, end_chunk, this->delta_mu_w, this->delta_var_w);
 
             if (this->bias) {
                 linear_bwd_fc_delta_b(this->var_b, input_delta_states.delta_mu,
                                       input_delta_states.delta_var,
-                                      this->output_size, batch_size,
+                                      this->output_size, effective_batch,
                                       start_chunk, this->output_size,
                                       this->delta_mu_b, this->delta_var_b);
             }

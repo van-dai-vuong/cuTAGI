@@ -135,7 +135,6 @@ class MultiheadAttention : public BaseLayer {
     BaseHiddenStates remax_input;
     BaseHiddenStates remax_output;
     BaseTempStates remax_temp;
-    size_t seq_len;
 
     bool use_rope;
     float rope_theta;

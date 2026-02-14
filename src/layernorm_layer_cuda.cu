@@ -401,16 +401,19 @@ void LayerNormCuda::forward(BaseHiddenStates &input_states,
     TempStateCuda *cu_temp_states = dynamic_cast<TempStateCuda *>(&temp_states);
 
     int batch_size = input_states.block_size;
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
-    if (this->_batch_size < batch_size) {
-        this->_batch_size = batch_size;
-        this->set_cap_factor_udapte(batch_size);
+    if (this->_batch_size < effective_batch) {
+        this->_batch_size = effective_batch;
+        this->set_cap_factor_udapte(effective_batch);
         this->deallocate_running_mean_var();
         this->allocate_running_mean_var();
     }
 
     int num_threads = this->num_cuda_threads;
-    unsigned int grid_size_ra = (batch_size + num_threads - 1) / num_threads;
+    unsigned int grid_size_ra =
+        (effective_batch + num_threads - 1) / num_threads;
     dim3 block_dim(num_threads, num_threads);
 
     // Assign output dimensions
@@ -419,31 +422,33 @@ void LayerNormCuda::forward(BaseHiddenStates &input_states,
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
     output_states.actual_size = this->output_size;
+    output_states.seq_len = seq_len;
 
-    unsigned int grid_row = (batch_size + num_threads - 1) / num_threads;
+    unsigned int grid_row = (effective_batch + num_threads - 1) / num_threads;
     unsigned int grid_col = (this->input_size + num_threads - 1) / num_threads;
     dim3 grid_size(grid_col, grid_row);
 
     layernorm_stat_mean_var_cuda<<<grid_size_ra, num_threads>>>(
         cu_input_states->d_mu_a, cu_input_states->d_var_a, this->input_size,
-        batch_size, this->d_mu_ra, cu_temp_states->d_tmp_2);
+        effective_batch, this->d_mu_ra, cu_temp_states->d_tmp_2);
 
     layernorm_sample_var_cuda<<<grid_size_ra, num_threads>>>(
         cu_input_states->d_mu_a, this->d_mu_ra, cu_temp_states->d_tmp_2,
-        this->input_size, batch_size, this->d_var_ra);
+        this->input_size, effective_batch, this->d_var_ra);
 
     if (this->normalized_shape.size() == 1) {
         layernorm_fwd_mean_var_cuda<<<grid_size, block_dim>>>(
             this->d_mu_w, this->d_var_w, this->d_mu_b, this->d_var_b,
             cu_input_states->d_mu_a, cu_input_states->d_var_a, this->d_mu_ra,
             this->d_var_ra, this->bias, this->epsilon, this->input_size,
-            batch_size, cu_output_states->d_mu_a, cu_output_states->d_var_a);
+            effective_batch, cu_output_states->d_mu_a,
+            cu_output_states->d_var_a);
     } else {
         int wihi = this->in_height * this->in_width;
         layernorm2d_fwd_mean_var_cuda<<<grid_size, block_dim>>>(
             this->d_mu_w, this->d_var_w, this->d_mu_b, this->d_var_b,
             cu_input_states->d_mu_a, cu_input_states->d_var_a, this->d_mu_ra,
-            this->d_var_ra, this->bias, this->epsilon, wihi, batch_size,
+            this->d_var_ra, this->bias, this->epsilon, wihi, effective_batch,
             this->input_size, cu_output_states->d_mu_a,
             cu_output_states->d_var_a);
     }
@@ -471,10 +476,12 @@ void LayerNormCuda::backward(BaseDeltaStates &input_delta_states,
 
     // Initialization
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
     int num_threads = this->num_cuda_threads;
     dim3 block_dim(num_threads, num_threads);
 
-    unsigned int grid_row = (batch_size + num_threads - 1) / num_threads;
+    unsigned int grid_row = (effective_batch + num_threads - 1) / num_threads;
     unsigned int grid_col = (this->input_size + num_threads - 1) / num_threads;
     dim3 grid_size(grid_col, grid_row);
 
@@ -484,7 +491,7 @@ void LayerNormCuda::backward(BaseDeltaStates &input_delta_states,
                 this->d_mu_w, cu_next_bwd_states->d_jcb, this->d_var_ra,
                 cu_input_delta_states->d_delta_mu,
                 cu_input_delta_states->d_delta_var, this->epsilon,
-                this->input_size, batch_size,
+                this->input_size, effective_batch,
                 cu_output_delta_states->d_delta_mu,
                 cu_output_delta_states->d_delta_var);
         } else {
@@ -494,7 +501,7 @@ void LayerNormCuda::backward(BaseDeltaStates &input_delta_states,
                 this->d_mu_w, cu_next_bwd_states->d_jcb, this->d_var_ra,
                 cu_input_delta_states->d_delta_mu,
                 cu_input_delta_states->d_delta_var, this->epsilon, wihi,
-                this->in_channels, batch_size,
+                this->in_channels, effective_batch,
                 cu_output_delta_states->d_delta_mu,
                 cu_output_delta_states->d_delta_var);
         }
@@ -512,21 +519,21 @@ void LayerNormCuda::backward(BaseDeltaStates &input_delta_states,
                 this->d_var_w, cu_next_bwd_states->d_mu_a, this->d_mu_ra,
                 this->d_var_ra, cu_input_delta_states->d_delta_mu,
                 cu_input_delta_states->d_delta_var, this->epsilon,
-                this->input_size, batch_size, this->d_delta_mu_w,
+                this->input_size, effective_batch, this->d_delta_mu_w,
                 this->d_delta_var_w);
 
             if (this->bias) {
                 layernorm_bwd_delta_b_cuda<<<grid_col_p, num_threads>>>(
                     this->d_var_b, cu_input_delta_states->d_delta_mu,
                     cu_input_delta_states->d_delta_var, this->epsilon,
-                    this->input_size, batch_size, this->d_delta_mu_b,
+                    this->input_size, effective_batch, this->d_delta_mu_b,
                     this->d_delta_var_b);
             }
 
         } else {
             int wihi = this->in_height * this->in_width;
             unsigned int grid_row_p =
-                (batch_size + num_threads - 1) / num_threads;
+                (effective_batch + num_threads - 1) / num_threads;
             dim3 dim_grid_p(grid_col_p, grid_row_p);
             unsigned int sum_grid_size =
                 (this->in_channels + num_threads - 1) / num_threads;
@@ -537,12 +544,12 @@ void LayerNormCuda::backward(BaseDeltaStates &input_delta_states,
                 this->d_var_w, cu_next_bwd_states->d_mu_a, this->d_mu_ra,
                 this->d_var_ra, cu_input_delta_states->d_delta_mu,
                 cu_input_delta_states->d_delta_var, this->epsilon, wihi,
-                this->in_channels, batch_size, cu_temp_states->d_tmp_1,
+                this->in_channels, effective_batch, cu_temp_states->d_tmp_1,
                 cu_temp_states->d_tmp_2);
 
             delta_param_sum_cuda<<<sum_grid_size, num_threads>>>(
                 cu_temp_states->d_tmp_1, cu_temp_states->d_tmp_2, wihi,
-                this->in_channels, batch_size, this->d_delta_mu_w,
+                this->in_channels, effective_batch, this->d_delta_mu_w,
                 this->d_delta_var_w);
 
             // Biases
@@ -550,12 +557,12 @@ void LayerNormCuda::backward(BaseDeltaStates &input_delta_states,
                 layernorm2d_bwd_delta_b_cuda<<<dim_grid_p, block_dim>>>(
                     this->d_var_b, cu_input_delta_states->d_delta_mu,
                     cu_input_delta_states->d_delta_var, this->epsilon, wihi,
-                    this->in_channels, batch_size, cu_temp_states->d_tmp_1,
+                    this->in_channels, effective_batch, cu_temp_states->d_tmp_1,
                     cu_temp_states->d_tmp_2);
 
                 delta_param_sum_cuda<<<sum_grid_size, num_threads>>>(
                     cu_temp_states->d_tmp_1, cu_temp_states->d_tmp_2, wihi,
-                    this->in_channels, batch_size, this->d_delta_mu_b,
+                    this->in_channels, effective_batch, this->d_delta_mu_b,
                     this->d_delta_var_b);
             }
         }

@@ -548,7 +548,6 @@ MultiheadAttention::MultiheadAttention(size_t embed_dim, size_t num_heads,
     : embed_dim(embed_dim),
       num_heads(num_heads),
       num_kv_heads(num_kv_heads),
-      seq_len(seq_len_),
       gain_w(gain_w),
       gain_b(gain_b),
       init_method(init_method),
@@ -557,6 +556,7 @@ MultiheadAttention::MultiheadAttention(size_t embed_dim, size_t num_heads,
       max_seq_len(max_seq_len) {
     this->input_size = embed_dim;
     this->output_size = this->embed_dim;
+    this->seq_len = seq_len_;
     this->head_dim = embed_dim / num_heads;
     this->bias = bias;
     this->device_idx = device_idx;
@@ -742,7 +742,8 @@ void MultiheadAttention::forward(BaseHiddenStates &input_states,
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
-    output_states.actual_size = this->output_size * this->seq_len;
+    output_states.seq_len = this->seq_len;
+    output_states.actual_size = this->output_size;
 
     if (this->training) {
         this->storing_states_for_training(input_states, output_states);

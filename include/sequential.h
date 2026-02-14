@@ -35,8 +35,9 @@ class Sequential {
     std::shared_ptr<BaseDeltaStates> input_delta_z_buffer;
     std::shared_ptr<BaseTempStates> temp_states;
 
-    int z_buffer_size = 0;        // e.g., batch size x input size
+    int z_buffer_size = 0;        // e.g., batch size x seq_len x input size
     int z_buffer_block_size = 0;  // e.g., batch size
+    int z_buffer_seq_len = 1;     // current buffer sequence length
     int num_samples = 0;          // number of training samples
 
     int input_size = 0;
@@ -98,6 +99,10 @@ class Sequential {
 
     void forward(const std::vector<float>& mu_a,
                  const std::vector<float>& var_a = std::vector<float>());
+
+    void forward(const std::vector<float>& mu_a,
+                 const std::vector<float>& var_a,
+                 const std::vector<int>& shapes);
 
     void forward(BaseHiddenStates& input_states);
 

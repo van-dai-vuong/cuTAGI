@@ -16,8 +16,9 @@ class BaseHiddenStates {
     std::vector<float> mu_a;
     std::vector<float> var_a;
     std::vector<float> jcb;
-    size_t size = 0;         // size of data including buffer
+    size_t size = 0;         // max size of the buffer in sequential.cpp
     size_t block_size = 0;   // batch size
+    size_t seq_len = 1;      // sequence length
     size_t actual_size = 0;  // input size or output size without batch size
     size_t width = 0, height = 0, depth = 0;
     int device_idx = 0;
@@ -28,7 +29,7 @@ class BaseHiddenStates {
 
     virtual void set_input_x(const std::vector<float> &mu_x,
                              const std::vector<float> &var_x,
-                             const size_t block_size);
+                             const size_t block_size, const size_t seq_len = 1);
 
     virtual std::string get_name() const { return "BaseHiddenStates"; };
 
@@ -41,6 +42,7 @@ class BaseHiddenStates {
           jcb(other.jcb),
           size(other.size),
           block_size(other.block_size),
+          seq_len(other.seq_len),
           actual_size(other.actual_size),
           width(other.width),
           height(other.height),
@@ -55,6 +57,7 @@ class BaseHiddenStates {
             jcb = other.jcb;
             size = other.size;
             block_size = other.block_size;
+            seq_len = other.seq_len;
             actual_size = other.actual_size;
             width = other.width;
             height = other.height;
@@ -71,6 +74,7 @@ class BaseHiddenStates {
           jcb(std::move(other.jcb)),
           size(other.size),
           block_size(other.block_size),
+          seq_len(other.seq_len),
           actual_size(other.actual_size),
           width(other.width),
           height(other.height),
@@ -85,6 +89,7 @@ class BaseHiddenStates {
             jcb = std::move(other.jcb);
             size = other.size;
             block_size = other.block_size;
+            seq_len = other.seq_len;
             actual_size = other.actual_size;
             width = other.width;
             height = other.height;
@@ -120,7 +125,7 @@ class BaseDeltaStates {
    public:
     std::vector<float> delta_mu;
     std::vector<float> delta_var;
-    size_t size = 0, block_size = 0, actual_size = 0;
+    size_t size = 0, block_size = 0, seq_len = 1, actual_size = 0;
     int device_idx = 0;
 
     BaseDeltaStates(size_t n, size_t m, int device_idx = 0);
@@ -137,6 +142,7 @@ class BaseDeltaStates {
           delta_var(std::move(other.delta_var)),
           size(other.size),
           block_size(other.block_size),
+          seq_len(other.seq_len),
           actual_size(other.actual_size),
           device_idx(other.device_idx) {};
 
@@ -147,6 +153,7 @@ class BaseDeltaStates {
             delta_var = std::move(other.delta_var);
             size = other.size;
             block_size = other.block_size;
+            seq_len = other.seq_len;
             actual_size = other.actual_size;
             device_idx = other.device_idx;
         }

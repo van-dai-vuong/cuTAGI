@@ -265,7 +265,8 @@ void SLSTM::forward(BaseHiddenStates &input_states,
     smooth_output_states->height = this->out_height;
     smooth_output_states->depth = this->out_channels;
     smooth_output_states->block_size = batch_size;
-    smooth_output_states->actual_size = this->output_size * this->seq_len;
+    smooth_output_states->actual_size = this->output_size;
+    smooth_output_states->seq_len = this->seq_len;
 
     // TODO: This is not efficient for memory and performance. Update the
     // previous states

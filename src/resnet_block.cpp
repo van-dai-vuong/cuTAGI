@@ -192,9 +192,11 @@ void ResNetBlock::forward(BaseHiddenStates &input_states,
 
 {
     int batch_size = input_states.block_size;
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
     // Main block
-    if (batch_size != this->_batch_size) {
-        this->_batch_size = batch_size;
+    if (this->_batch_size != effective_batch) {
+        this->_batch_size = effective_batch;
         this->init_input_buffer();
         if (this->shortcut != nullptr) {
             this->init_shortcut_state();
@@ -213,7 +215,7 @@ void ResNetBlock::forward(BaseHiddenStates &input_states,
     }
 
     // Make a copy of input states for residual connection
-    this->input_z->copy_from(input_states, this->input_size * batch_size);
+    this->input_z->copy_from(input_states, this->input_size * effective_batch);
 
     this->main_block->forward(input_states, output_states, temp_states);
     int num_states = output_states.block_size * this->output_size;
@@ -237,6 +239,7 @@ void ResNetBlock::forward(BaseHiddenStates &input_states,
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
+    output_states.seq_len = seq_len;
     output_states.actual_size = this->output_size;
 
     // Fill jacobian matrix for output with ones

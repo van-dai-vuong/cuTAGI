@@ -103,7 +103,6 @@ void Sequential::add_layers()
 /*
  */
 {
-    // After variadic template, meanings vector of layers has formed
     if (this->device == "cpu") {
         this->compute_input_output_size();
         this->set_buffer_size();
@@ -277,23 +276,81 @@ std::string Sequential::get_device()
 }
 
 void Sequential::forward(const std::vector<float> &mu_x,
-                         const std::vector<float> &var_x)
+                         const std::vector<float> &var_x) {
+    int input_size = this->layers.front()->get_input_size();
+
+    if (mu_x.size() % input_size != 0) {
+        LOG(LogLevel::ERROR, "Input size mismatch: expected multiple of " +
+                                 std::to_string(input_size) + ", got " +
+                                 std::to_string(mu_x.size()));
+    }
+
+    int batch_size = mu_x.size() / input_size;
+    std::vector<int> shapes = {batch_size, input_size};
+
+    this->forward(mu_x, var_x, shapes);
+}
+
+void Sequential::forward(const std::vector<float> &mu_x,
+                         const std::vector<float> &var_x,
+                         const std::vector<int> &shapes)
 /*
  */
 {
-    // Batch size: TODO: this is only correct if input size is correctly set
-    int input_size = this->layers.front()->get_input_size();
-    if (mu_x.size() % input_size != 0) {
-        std::string msg = "Input size mismatch: " + std::to_string(input_size) +
-                          " vs " + std::to_string(mu_x.size());
+    if (shapes.size() < 2 || shapes.size() > 5) {
+        LOG(LogLevel::ERROR,
+            "Invalid shapes size: expected 2-5 dimensions, got " +
+                std::to_string(shapes.size()));
+    }
+
+    int batch_size = shapes[0];
+    int seq_len = 1;
+    int channels = 1;
+    int height = 1;
+    int width = 1;
+
+    // 2D:[batch_size, input_size]
+    // 3D:[batch_size, seq_len, input_size]
+    // 4D:[batch_size, channels, height, width]
+    // 5D:[batch_size, seq_len, channels, height, width]
+    switch (shapes.size()) {
+        case 2:
+            break;
+        case 3:
+            seq_len = shapes[1];
+            break;
+        case 4:
+            channels = shapes[1];
+            height = shapes[2];
+            width = shapes[3];
+            break;
+        case 5:
+            seq_len = shapes[1];
+            channels = shapes[2];
+            height = shapes[3];
+            width = shapes[4];
+            break;
+    }
+
+    size_t expected_size = 1;
+    for (int dim : shapes) {
+        expected_size *= dim;
+    }
+    if (mu_x.size() != expected_size) {
+        std::string msg = "Input size mismatch: expected " +
+                          std::to_string(expected_size) + " from shapes [";
+        for (size_t i = 0; i < shapes.size(); i++) {
+            msg += std::to_string(shapes[i]);
+            if (i + 1 < shapes.size()) msg += ", ";
+        }
+        msg += "], got " + std::to_string(mu_x.size());
         LOG(LogLevel::ERROR, msg);
     }
-    int batch_size = mu_x.size() / input_size;
 
-    // Lazy initialization
     if (this->z_buffer_block_size == 0) {
         this->z_buffer_block_size = batch_size;
-        this->z_buffer_size = batch_size * this->z_buffer_size;
+        this->z_buffer_seq_len = seq_len;
+        this->z_buffer_size = batch_size * seq_len * this->z_buffer_size;
 
         this->init_output_state_buffer();
         if (this->training) {
@@ -301,11 +358,14 @@ void Sequential::forward(const std::vector<float> &mu_x,
         }
     }
 
-    // Reallocate the buffer if batch size changes
-    if (batch_size != this->z_buffer_block_size) {
-        this->z_buffer_size =
-            batch_size * (this->z_buffer_size / this->z_buffer_block_size);
+    if (batch_size != this->z_buffer_block_size ||
+        seq_len != this->z_buffer_seq_len) {
+        int old_per_sample_size =
+            this->z_buffer_size /
+            (this->z_buffer_block_size * this->z_buffer_seq_len);
+        this->z_buffer_size = batch_size * seq_len * old_per_sample_size;
         this->z_buffer_block_size = batch_size;
+        this->z_buffer_seq_len = seq_len;
 
         this->input_z_buffer->set_size(this->z_buffer_size, batch_size);
         if (this->training) {
@@ -316,21 +376,21 @@ void Sequential::forward(const std::vector<float> &mu_x,
         }
     }
 
-    // Merge input data to the input buffer
-    this->input_z_buffer->set_input_x(mu_x, var_x, batch_size);
+    this->input_z_buffer->set_input_x(mu_x, var_x, batch_size, seq_len);
 
-    // Forward pass for all layers
+    this->input_z_buffer->width = width;
+    this->input_z_buffer->height = height;
+    this->input_z_buffer->depth = channels;
+
     for (auto &layer : this->layers) {
         auto *current_layer = layer.get();
 
         current_layer->forward(*this->input_z_buffer, *this->output_z_buffer,
                                *this->temp_states);
 
-        // Swap the pointer holding class
         std::swap(this->input_z_buffer, this->output_z_buffer);
     }
 
-    // Output buffer is considered as the final output of network
     std::swap(this->output_z_buffer, this->input_z_buffer);
 }
 
@@ -339,13 +399,13 @@ void Sequential::forward(BaseHiddenStates &input_states)
  * connection for two sequential models
  */
 {
-    // Batch size
     int batch_size = input_states.block_size;
+    int seq_len = input_states.seq_len;
 
-    // Only initialize if batch size changes
     if (this->z_buffer_block_size == 0) {
         this->z_buffer_block_size = batch_size;
-        this->z_buffer_size = batch_size * this->z_buffer_size;
+        this->z_buffer_seq_len = seq_len;
+        this->z_buffer_size = batch_size * seq_len * this->z_buffer_size;
 
         this->init_output_state_buffer();
         if (this->training) {
@@ -353,11 +413,15 @@ void Sequential::forward(BaseHiddenStates &input_states)
         }
     }
 
-    // Reallocate the buffer if batch size changes
-    if (batch_size != this->z_buffer_block_size) {
-        this->z_buffer_size =
-            batch_size * (this->z_buffer_size / this->z_buffer_block_size);
+    // Reallocate if batch size or seq_len changes
+    if (batch_size != this->z_buffer_block_size ||
+        seq_len != this->z_buffer_seq_len) {
+        int old_per_sample_size =
+            this->z_buffer_size /
+            (this->z_buffer_block_size * this->z_buffer_seq_len);
+        this->z_buffer_size = batch_size * seq_len * old_per_sample_size;
         this->z_buffer_block_size = batch_size;
+        this->z_buffer_seq_len = seq_len;
 
         this->input_z_buffer->set_size(this->z_buffer_size, batch_size);
         if (this->training) {
@@ -769,22 +833,26 @@ void Sequential::params_from(const Sequential &model_ref) {
 
 // Python Wrapper
 void Sequential::forward_py(pybind11::array_t<float> mu_a_np,
-                            pybind11::array_t<float> var_a_np)
-/*
- */
-{
-    // Get pointers to the data in the arrays
+                            pybind11::array_t<float> var_a_np) {
     auto mu_a_buf = mu_a_np.request();
     float *mu_a_ptr = static_cast<float *>(mu_a_buf.ptr);
     std::vector<float> mu_a(mu_a_ptr, mu_a_ptr + mu_a_buf.size);
 
-    if (!var_a_np.is_none()) {
+    std::vector<float> var_a;
+    if (var_a_np.size() > 0) {
         auto var_a_buf = var_a_np.request();
         float *var_a_ptr = static_cast<float *>(var_a_buf.ptr);
-        std::vector<float> var_a(var_a_ptr, var_a_ptr + var_a_buf.size);
-        this->forward(mu_a, var_a);
+        var_a.assign(var_a_ptr, var_a_ptr + var_a_buf.size);
+    }
+
+    if (mu_a_buf.ndim > 1) {
+        std::vector<int> shapes(mu_a_buf.ndim);
+        for (int i = 0; i < mu_a_buf.ndim; i++) {
+            shapes[i] = mu_a_buf.shape[i];
+        }
+        this->forward(mu_a, var_a, shapes);
     } else {
-        this->forward(mu_a);
+        this->forward(mu_a, var_a);
     }
 }
 
@@ -796,7 +864,8 @@ Sequential::get_outputs()
     if (this->device.compare("cuda") == 0) {
         this->output_to_host();
     }
-    int batch_size = this->output_z_buffer->block_size;
+    int batch_size =
+        this->output_z_buffer->block_size * this->output_z_buffer->seq_len;
     int num_outputs = this->layers.back()->output_size;
     std::vector<float> mu_a_output(batch_size * num_outputs);
     std::vector<float> var_a_output(batch_size * num_outputs);

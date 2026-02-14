@@ -17,8 +17,8 @@ class HiddenStateCuda : public BaseHiddenStates {
     ~HiddenStateCuda();
 
     void set_input_x(const std::vector<float> &mu_x,
-                     const std::vector<float> &var_x,
-                     const size_t block_size) override;
+                     const std::vector<float> &var_x, const size_t block_size,
+                     const size_t seq_len = 1) override;
 
     std::string get_name() const override { return "HiddenStateCuda"; };
     void allocate_memory();

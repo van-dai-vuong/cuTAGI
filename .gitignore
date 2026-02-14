@@ -32,6 +32,7 @@ saved_results/param_viz
 
 # claude
 CLAUDE.md
+SYSTEM_DESIGN.md
 
 
 !test/data/*.csv

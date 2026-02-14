@@ -327,39 +327,39 @@ void RMSNorm::forward(BaseHiddenStates &input_states,
 /**/
 {
     int batch_size = input_states.block_size;
-    if (this->input_size != input_states.actual_size) {
-        int seq_len = input_states.actual_size / this->input_size;
-        batch_size = batch_size * seq_len;
-    }
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
+    this->set_cap_factor_udapte(effective_batch);
 
-    if (this->_batch_size != batch_size) {
-        this->_batch_size = batch_size;
+    if (this->_batch_size != effective_batch) {
+        this->_batch_size = effective_batch;
         this->allocate_running_rms();
     }
 
     output_states.width = this->out_width;
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
-    output_states.block_size = input_states.block_size;
+    output_states.block_size = batch_size;
+    output_states.seq_len = seq_len;
     output_states.actual_size = this->output_size;
 
     if (this->num_threads <= 1) {
         rmsnorm_stat_rms(input_states.mu_a, input_states.var_a,
-                         this->input_size, 0, batch_size, this->rms_ra);
+                         this->input_size, 0, effective_batch, this->rms_ra);
 
         rmsnorm_fwd_mean_var(this->mu_w, this->var_w, input_states.mu_a,
                              input_states.var_a, this->rms_ra, this->epsilon,
-                             this->input_size, 0, batch_size,
+                             this->input_size, 0, effective_batch,
                              output_states.mu_a, output_states.var_a);
     } else {
         rmsnorm_stat_rms_mp(input_states.mu_a, input_states.var_a,
-                            this->input_size, batch_size, this->num_threads,
-                            this->rms_ra);
+                            this->input_size, effective_batch,
+                            this->num_threads, this->rms_ra);
 
-        rmsnorm_fwd_mean_var_mp(this->mu_w, this->var_w, input_states.mu_a,
-                                input_states.var_a, this->rms_ra, this->epsilon,
-                                this->input_size, batch_size, this->num_threads,
-                                output_states.mu_a, output_states.var_a);
+        rmsnorm_fwd_mean_var_mp(
+            this->mu_w, this->var_w, input_states.mu_a, input_states.var_a,
+            this->rms_ra, this->epsilon, this->input_size, effective_batch,
+            this->num_threads, output_states.mu_a, output_states.var_a);
     }
 
     if (this->training) {
@@ -374,20 +374,22 @@ void RMSNorm::backward(BaseDeltaStates &input_delta_states,
  */
 {
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
     if (state_udapte) {
         if (this->num_threads <= 1) {
             rmsnorm_bwd_delta_z(
                 this->mu_w, this->rms_ra, input_delta_states.delta_mu,
                 input_delta_states.delta_var, this->epsilon, this->input_size,
-                0, batch_size, output_delta_states.delta_mu,
+                0, effective_batch, output_delta_states.delta_mu,
                 output_delta_states.delta_var);
         } else {
             rmsnorm_bwd_delta_z_mp(
                 this->mu_w, this->rms_ra, input_delta_states.delta_mu,
                 input_delta_states.delta_var, this->epsilon, this->input_size,
-                batch_size, this->num_threads, output_delta_states.delta_mu,
-                output_delta_states.delta_var);
+                effective_batch, this->num_threads,
+                output_delta_states.delta_mu, output_delta_states.delta_var);
         }
     }
     if (this->param_update) {
@@ -395,14 +397,14 @@ void RMSNorm::backward(BaseDeltaStates &input_delta_states,
             rmsnorm_bwd_delta_w(
                 this->bwd_states->mu_a, this->rms_ra,
                 input_delta_states.delta_mu, input_delta_states.delta_var,
-                this->epsilon, this->input_size, batch_size, 0,
+                this->epsilon, this->input_size, effective_batch, 0,
                 this->input_size, this->delta_mu_w, this->delta_var_w);
         } else {
             rmsnorm_bwd_delta_w_mp(
                 this->bwd_states->mu_a, this->rms_ra,
                 input_delta_states.delta_mu, input_delta_states.delta_var,
-                this->epsilon, this->input_size, batch_size, this->num_threads,
-                this->delta_mu_w, this->delta_var_w);
+                this->epsilon, this->input_size, effective_batch,
+                this->num_threads, this->delta_mu_w, this->delta_var_w);
         }
     }
 }

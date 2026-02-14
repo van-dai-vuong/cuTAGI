@@ -63,6 +63,8 @@ void AvgPool2d::forward(BaseHiddenStates &input_states,
  */
 {
     int batch_size = input_states.block_size;
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
     if (this->pool_idx.size() == 0) {
         this->lazy_index_init();
@@ -73,12 +75,13 @@ void AvgPool2d::forward(BaseHiddenStates &input_states,
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
+    output_states.seq_len = input_states.seq_len;
     output_states.actual_size = this->output_size;
 
     int woho = this->out_width * this->out_height;
     int wihi = this->in_width * this->in_height;
-    int num_states = woho * this->out_channels * batch_size;
-    int pad_idx_in = wihi * this->in_channels * batch_size + 1;
+    int num_states = woho * this->out_channels * effective_batch;
+    int pad_idx_in = wihi * this->in_channels * effective_batch + 1;
 
     if (this->num_threads > 1) {
         if (this->overlap) {
@@ -118,17 +121,19 @@ void AvgPool2d::backward(BaseDeltaStates &input_delta_states,
 {
     // Initialization
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
     // Launch kernel
     int woho = this->out_width * this->out_height;
     int wihi = this->in_width * this->in_height;
-    int pad_out_idx = woho * this->out_channels * batch_size + 1;
+    int pad_out_idx = woho * this->out_channels * effective_batch + 1;
 
     if (state_udapte) {
         if (this->num_threads > 1) {
             if (this->overlap) {
                 int num_in_states = this->in_width * this->in_height *
-                                    this->in_channels * batch_size;
+                                    this->in_channels * effective_batch;
 
                 avgpool2d_bwd_overlapped_delta_z_mp(
                     this->bwd_states->jcb, input_delta_states.delta_mu,
@@ -139,7 +144,7 @@ void AvgPool2d::backward(BaseDeltaStates &input_delta_states,
                     output_delta_states.delta_var);
             } else {
                 int kiwo = this->kernel_size * this->out_width;
-                int nums = wihi * this->in_channels * batch_size / kiwo;
+                int nums = wihi * this->in_channels * effective_batch / kiwo;
 
                 avgpool2d_bwd_delta_z_mp(
                     this->bwd_states->jcb, input_delta_states.delta_mu,
@@ -151,7 +156,7 @@ void AvgPool2d::backward(BaseDeltaStates &input_delta_states,
         } else {
             if (this->overlap) {
                 int num_in_states = this->in_width * this->in_height *
-                                    this->in_channels * batch_size;
+                                    this->in_channels * effective_batch;
 
                 avgpool2d_bwd_overlapped_delta_z(
                     this->bwd_states->jcb, input_delta_states.delta_mu,
@@ -161,7 +166,7 @@ void AvgPool2d::backward(BaseDeltaStates &input_delta_states,
                     output_delta_states.delta_var);
             } else {
                 int kiwo = this->kernel_size * this->out_width;
-                int nums = wihi * this->in_channels * batch_size / kiwo;
+                int nums = wihi * this->in_channels * effective_batch / kiwo;
                 int end_chunk = this->kernel_size * this->out_width * nums;
 
                 avgpool2d_bwd_delta_z(

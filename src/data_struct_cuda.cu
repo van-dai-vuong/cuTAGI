@@ -38,13 +38,14 @@ void HiddenStateCuda::deallocate_memory() {
 
 void HiddenStateCuda::set_input_x(const std::vector<float> &mu_x,
                                   const std::vector<float> &var_x,
-                                  const size_t block_size)
+                                  const size_t block_size, const size_t seq_len)
 /*
  */
 {
     size_t data_size = mu_x.size();
-    this->actual_size = data_size / block_size;
+    this->actual_size = data_size / (block_size * seq_len);
     this->block_size = block_size;
+    this->seq_len = seq_len;
 
     for (int i = 0; i < data_size; i++) {
         this->mu_a[i] = mu_x[i];

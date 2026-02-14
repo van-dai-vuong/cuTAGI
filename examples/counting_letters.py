@@ -51,7 +51,7 @@ class CountingTask:
 
 
 def main(
-    num_epochs: int = 50,
+    num_epochs: int = 1,
     batch_size: int = 2,
     max_len: int = 4,
     vocab_size: int = 2,
@@ -127,8 +127,11 @@ def main(
     net.eval()
     m_pred, v_pred = net(x_test)
     predicted = metric.get_predicted_labels(m_pred, v_pred)
-
     sequences = task.prettify(x_test, batch_size)
+
+    counts_test = counts_test.reshape(batch_size, vocab_size)
+    predicted = predicted.reshape(batch_size, vocab_size)
+
     num_show = min(5, batch_size)
     print(f"\nTest Results (showing {num_show} of {batch_size}):")
     for i in range(num_show):

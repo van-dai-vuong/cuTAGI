@@ -119,7 +119,7 @@ Embedding::Embedding(int num_embeddings, int embedding_dim, int input_size,
 
     if (input_size > 0) {
         this->input_size = input_size;
-        this->output_size = input_size * embedding_dim;
+        this->output_size = embedding_dim;
     }
 
     if (this->device.compare("cpu") == 0) {
@@ -158,11 +158,6 @@ void Embedding::forward(BaseHiddenStates &input_states,
     int batch_size = input_states.block_size;
     this->set_cap_factor_udapte(batch_size);
 
-    if (this->input_size != input_states.actual_size) {
-        this->input_size = input_states.actual_size;
-        this->output_size = this->input_size * this->embedding_dim;
-    }
-
     fwd_emb(input_states.mu_a, this->mu_w, this->var_w, this->embedding_dim,
             this->input_size, batch_size, this->padding_idx, output_states.mu_a,
             output_states.var_a);
@@ -171,6 +166,7 @@ void Embedding::forward(BaseHiddenStates &input_states,
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
+    output_states.seq_len = this->input_size;
     output_states.actual_size = this->output_size;
 
     if (this->training) {

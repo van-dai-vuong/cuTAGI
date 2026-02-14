@@ -853,7 +853,9 @@ void BatchNorm2d::forward(BaseHiddenStates &input_states,
  */
 {
     int batch_size = input_states.block_size;
-    this->set_cap_factor_udapte(batch_size);
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
+    this->set_cap_factor_udapte(effective_batch);
 
     if (this->input_size == 0 || this->output_size == 0) {
         this->input_size = input_states.actual_size;
@@ -872,6 +874,7 @@ void BatchNorm2d::forward(BaseHiddenStates &input_states,
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
     output_states.actual_size = this->output_size;
+    output_states.seq_len = seq_len;
 
     const std::vector<float> &mu_target =
         this->training ? this->mu_norm_batch : this->mu_ra;
@@ -883,13 +886,13 @@ void BatchNorm2d::forward(BaseHiddenStates &input_states,
         if (this->num_features != this->in_channels) {
             if (this->training) {
                 batchnorm_stat_mean_var(input_states.mu_a, input_states.var_a,
-                                        this->input_size, batch_size, 0,
+                                        this->input_size, effective_batch, 0,
                                         this->input_size, this->mu_norm_batch,
                                         temp_states.tmp_2);
 
                 batchnorm_sample_var(input_states.mu_a, this->mu_norm_batch,
                                      temp_states.tmp_2, this->input_size,
-                                     batch_size, 0, this->input_size,
+                                     effective_batch, 0, this->input_size,
                                      this->var_norm_batch);
 
                 running_mean_var(this->mu_norm_batch, this->var_norm_batch,
@@ -899,7 +902,7 @@ void BatchNorm2d::forward(BaseHiddenStates &input_states,
             batchnorm_fwd_mean_var(
                 this->mu_w, this->var_w, this->mu_b, this->var_b,
                 input_states.mu_a, input_states.var_a, mu_target, var_target,
-                this->bias, this->epsilon, this->input_size, 0, batch_size,
+                this->bias, this->epsilon, this->input_size, 0, effective_batch,
                 output_states.mu_a, output_states.var_a);
 
         } else {
@@ -907,12 +910,12 @@ void BatchNorm2d::forward(BaseHiddenStates &input_states,
             if (this->training) {
                 batchnorm2d_stat_mean_var(
                     input_states.mu_a, input_states.var_a, wihi,
-                    this->in_channels, batch_size, 0, this->in_channels,
+                    this->in_channels, effective_batch, 0, this->in_channels,
                     this->mu_norm_batch, temp_states.tmp_2);
 
                 batchnorm2d_sample_var(input_states.mu_a, this->mu_norm_batch,
                                        temp_states.tmp_2, wihi,
-                                       this->in_channels, batch_size, 0,
+                                       this->in_channels, effective_batch, 0,
                                        this->in_channels, this->var_norm_batch);
 
                 running_mean_var(this->mu_norm_batch, this->var_norm_batch,
@@ -920,24 +923,25 @@ void BatchNorm2d::forward(BaseHiddenStates &input_states,
                                  this->var_ra);
             }
 
-            int end_chunk = this->in_channels * batch_size;
+            int end_chunk = this->in_channels * effective_batch;
             batchnorm2d_fwd_mean_var(
                 this->mu_w, this->var_w, this->mu_b, this->var_b,
                 input_states.mu_a, input_states.var_a, mu_target, var_target,
-                this->bias, this->epsilon, wihi, this->in_channels, batch_size,
-                0, end_chunk, output_states.mu_a, output_states.var_a);
+                this->bias, this->epsilon, wihi, this->in_channels,
+                effective_batch, 0, end_chunk, output_states.mu_a,
+                output_states.var_a);
         }
     } else {
         if (this->num_features != this->in_channels) {
             if (this->training) {
                 batchnorm_stat_mean_var_mp(
                     input_states.mu_a, input_states.var_a, this->input_size,
-                    batch_size, this->num_threads, this->mu_norm_batch,
+                    effective_batch, this->num_threads, this->mu_norm_batch,
                     temp_states.tmp_2);
 
                 batchnorm_sample_var_mp(input_states.mu_a, this->mu_norm_batch,
                                         temp_states.tmp_2, this->input_size,
-                                        batch_size, this->num_threads,
+                                        effective_batch, this->num_threads,
                                         this->var_norm_batch);
 
                 running_mean_var_mp(this->mu_norm_batch, this->var_norm_batch,
@@ -949,7 +953,7 @@ void BatchNorm2d::forward(BaseHiddenStates &input_states,
             batchnorm_fwd_mean_var_mp(
                 this->mu_w, this->var_w, this->mu_b, this->var_b,
                 input_states.mu_a, input_states.var_a, mu_target, var_target,
-                this->bias, this->epsilon, this->input_size, batch_size,
+                this->bias, this->epsilon, this->input_size, effective_batch,
                 this->num_threads, output_states.mu_a, output_states.var_a);
 
         } else {
@@ -957,12 +961,12 @@ void BatchNorm2d::forward(BaseHiddenStates &input_states,
             if (this->training) {
                 batchnorm2d_stat_mean_var_mp(
                     input_states.mu_a, input_states.var_a, wihi,
-                    this->in_channels, batch_size, this->num_threads,
+                    this->in_channels, effective_batch, this->num_threads,
                     this->mu_norm_batch, temp_states.tmp_2);
 
                 batchnorm2d_sample_var_mp(
                     input_states.mu_a, this->mu_norm_batch, temp_states.tmp_2,
-                    wihi, this->in_channels, batch_size, this->num_threads,
+                    wihi, this->in_channels, effective_batch, this->num_threads,
                     this->var_norm_batch);
 
                 running_mean_var_mp(this->mu_norm_batch, this->var_norm_batch,
@@ -971,12 +975,13 @@ void BatchNorm2d::forward(BaseHiddenStates &input_states,
                                     this->var_ra);
             }
 
-            int end_chunk = this->in_channels * batch_size;
+            int end_chunk = this->in_channels * effective_batch;
             batchnorm2d_fwd_mean_var_mp(
                 this->mu_w, this->var_w, this->mu_b, this->var_b,
                 input_states.mu_a, input_states.var_a, mu_target, var_target,
-                this->bias, this->epsilon, wihi, this->in_channels, batch_size,
-                this->num_threads, output_states.mu_a, output_states.var_a);
+                this->bias, this->epsilon, wihi, this->in_channels,
+                effective_batch, this->num_threads, output_states.mu_a,
+                output_states.var_a);
         }
     }
     if (this->training) {
@@ -991,6 +996,8 @@ void BatchNorm2d::backward(BaseDeltaStates &input_delta_states,
  */
 {
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
     if (state_udapte) {
         if (this->num_threads == 1) {
@@ -998,17 +1005,17 @@ void BatchNorm2d::backward(BaseDeltaStates &input_delta_states,
                 batchnorm_bwd_delta_z(
                     this->mu_w, this->bwd_states->jcb, this->var_norm_batch,
                     input_delta_states.delta_mu, input_delta_states.delta_var,
-                    this->epsilon, this->input_size, 0, batch_size,
+                    this->epsilon, this->input_size, 0, effective_batch,
                     output_delta_states.delta_mu,
                     output_delta_states.delta_var);
             } else {
                 int wihi = this->in_width * this->in_height;
-                int end_chunk = this->in_channels * batch_size;
+                int end_chunk = this->in_channels * effective_batch;
 
                 batchnorm2d_bwd_delta_z(
                     this->mu_w, this->bwd_states->jcb, this->var_norm_batch,
                     input_delta_states.delta_mu, input_delta_states.delta_var,
-                    this->epsilon, wihi, this->in_channels, batch_size, 0,
+                    this->epsilon, wihi, this->in_channels, effective_batch, 0,
                     end_chunk, output_delta_states.delta_mu,
                     output_delta_states.delta_var);
             }
@@ -1017,17 +1024,17 @@ void BatchNorm2d::backward(BaseDeltaStates &input_delta_states,
                 batchnorm_bwd_delta_z_mp(
                     this->mu_w, this->bwd_states->jcb, this->var_norm_batch,
                     input_delta_states.delta_mu, input_delta_states.delta_var,
-                    this->epsilon, this->input_size, batch_size,
+                    this->epsilon, this->input_size, effective_batch,
                     this->num_threads, output_delta_states.delta_mu,
                     output_delta_states.delta_var);
             } else {
                 int wihi = this->in_width * this->in_height;
-                int end_chunk = this->in_channels * batch_size;
+                int end_chunk = this->in_channels * effective_batch;
 
                 batchnorm2d_bwd_delta_z_mp(
                     this->mu_w, this->bwd_states->jcb, this->var_norm_batch,
                     input_delta_states.delta_mu, input_delta_states.delta_var,
-                    this->epsilon, wihi, this->in_channels, batch_size,
+                    this->epsilon, wihi, this->in_channels, effective_batch,
                     this->num_threads, output_delta_states.delta_mu,
                     output_delta_states.delta_var);
             }
@@ -1041,31 +1048,31 @@ void BatchNorm2d::backward(BaseDeltaStates &input_delta_states,
                     this->var_w, this->bwd_states->mu_a, this->mu_norm_batch,
                     this->var_norm_batch, input_delta_states.delta_mu,
                     input_delta_states.delta_var, this->epsilon,
-                    this->input_size, batch_size, 0, this->input_size,
+                    this->input_size, effective_batch, 0, this->input_size,
                     this->delta_mu_w, this->delta_var_w);
 
                 if (this->bias) {
                     batchnorm_bwd_delta_b(
                         this->var_b, input_delta_states.delta_mu,
                         input_delta_states.delta_var, this->epsilon,
-                        this->input_size, batch_size, 0, this->input_size,
+                        this->input_size, effective_batch, 0, this->input_size,
                         this->delta_mu_b, this->delta_var_b);
                 }
 
             } else {
                 int wihi = this->in_width * this->in_height;
-                int end_chunk = this->in_channels * batch_size;
+                int end_chunk = this->in_channels * effective_batch;
 
                 batchnorm2d_bwd_delta_w(
                     this->var_w, this->bwd_states->mu_a, this->mu_norm_batch,
                     this->var_norm_batch, input_delta_states.delta_mu,
                     input_delta_states.delta_var, this->epsilon, wihi,
-                    this->in_channels, batch_size, 0, end_chunk,
+                    this->in_channels, effective_batch, 0, end_chunk,
                     temp_states.tmp_1, temp_states.tmp_2);
 
                 delta_param_sum(temp_states.tmp_1, temp_states.tmp_2, wihi,
-                                this->in_channels, batch_size, this->delta_mu_w,
-                                this->delta_var_w);
+                                this->in_channels, effective_batch,
+                                this->delta_mu_w, this->delta_var_w);
 
                 if (this->bias) {
                     batchnorm2d_bwd_delta_b(
@@ -1075,7 +1082,7 @@ void BatchNorm2d::backward(BaseDeltaStates &input_delta_states,
                         temp_states.tmp_2);
 
                     delta_param_sum(temp_states.tmp_1, temp_states.tmp_2, wihi,
-                                    this->in_channels, batch_size,
+                                    this->in_channels, effective_batch,
                                     this->delta_mu_b, this->delta_var_b);
                 }
             }
@@ -1085,41 +1092,41 @@ void BatchNorm2d::backward(BaseDeltaStates &input_delta_states,
                     this->var_w, this->bwd_states->mu_a, this->mu_norm_batch,
                     this->var_norm_batch, input_delta_states.delta_mu,
                     input_delta_states.delta_var, this->epsilon,
-                    this->input_size, batch_size, this->num_threads,
+                    this->input_size, effective_batch, this->num_threads,
                     this->delta_mu_w, this->delta_var_w);
 
                 if (this->bias) {
                     batchnorm_bwd_delta_b_mp(
                         this->var_b, input_delta_states.delta_mu,
                         input_delta_states.delta_var, this->epsilon,
-                        this->input_size, batch_size, this->num_threads,
+                        this->input_size, effective_batch, this->num_threads,
                         this->delta_mu_b, this->delta_var_b);
                 }
 
             } else {
                 int wihi = this->in_width * this->in_height;
-                int end_chunk = this->in_channels * batch_size;
+                int end_chunk = this->in_channels * effective_batch;
 
                 batchnorm2d_bwd_delta_w_mp(
                     this->var_w, this->bwd_states->mu_a, this->mu_norm_batch,
                     this->var_norm_batch, input_delta_states.delta_mu,
                     input_delta_states.delta_var, this->epsilon, wihi,
-                    this->in_channels, batch_size, this->num_threads,
+                    this->in_channels, effective_batch, this->num_threads,
                     temp_states.tmp_1, temp_states.tmp_2);
 
                 delta_param_sum(temp_states.tmp_1, temp_states.tmp_2, wihi,
-                                this->in_channels, batch_size, this->delta_mu_w,
-                                this->delta_var_w);
+                                this->in_channels, effective_batch,
+                                this->delta_mu_w, this->delta_var_w);
 
                 if (this->bias) {
                     batchnorm2d_bwd_delta_b_mp(
                         this->var_b, input_delta_states.delta_mu,
                         input_delta_states.delta_var, this->epsilon, wihi,
-                        this->in_channels, batch_size, this->num_threads,
+                        this->in_channels, effective_batch, this->num_threads,
                         temp_states.tmp_1, temp_states.tmp_2);
 
                     delta_param_sum(temp_states.tmp_1, temp_states.tmp_2, wihi,
-                                    this->in_channels, batch_size,
+                                    this->in_channels, effective_batch,
                                     this->delta_mu_b, this->delta_var_b);
                 }
             }

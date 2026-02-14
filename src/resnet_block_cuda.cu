@@ -215,10 +215,12 @@ void ResNetBlockCuda::forward(BaseHiddenStates &input_states,
 
 {
     int batch_size = input_states.block_size;
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
     // Main block
-    if (batch_size != this->_batch_size) {
-        this->_batch_size = batch_size;
+    if (this->_batch_size != effective_batch) {
+        this->_batch_size = effective_batch;
         this->init_input_buffer();
         if (this->shortcut != nullptr) {
             this->init_shortcut_state();
@@ -235,7 +237,7 @@ void ResNetBlockCuda::forward(BaseHiddenStates &input_states,
         BackwardStateCuda *cu_bwd_states =
             dynamic_cast<BackwardStateCuda *>(this->bwd_states.get());
 
-        int act_size = cu_input_states->actual_size * batch_size;
+        int act_size = cu_input_states->actual_size * effective_batch;
         if (cu_bwd_states->size != act_size) {
             cu_bwd_states->size = act_size;
             cu_bwd_states->set_device_idx(cu_input_states->device_idx);
@@ -248,7 +250,7 @@ void ResNetBlockCuda::forward(BaseHiddenStates &input_states,
     }
 
     // Make a copy of input states for residual connection
-    this->input_z->copy_from(input_states, this->input_size * batch_size);
+    this->input_z->copy_from(input_states, this->input_size * effective_batch);
     this->main_block->forward(input_states, output_states, temp_states);
 
     int num_states = output_states.block_size * this->output_size;
@@ -284,6 +286,7 @@ void ResNetBlockCuda::forward(BaseHiddenStates &input_states,
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
+    output_states.seq_len = seq_len;
     output_states.actual_size = this->output_size;
 
     // Fill jacobian matrix for output with ones
@@ -291,7 +294,7 @@ void ResNetBlockCuda::forward(BaseHiddenStates &input_states,
         HiddenStateCuda *cu_input_states =
             dynamic_cast<HiddenStateCuda *>(this->input_z.get());
 
-        int out_size = this->output_size * batch_size;
+        int out_size = this->output_size * effective_batch;
         unsigned int out_blocks = (out_size + THREADS - 1) / THREADS;
         fill_output_states_on_device<<<out_blocks, THREADS>>>(
             out_size, cu_output_states->d_jcb);
@@ -304,6 +307,8 @@ void ResNetBlockCuda::backward(BaseDeltaStates &input_delta_states,
 /**/
 {
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
     // Make a copy of delta input used later for residual connection
     this->input_delta_z->copy_from(input_delta_states,
                                    this->output_size * batch_size);
@@ -314,7 +319,7 @@ void ResNetBlockCuda::backward(BaseDeltaStates &input_delta_states,
     DeltaStateCuda *cu_output_delta_states =
         dynamic_cast<DeltaStateCuda *>(&output_delta_states);
 
-    int num_states = batch_size * this->input_size;
+    int num_states = effective_batch * this->input_size;
     constexpr unsigned int THREADS = 256;
     unsigned int grid_size = (num_states + THREADS - 1) / THREADS;
 

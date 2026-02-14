@@ -163,6 +163,7 @@ void LayerBlock::forward(BaseHiddenStates &input_states,
 
     // Forward pass for all layers
     int batch_size = input_states.block_size;
+    int seq_len = input_states.seq_len;
     int num_layers = this->layers.size();
 
     for (int i = 0; i < num_layers; ++i) {
@@ -183,6 +184,7 @@ void LayerBlock::forward(BaseHiddenStates &input_states,
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
+    output_states.seq_len = seq_len;
     output_states.actual_size = this->output_size;
 }
 

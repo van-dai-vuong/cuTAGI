@@ -209,7 +209,9 @@ void ConvTranspose2dCuda::forward(BaseHiddenStates &input_states,
         dynamic_cast<HiddenStateCuda *>(&output_states);
 
     int batch_size = input_states.block_size;
-    this->set_cap_factor_udapte(batch_size);
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
+    this->set_cap_factor_udapte(effective_batch);
 
     if (this->num_weights == 0) {
         this->get_number_param();
@@ -226,6 +228,7 @@ void ConvTranspose2dCuda::forward(BaseHiddenStates &input_states,
     cu_output_states->height = this->out_height;
     cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = batch_size;
+    cu_output_states->seq_len = seq_len;
     cu_output_states->actual_size = this->output_size;
 
     // Launch kernel
@@ -233,7 +236,7 @@ void ConvTranspose2dCuda::forward(BaseHiddenStates &input_states,
     constexpr size_t SMEM_PADDING = 0;
     int woho = this->out_width * this->out_height;
     int wihi = this->in_width * this->in_height;
-    unsigned int grid_row = (batch_size + THREADS - 1) / THREADS;
+    unsigned int grid_row = (effective_batch + THREADS - 1) / THREADS;
     unsigned int grid_col = (woho * this->out_channels + THREADS - 1) / THREADS;
 
     dim3 dim_grid(grid_col, grid_row);
@@ -245,7 +248,7 @@ void ConvTranspose2dCuda::forward(BaseHiddenStates &input_states,
             cu_input_states->d_mu_a, cu_input_states->d_var_a,
             this->d_idx_mwa_1, this->d_idx_mwa_2, woho, this->out_channels,
             wihi, this->in_channels, this->kernel_size, this->col_cov_mwa_1,
-            batch_size, this->bias, cu_output_states->d_mu_a,
+            effective_batch, this->bias, cu_output_states->d_mu_a,
             cu_output_states->d_var_a);
 
     // Update backward state for inferring parameters
@@ -271,6 +274,8 @@ void ConvTranspose2dCuda::backward(BaseDeltaStates &input_delta_states,
         dynamic_cast<DeltaStateCuda *>(&output_delta_states);
 
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
     // Lauch kernel
     constexpr unsigned int THREADS = 16;
@@ -292,7 +297,7 @@ void ConvTranspose2dCuda::backward(BaseDeltaStates &input_delta_states,
             cu_input_delta_states->d_delta_mu,
             cu_input_delta_states->d_delta_var, this->d_idx_cov_wz_2,
             this->d_idx_var_wz_ud, woho, this->out_channels, wihi,
-            this->in_channels, this->kernel_size, batch_size,
+            this->in_channels, this->kernel_size, effective_batch,
             this->d_delta_mu_w, this->d_delta_var_w);
 
     if (this->bias) {
@@ -309,13 +314,13 @@ void ConvTranspose2dCuda::backward(BaseDeltaStates &input_delta_states,
 
         convtranspose2d_bwd_delta_b_dual_sum_reduction<float>(
             this->d_var_b, cu_input_delta_states->d_delta_mu,
-            cu_input_delta_states->d_delta_var, batch_size, woho,
+            cu_input_delta_states->d_delta_var, effective_batch, woho,
             this->out_channels, buf_mu_in, buf_var_in, buf_mu_out, buf_var_out,
             this->d_delta_mu_b, this->d_delta_var_b);
     }
 
     // State update
-    unsigned int grid_row = (batch_size + THREADS - 1) / THREADS;
+    unsigned int grid_row = (effective_batch + THREADS - 1) / THREADS;
     unsigned int grid_col = (wihi * this->in_channels + THREADS - 1) / THREADS;
     dim3 dim_grid(grid_col, grid_row);
 
@@ -325,7 +330,7 @@ void ConvTranspose2dCuda::backward(BaseDeltaStates &input_delta_states,
             cu_input_delta_states->d_delta_mu,
             cu_input_delta_states->d_delta_var, this->d_idx_cov_z_wa_1,
             this->d_idx_var_z_ud, woho, this->out_channels, wihi,
-            this->in_channels, this->kernel_size, this->row_zw, batch_size,
+            this->in_channels, this->kernel_size, this->row_zw, effective_batch,
             cu_output_delta_states->d_delta_mu,
             cu_output_delta_states->d_delta_var);
 }

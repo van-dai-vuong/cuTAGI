@@ -223,7 +223,6 @@ void lstm_delta_mean_var_b_mp(
 
 class LSTM : public BaseLayer {
    public:
-    int seq_len = 1;
     int _batch_size = -1;
     float act_omega = 0.0000001f;
     float gain_w;

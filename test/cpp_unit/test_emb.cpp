@@ -123,13 +123,19 @@ bool test_embedding_class_forward()
     emb_layer.forward(input_states, output_states, temp_states);
 
     // Validation: Check that output size is correct
-    if (output_states.actual_size != num_inputs * embedding_dim) {
+    if (output_states.actual_size != embedding_dim) {
+        LOG(LogLevel::INFO, "Output size mismatch: expected " +
+                                std::to_string(num_inputs * embedding_dim) +
+                                ", got " +
+                                std::to_string(output_states.actual_size));
         return false;
     }
 
     // Validation: Check that all output values are non-zero
     for (size_t i = 0; i < output_states.mu_a.size(); i++) {
         if (output_states.mu_a[i] == 0 || output_states.var_a[i] == 0) {
+            LOG(LogLevel::INFO,
+                "Output value is zero at index " + std::to_string(i));
             return false;
         }
     }
@@ -372,7 +378,7 @@ bool test_embedding_class_forward_cuda() {
 
     emb_layer.forward(input_states, output_states, temp_states);
 
-    if (output_states.actual_size != num_inputs * embedding_dim) {
+    if (output_states.actual_size != embedding_dim) {
         return false;
     }
 

@@ -29,7 +29,8 @@ TEST(AttentionForward, BasicForwardPass) {
     input_states.var_a = input_var;
     input_states.jcb = input_jcb;
     input_states.block_size = batch_size;
-    input_states.actual_size = embed_dim * seq_len;
+    input_states.actual_size = embed_dim;
+    input_states.seq_len = seq_len;
     input_states.size = batch_size * seq_len * embed_dim;
 
     BaseHiddenStates output_states;
@@ -47,7 +48,8 @@ TEST(AttentionForward, BasicForwardPass) {
 
     EXPECT_EQ(output_states.mu_a.size(), batch_size * seq_len * embed_dim);
     EXPECT_EQ(output_states.var_a.size(), batch_size * seq_len * embed_dim);
-    EXPECT_EQ(output_states.actual_size, embed_dim * seq_len);
+    EXPECT_EQ(output_states.actual_size, embed_dim);
+    EXPECT_EQ(output_states.seq_len, seq_len);
 
     for (size_t i = 0; i < output_states.mu_a.size(); i++) {
         EXPECT_FALSE(std::isnan(output_states.mu_a[i]))
@@ -105,7 +107,8 @@ TEST(AttentionBackward, BasicBackwardPass) {
     input_states.var_a = input_var;
     input_states.jcb = input_jcb;
     input_states.block_size = batch_size;
-    input_states.actual_size = embed_dim * seq_len;
+    input_states.actual_size = embed_dim;
+    input_states.seq_len = seq_len;
     input_states.size = batch_size * seq_len * embed_dim;
 
     BaseHiddenStates output_states;
@@ -133,7 +136,8 @@ TEST(AttentionBackward, BasicBackwardPass) {
     output_delta_states.delta_mu.resize(batch_size * seq_len * embed_dim);
     output_delta_states.delta_var.resize(batch_size * seq_len * embed_dim);
     output_delta_states.block_size = batch_size;
-    output_delta_states.actual_size = embed_dim * seq_len;
+    output_delta_states.actual_size = embed_dim;
+    output_delta_states.seq_len = seq_len;
 
     attn_layer.backward(input_delta_states, output_delta_states, temp_states,
                         true);

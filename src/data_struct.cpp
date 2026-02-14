@@ -19,13 +19,15 @@ BaseHiddenStates::BaseHiddenStates() {}
 
 void BaseHiddenStates::set_input_x(const std::vector<float>& mu_x,
                                    const std::vector<float>& var_x,
-                                   const size_t block_size)
+                                   const size_t block_size,
+                                   const size_t seq_len)
 /*
  */
 {
     int data_size = mu_x.size();
-    this->actual_size = data_size / block_size;
+    this->actual_size = data_size / (block_size * seq_len);
     this->block_size = block_size;
+    this->seq_len = seq_len;
     for (int i = 0; i < data_size; i++) {
         this->mu_a[i] = mu_x[i];
         this->jcb[i] = 1.0f;
@@ -67,6 +69,7 @@ void BaseHiddenStates::swap(BaseHiddenStates& other)
     std::swap(jcb, other.jcb);
     std::swap(size, other.size);
     std::swap(block_size, other.block_size);
+    std::swap(seq_len, other.seq_len);
     std::swap(actual_size, other.actual_size);
     std::swap(width, other.width);
     std::swap(height, other.height);
@@ -87,6 +90,7 @@ void BaseHiddenStates::copy_from(const BaseHiddenStates& source, int num_data)
         this->jcb[i] = source.jcb[i];
     }
     this->block_size = source.block_size;
+    this->seq_len = source.seq_len;
     this->actual_size = source.actual_size;
     this->width = source.width;
     this->height = source.height;
@@ -125,6 +129,7 @@ void BaseDeltaStates::copy_from(const BaseDeltaStates& source, int num_data)
     }
 
     this->block_size = source.block_size;
+    this->seq_len = source.seq_len;
 }
 
 void BaseDeltaStates::set_size(size_t new_size, size_t new_block_size)
@@ -133,10 +138,11 @@ void BaseDeltaStates::set_size(size_t new_size, size_t new_block_size)
 {
     if (new_size > this->size) {
         this->size = new_size;
-        this->reset_zeros();
+        this->delta_mu.resize(this->size, 0.0f);
+        this->delta_var.resize(this->size, 0.0f);
     }
     this->block_size = new_block_size;
-    this->actual_size = new_size / new_block_size;
+    this->actual_size = new_size / (new_block_size * this->seq_len);
 }
 
 void BaseDeltaStates::swap(BaseDeltaStates& other)
@@ -146,6 +152,7 @@ void BaseDeltaStates::swap(BaseDeltaStates& other)
     std::swap(delta_var, other.delta_var);
     std::swap(size, other.size);
     std::swap(block_size, other.block_size);
+    std::swap(seq_len, other.seq_len);
     std::swap(actual_size, other.actual_size);
 }
 

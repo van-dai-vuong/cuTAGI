@@ -41,6 +41,7 @@ class BaseLayer {
     size_t num_weights = 0, num_biases = 0;
     size_t in_width = 0, in_height = 0, in_channels = 0;
     size_t out_width = 0, out_height = 0, out_channels = 0;
+    size_t seq_len = 1;
     bool bias = true;
     bool param_update = true;
     float cap_factor_update = 1.0f;

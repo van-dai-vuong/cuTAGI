@@ -595,7 +595,8 @@ void SigmoidCuda::forward(BaseHiddenStates &input_states,
     // TempStateCuda *cu_temp_states = dynamic_cast<TempStateCuda
     // *>(&temp_states);
 
-    int num_states = input_states.actual_size * input_states.block_size;
+    int num_states = input_states.actual_size * input_states.block_size *
+                     input_states.seq_len;
     unsigned int blocks =
         (num_states + this->num_cuda_threads - 1) / this->num_cuda_threads;
 
@@ -609,9 +610,12 @@ void SigmoidCuda::forward(BaseHiddenStates &input_states,
         this->output_size = input_states.actual_size;
     }
 
-    // Update number of actual states.
+    cu_output_states->width = this->out_width;
+    cu_output_states->height = this->out_height;
+    cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = cu_input_states->block_size;
     cu_output_states->actual_size = cu_input_states->actual_size;
+    cu_output_states->seq_len = cu_input_states->seq_len;
 }
 
 std::unique_ptr<BaseLayer> SigmoidCuda::to_host()
@@ -666,7 +670,8 @@ void TanhCuda::forward(BaseHiddenStates &input_states,
     // TempStateCuda *cu_temp_states = dynamic_cast<TempStateCuda
     // *>(&temp_states);
 
-    int num_states = input_states.actual_size * input_states.block_size;
+    int num_states = input_states.actual_size * input_states.block_size *
+                     input_states.seq_len;
     unsigned int blocks =
         (num_states + this->num_cuda_threads - 1) / this->num_cuda_threads;
 
@@ -680,9 +685,12 @@ void TanhCuda::forward(BaseHiddenStates &input_states,
         this->output_size = input_states.actual_size;
     }
 
-    // Update number of actual states.
+    cu_output_states->width = this->out_width;
+    cu_output_states->height = this->out_height;
+    cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = cu_input_states->block_size;
     cu_output_states->actual_size = cu_input_states->actual_size;
+    cu_output_states->seq_len = cu_input_states->seq_len;
 }
 
 std::unique_ptr<BaseLayer> TanhCuda::to_host()
@@ -737,7 +745,8 @@ void MixtureReLUCuda::forward(BaseHiddenStates &input_states,
     // TempStateCuda *cu_temp_states = dynamic_cast<TempStateCuda
     // *>(&temp_states);
 
-    int num_states = input_states.actual_size * input_states.block_size;
+    int num_states = input_states.actual_size * input_states.block_size *
+                     input_states.seq_len;
     unsigned int blocks =
         (num_states + this->num_cuda_threads - 1) / this->num_cuda_threads;
 
@@ -753,9 +762,12 @@ void MixtureReLUCuda::forward(BaseHiddenStates &input_states,
         this->output_size = input_states.actual_size;
     }
 
-    // Update number of actual states.
+    cu_output_states->width = this->out_width;
+    cu_output_states->height = this->out_height;
+    cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = cu_input_states->block_size;
     cu_output_states->actual_size = cu_input_states->actual_size;
+    cu_output_states->seq_len = cu_input_states->seq_len;
 }
 
 std::unique_ptr<BaseLayer> MixtureReLUCuda::to_host()
@@ -810,7 +822,8 @@ void MixtureSigmoidCuda::forward(BaseHiddenStates &input_states,
     // TempStateCuda *cu_temp_states = dynamic_cast<TempStateCuda
     // *>(&temp_states);
 
-    int num_states = input_states.actual_size * input_states.block_size;
+    int num_states = input_states.actual_size * input_states.block_size *
+                     input_states.seq_len;
     unsigned int blocks =
         (num_states + this->num_cuda_threads - 1) / this->num_cuda_threads;
 
@@ -824,9 +837,12 @@ void MixtureSigmoidCuda::forward(BaseHiddenStates &input_states,
         this->output_size = input_states.actual_size;
     }
 
-    // Update number of actual states.
+    cu_output_states->width = this->out_width;
+    cu_output_states->height = this->out_height;
+    cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = cu_input_states->block_size;
     cu_output_states->actual_size = cu_input_states->actual_size;
+    cu_output_states->seq_len = cu_input_states->seq_len;
 }
 
 std::unique_ptr<BaseLayer> MixtureSigmoidCuda::to_host()
@@ -881,7 +897,8 @@ void MixtureTanhCuda::forward(BaseHiddenStates &input_states,
     // TempStateCuda *cu_temp_states = dynamic_cast<TempStateCuda
     // *>(&temp_states);
 
-    int num_states = input_states.actual_size * input_states.block_size;
+    int num_states = input_states.actual_size * input_states.block_size *
+                     input_states.seq_len;
     unsigned int blocks =
         (num_states + this->num_cuda_threads - 1) / this->num_cuda_threads;
 
@@ -895,9 +912,12 @@ void MixtureTanhCuda::forward(BaseHiddenStates &input_states,
         this->output_size = input_states.actual_size;
     }
 
-    // Update number of actual states.
+    cu_output_states->width = this->out_width;
+    cu_output_states->height = this->out_height;
+    cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = cu_input_states->block_size;
     cu_output_states->actual_size = cu_input_states->actual_size;
+    cu_output_states->seq_len = cu_input_states->seq_len;
 }
 
 std::unique_ptr<BaseLayer> MixtureTanhCuda::to_host()
@@ -952,7 +972,8 @@ void SoftplusCuda::forward(BaseHiddenStates &input_states,
     // TempStateCuda *cu_temp_states = dynamic_cast<TempStateCuda
     // *>(&temp_states);
 
-    int num_states = input_states.actual_size * input_states.block_size;
+    int num_states = input_states.actual_size * input_states.block_size *
+                     input_states.seq_len;
     unsigned int blocks =
         (num_states + this->num_cuda_threads - 1) / this->num_cuda_threads;
 
@@ -966,9 +987,12 @@ void SoftplusCuda::forward(BaseHiddenStates &input_states,
         this->output_size = input_states.actual_size;
     }
 
-    // Update number of actual states.
+    cu_output_states->width = this->out_width;
+    cu_output_states->height = this->out_height;
+    cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = cu_input_states->block_size;
     cu_output_states->actual_size = cu_input_states->actual_size;
+    cu_output_states->seq_len = cu_input_states->seq_len;
 }
 
 std::unique_ptr<BaseLayer> SoftplusCuda::to_host()
@@ -1023,7 +1047,8 @@ void LeakyReLUCuda::forward(BaseHiddenStates &input_states,
     // TempStateCuda *cu_temp_states = dynamic_cast<TempStateCuda
     // *>(&temp_states);
 
-    int num_states = input_states.actual_size * input_states.block_size;
+    int num_states = input_states.actual_size * input_states.block_size *
+                     input_states.seq_len;
     unsigned int blocks =
         (num_states + this->num_cuda_threads - 1) / this->num_cuda_threads;
 
@@ -1037,9 +1062,12 @@ void LeakyReLUCuda::forward(BaseHiddenStates &input_states,
         this->output_size = input_states.actual_size;
     }
 
-    // Update number of actual states.
+    cu_output_states->width = this->out_width;
+    cu_output_states->height = this->out_height;
+    cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = cu_input_states->block_size;
     cu_output_states->actual_size = cu_input_states->actual_size;
+    cu_output_states->seq_len = cu_input_states->seq_len;
 }
 
 std::unique_ptr<BaseLayer> LeakyReLUCuda::to_host()
@@ -1094,9 +1122,9 @@ void SoftmaxCuda::forward(BaseHiddenStates &input_states,
     // TempStateCuda *cu_temp_states = dynamic_cast<TempStateCuda
     // *>(&temp_states);
 
-    unsigned int blocks =
-        (input_states.block_size + this->num_cuda_threads - 1) /
-        this->num_cuda_threads;
+    unsigned int blocks = (input_states.block_size * input_states.seq_len +
+                           this->num_cuda_threads - 1) /
+                          this->num_cuda_threads;
 
     softmax_mean_var_cuda<<<blocks, this->num_cuda_threads>>>(
         cu_input_states->d_mu_a, cu_input_states->d_var_a,
@@ -1109,8 +1137,11 @@ void SoftmaxCuda::forward(BaseHiddenStates &input_states,
         this->output_size = input_states.actual_size;
     }
 
-    // Update number of actual states.
+    cu_output_states->width = this->out_width;
+    cu_output_states->height = this->out_height;
+    cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = cu_input_states->block_size;
+    cu_output_states->seq_len = cu_input_states->seq_len;
     cu_output_states->actual_size = cu_input_states->actual_size;
 }
 
@@ -1165,12 +1196,14 @@ void RemaxCuda::forward(BaseHiddenStates &input_states,
 
     int batch_size = input_states.block_size;
     int hidden_size = input_states.actual_size;
-    if (this->batch_size_ != batch_size) {
-        this->batch_size_ = batch_size;
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
+    if (this->batch_size_ != effective_batch) {
+        this->batch_size_ = effective_batch;
         this->deallocate_memory();
-        this->allocate_memory(hidden_size, batch_size);
+        this->allocate_memory(hidden_size, effective_batch);
     }
-    int num_states = batch_size * hidden_size;
+    int num_states = hidden_size * effective_batch;
     constexpr int THREADS = 256;
     constexpr int THREADS_BATCH = 16;
     constexpr int THREADS_HIDDEN = 16;
@@ -1181,40 +1214,40 @@ void RemaxCuda::forward(BaseHiddenStates &input_states,
         this->d_mu_m, this->d_jcb_m, this->d_var_m);
 
     // Compute mean and variance of Mt
-    unsigned int blocks_sum = (batch_size + THREADS - 1) / THREADS;
+    unsigned int blocks_sum = (effective_batch + THREADS - 1) / THREADS;
     compute_mean_var_sum_cuda<<<blocks_sum, THREADS>>>(
-        this->d_mu_m, this->d_var_m, hidden_size, batch_size, this->d_mu_mt,
-        this->d_var_mt);
+        this->d_mu_m, this->d_var_m, hidden_size, effective_batch,
+        this->d_mu_mt, this->d_var_mt);
 
     // Compute mean and variance of log(M)
     unsigned int hidden_blocks =
         (hidden_size + THREADS_HIDDEN - 1) / THREADS_HIDDEN;
     unsigned int batch_blocks =
-        (batch_size + THREADS_BATCH - 1) / THREADS_BATCH;
+        (effective_batch + THREADS_BATCH - 1) / THREADS_BATCH;
     dim3 dim_grid_log(hidden_blocks, batch_blocks);
     dim3 dim_block_log(THREADS_HIDDEN, THREADS_BATCH);
 
     to_log_cuda<<<dim_grid_log, dim_block_log>>>(
-        this->d_mu_m, this->d_var_m, hidden_size, batch_size, this->d_mu_log_m,
-        this->d_var_log_m);
+        this->d_mu_m, this->d_var_m, hidden_size, effective_batch,
+        this->d_mu_log_m, this->d_var_log_m);
 
     // Compute mean and variance of log(Mt)
-    unsigned int blocks_log_mt = (batch_size + THREADS - 1) / THREADS;
+    unsigned int blocks_log_mt = (effective_batch + THREADS - 1) / THREADS;
     dim3 dim_grid_log_mt(1, blocks_log_mt);
     dim3 dim_block_log_mt(1, THREADS);
     to_log_cuda<<<dim_grid_log_mt, dim_block_log_mt>>>(
-        this->d_mu_mt, this->d_var_mt, 1, batch_size, this->d_mu_log_mt,
+        this->d_mu_mt, this->d_var_mt, 1, effective_batch, this->d_mu_log_mt,
         this->d_var_log_mt);
 
     // Compute covariance of log(M) and log(Mt)
     compute_cov_log_m_mt_cuda<<<dim_grid_log, dim_block_log>>>(
-        this->d_mu_m, this->d_var_m, this->d_mu_mt, hidden_size, batch_size,
-        this->d_cov_log_m_mt);
+        this->d_mu_m, this->d_var_m, this->d_mu_mt, hidden_size,
+        effective_batch, this->d_cov_log_m_mt);
 
     // Compute mean and variance of A
     compute_remax_mean_var_cuda<<<blocks_sum, THREADS>>>(
         this->d_mu_log_m, this->d_var_log_m, this->d_mu_log_mt,
-        this->d_var_log_mt, this->d_cov_log_m_mt, hidden_size, batch_size,
+        this->d_var_log_mt, this->d_cov_log_m_mt, hidden_size, effective_batch,
         cu_output_states->d_mu_a, cu_output_states->d_var_a);
 
     // Compute covariance of A and Z i.e., Jacobian.
@@ -1222,14 +1255,18 @@ void RemaxCuda::forward(BaseHiddenStates &input_states,
         cu_output_states->d_mu_a, cu_output_states->d_var_a,
         cu_input_states->d_var_a, this->d_mu_m, this->d_var_m,
         this->d_var_log_m, this->d_cov_log_m_mt, this->d_jcb_m, hidden_size,
-        batch_size, cu_output_states->d_jcb);
+        effective_batch, cu_output_states->d_jcb);
 
     if (this->input_size != input_states.actual_size) {
         this->input_size = input_states.actual_size;
         this->output_size = input_states.actual_size;
     }
 
+    cu_output_states->width = this->out_width;
+    cu_output_states->height = this->out_height;
+    cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = cu_input_states->block_size;
+    cu_output_states->seq_len = cu_input_states->seq_len;
     cu_output_states->actual_size = cu_input_states->actual_size;
 }
 

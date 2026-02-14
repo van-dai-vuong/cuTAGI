@@ -568,7 +568,9 @@ void ConvTranspose2d::forward(BaseHiddenStates &input_states,
     }
 
     int batch_size = input_states.block_size;
-    this->set_cap_factor_udapte(batch_size);
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
+    this->set_cap_factor_udapte(effective_batch);
 
     if (this->num_weights == 0) {
         this->get_number_param();
@@ -586,6 +588,7 @@ void ConvTranspose2d::forward(BaseHiddenStates &input_states,
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
     output_states.actual_size = this->output_size;
+    output_states.seq_len = seq_len;
 
     int woho = this->out_width * this->out_height;
     int wihi = this->in_width * this->in_height;
@@ -595,15 +598,15 @@ void ConvTranspose2d::forward(BaseHiddenStates &input_states,
             this->mu_w, this->var_w, this->mu_b, this->var_b, input_states.mu_a,
             input_states.var_a, this->idx_mwa_1, this->idx_mwa_2, woho,
             this->out_channels, wihi, this->in_channels, this->kernel_size,
-            this->col_cov_mwa_1, batch_size, this->bias, this->num_threads,
+            this->col_cov_mwa_1, effective_batch, this->bias, this->num_threads,
             output_states.mu_a, output_states.var_a);
     } else {
         convtranspose2d_fwd_mean_var(
             this->mu_w, this->var_w, this->mu_b, this->var_b, input_states.mu_a,
             input_states.var_a, this->idx_mwa_1, this->idx_mwa_2, woho,
             this->out_channels, wihi, this->in_channels, this->kernel_size,
-            this->col_cov_mwa_1, 0, batch_size, this->bias, output_states.mu_a,
-            output_states.var_a);
+            this->col_cov_mwa_1, 0, effective_batch, this->bias,
+            output_states.mu_a, output_states.var_a);
     }
     if (this->training) {
         this->storing_states_for_training(input_states, output_states);
@@ -616,8 +619,9 @@ void ConvTranspose2d::backward(BaseDeltaStates &input_delta_states,
 /*
  */
 {
-    // Initialization
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
     int wihi = this->in_height * this->in_width;
     int woho = this->out_width * this->out_height;
@@ -627,7 +631,7 @@ void ConvTranspose2d::backward(BaseDeltaStates &input_delta_states,
             this->mu_w, this->bwd_states->jcb, input_delta_states.delta_mu,
             input_delta_states.delta_var, this->idx_cov_z_wa_1,
             this->idx_var_z_ud, woho, this->out_channels, wihi,
-            this->in_channels, this->kernel_size, this->row_zw, batch_size,
+            this->in_channels, this->kernel_size, this->row_zw, effective_batch,
             this->num_threads, output_delta_states.delta_mu,
             output_delta_states.delta_var);
     } else {
@@ -635,11 +639,10 @@ void ConvTranspose2d::backward(BaseDeltaStates &input_delta_states,
             this->mu_w, this->bwd_states->jcb, input_delta_states.delta_mu,
             input_delta_states.delta_var, this->idx_cov_z_wa_1,
             this->idx_var_z_ud, woho, this->out_channels, wihi,
-            this->in_channels, this->kernel_size, this->row_zw, 0, batch_size,
-            output_delta_states.delta_mu, output_delta_states.delta_var);
+            this->in_channels, this->kernel_size, this->row_zw, 0,
+            effective_batch, output_delta_states.delta_mu,
+            output_delta_states.delta_var);
     }
-
-    // Parameters
 
     int ki2 = this->kernel_size * this->kernel_size;
 
@@ -648,13 +651,13 @@ void ConvTranspose2d::backward(BaseDeltaStates &input_delta_states,
             this->var_w, this->bwd_states->mu_a, input_delta_states.delta_mu,
             input_delta_states.delta_var, this->idx_cov_wz_2,
             this->idx_var_wz_ud, woho, this->out_channels, wihi,
-            this->in_channels, this->kernel_size, batch_size, this->num_threads,
-            this->delta_mu_w, this->delta_var_w);
+            this->in_channels, this->kernel_size, effective_batch,
+            this->num_threads, this->delta_mu_w, this->delta_var_w);
         if (this->bias) {
             convtranspose2d_bwd_delta_b_mp(
                 this->var_b, input_delta_states.delta_mu,
                 input_delta_states.delta_var, woho, this->out_channels,
-                batch_size, this->num_threads, this->delta_mu_b,
+                effective_batch, this->num_threads, this->delta_mu_b,
                 this->delta_var_b);
         }
     } else {
@@ -662,13 +665,13 @@ void ConvTranspose2d::backward(BaseDeltaStates &input_delta_states,
             this->var_w, this->bwd_states->mu_a, input_delta_states.delta_mu,
             input_delta_states.delta_var, this->idx_cov_wz_2,
             this->idx_var_wz_ud, woho, this->out_channels, wihi,
-            this->in_channels, this->kernel_size, batch_size, 0,
+            this->in_channels, this->kernel_size, effective_batch, 0,
             ki2 * this->out_channels, this->delta_mu_w, this->delta_var_w);
         if (this->bias) {
             convtranspose2d_bwd_delta_b(
                 this->var_b, input_delta_states.delta_mu,
                 input_delta_states.delta_var, woho, this->out_channels,
-                batch_size, 0, this->out_channels, this->delta_mu_b,
+                effective_batch, 0, this->out_channels, this->delta_mu_b,
                 this->delta_var_b);
         }
     }

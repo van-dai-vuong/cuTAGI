@@ -563,14 +563,14 @@ NOTE: All LSTM states are from the next layer e.g., mi_ga(l+1)
 LSTMCuda::LSTMCuda(size_t input_size, size_t output_size, int seq_len,
                    bool bias, float gain_w, float gain_b,
                    std::string init_method, int device_idx)
-    : seq_len(seq_len),
-      gain_w(gain_w),
+    : gain_w(gain_w),
       gain_b(gain_b),
       init_method(init_method)
 /**/
 {
     this->input_size = input_size;
     this->output_size = output_size;
+    this->seq_len = seq_len;
     this->bias = bias;
     this->device_idx = device_idx;
     this->get_number_param();
@@ -833,7 +833,8 @@ void LSTMCuda::forward(BaseHiddenStates &input_states,
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
-    output_states.actual_size = this->output_size * this->seq_len;
+    output_states.actual_size = this->output_size;
+    output_states.seq_len = this->seq_len;
 
     if (this->seq_len == 1 && batch_size == 1) {
         cudaSetDevice(this->device_idx);

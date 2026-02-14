@@ -51,11 +51,13 @@ void MaxPool2d::forward(BaseHiddenStates &input_states,
                         BaseHiddenStates &output_states,
                         BaseTempStates &temp_states) {
     int batch_size = input_states.block_size;
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
-    if (this->_batch_size != batch_size) {
-        this->_batch_size = batch_size;
+    if (this->_batch_size != effective_batch) {
+        this->_batch_size = effective_batch;
         // TODO: trigger if changed batch size
-        this->max_pool_idx.resize(this->output_size * batch_size);
+        this->max_pool_idx.resize(this->output_size * effective_batch);
     }
     if (this->pool_idx.size() == 0) {
         this->lazy_index_init();
@@ -66,11 +68,12 @@ void MaxPool2d::forward(BaseHiddenStates &input_states,
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
+    output_states.seq_len = seq_len;
     output_states.actual_size = this->output_size;
 
     int woho = this->out_width * this->out_height;
     int wihi = this->in_width * this->in_height;
-    int num_states = woho * this->out_channels * batch_size;
+    int num_states = woho * this->out_channels * effective_batch;
 
     if (this->num_threads > 1) {
         if (this->overlap) {
@@ -108,11 +111,13 @@ void MaxPool2d::backward(BaseDeltaStates &input_delta_states,
                          BaseTempStates &temp_states, bool state_update) {
     // Initialization
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
     // Launch kernel
     int woho = this->out_width * this->out_height;
     int wihi = this->in_width * this->in_height;
-    int num_states = woho * this->out_channels * batch_size;
+    int num_states = woho * this->out_channels * effective_batch;
 
     if (state_update) {
         output_delta_states.reset_zeros();

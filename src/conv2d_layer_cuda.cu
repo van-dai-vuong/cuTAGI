@@ -405,7 +405,9 @@ void Conv2dCuda::forward(BaseHiddenStates &input_states,
         dynamic_cast<HiddenStateCuda *>(&output_states);
 
     int batch_size = input_states.block_size;
-    this->set_cap_factor_udapte(batch_size);
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
+    this->set_cap_factor_udapte(effective_batch);
 
     if (this->num_weights == 0) {
         this->get_number_param();
@@ -422,13 +424,14 @@ void Conv2dCuda::forward(BaseHiddenStates &input_states,
     cu_output_states->height = this->out_height;
     cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = batch_size;
+    cu_output_states->seq_len = seq_len;
     cu_output_states->actual_size = this->output_size;
 
     // Launch kernel
     int woho = this->out_width * this->out_height;
     int wihi = this->in_width * this->in_height;
-    int woho_batch = woho * batch_size;
-    int pad_idx = wihi * this->in_channels * batch_size + 1;
+    int woho_batch = woho * effective_batch;
+    int pad_idx = wihi * this->in_channels * effective_batch + 1;
 
     int threads = this->num_cuda_threads;
     unsigned int grid_row = (this->out_channels + threads - 1) / threads;
@@ -440,7 +443,7 @@ void Conv2dCuda::forward(BaseHiddenStates &input_states,
     conv2d_forward_cuda(cu_input_states, this->d_mu_w, this->d_var_w,
                         this->d_mu_b, this->d_var_b, this->d_idx_mwa_2,
                         this->out_channels, woho, this->in_channels, wihi,
-                        this->kernel_size, batch_size, pad_idx, this->bias,
+                        this->kernel_size, effective_batch, pad_idx, this->bias,
                         cu_output_states);
 
     // Update backward state for inferring parameters
@@ -466,6 +469,8 @@ void Conv2dCuda::backward(BaseDeltaStates &input_delta_states,
 
     // Initialization
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
     int threads = this->num_cuda_threads;
     dim3 dim_block(threads, threads);
 
@@ -479,7 +484,7 @@ void Conv2dCuda::backward(BaseDeltaStates &input_delta_states,
         conv2d_param_backward_cuda(
             cu_input_delta_states, cu_temp_states, cu_next_bwd_states,
             this->d_var_w, this->d_idx_mwa_2, this->out_channels, woho,
-            this->in_channels, wihi, this->kernel_size, batch_size,
+            this->in_channels, wihi, this->kernel_size, effective_batch,
             this->d_delta_mu_w, this->d_delta_var_w);
 
         if (this->bias) {
@@ -493,7 +498,7 @@ void Conv2dCuda::backward(BaseDeltaStates &input_delta_states,
 
             conv2d_bwd_delta_b_dual_sum_reduction<float>(
                 this->d_var_b, cu_input_delta_states->d_delta_mu,
-                cu_input_delta_states->d_delta_var, batch_size, woho,
+                cu_input_delta_states->d_delta_var, effective_batch, woho,
                 this->out_channels, buf_mu_in, buf_var_in, buf_mu_out,
                 buf_var_out, this->d_delta_mu_b, this->d_delta_var_b);
         }
@@ -501,20 +506,20 @@ void Conv2dCuda::backward(BaseDeltaStates &input_delta_states,
 
     // NOTE: state need to be updated after parameter update
     if (state_udapte) {
-        unsigned int grid_row_p = (batch_size + threads - 1) / threads;
+        unsigned int grid_row_p = (effective_batch + threads - 1) / threads;
         unsigned int grid_col_p =
             (wihi * this->in_channels + threads - 1) / threads;
         dim3 dim_grid_p(grid_col_p, grid_row_p);
 
         permmute_jacobian_cuda<<<dim_grid_p, dim_block>>>(
-            cu_next_bwd_states->d_jcb, wihi, this->in_channels, batch_size,
+            cu_next_bwd_states->d_jcb, wihi, this->in_channels, effective_batch,
             cu_temp_states->d_tmp_1);
 
         conv2d_state_backward_cuda(
             cu_input_delta_states, cu_temp_states, this->d_mu_w,
             this->d_idx_mwa_2, this->d_idx_cov_zwa_1, this->d_idx_var_z_ud,
             this->out_channels, woho, this->in_channels, wihi,
-            this->kernel_size, this->row_zw, row_zw_fo, batch_size,
+            this->kernel_size, this->row_zw, row_zw_fo, effective_batch,
             pad_param_idx, cu_output_delta_states);
     }
 }

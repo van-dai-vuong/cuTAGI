@@ -251,17 +251,22 @@ void LinearCuda::forward(BaseHiddenStates &input_states,
     }
 
     int batch_size = input_states.block_size;
-
-    this->set_cap_factor_udapte(batch_size);
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
+    this->set_cap_factor_udapte(effective_batch);
 
     linear_forward_cuda(cu_input_states, cu_output_states, this->d_mu_w,
                         this->d_var_w, this->d_mu_b, this->d_var_b,
-                        this->input_size, this->output_size,
-                        input_states.block_size, this->bias);
+                        this->input_size, this->output_size, effective_batch,
+                        this->bias);
 
     // Update number of actual states.
-    output_states.block_size = batch_size;
-    output_states.actual_size = this->output_size;
+    cu_output_states->width = this->out_width;
+    cu_output_states->height = this->out_height;
+    cu_output_states->depth = this->out_channels;
+    cu_output_states->block_size = batch_size;
+    cu_output_states->seq_len = seq_len;
+    cu_output_states->actual_size = this->output_size;
 
     // Update backward state for inferring parameters
     if (this->training) {
@@ -275,7 +280,6 @@ void LinearCuda::backward(BaseDeltaStates &input_delta_states,
                           BaseTempStates &temp_states, bool state_udapte)
 /**/
 {
-    // New poitner will point to the same memory location when casting
     BackwardStateCuda *cu_next_bwd_states =
         dynamic_cast<BackwardStateCuda *>(this->bwd_states.get());
     DeltaStateCuda *cu_input_delta_states =
@@ -283,13 +287,13 @@ void LinearCuda::backward(BaseDeltaStates &input_delta_states,
     DeltaStateCuda *cu_output_delta_states =
         dynamic_cast<DeltaStateCuda *>(&output_delta_states);
 
-    // Initialization
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
     int threads = this->num_cuda_threads;
 
-    // Compute inovation vector
     unsigned int grid_row = (this->input_size + threads - 1) / threads;
-    unsigned int grid_col = (batch_size + threads - 1) / threads;
+    unsigned int grid_col = (effective_batch + threads - 1) / threads;
 
     dim3 grid_dim(grid_col, grid_row);
     dim3 block_dim(threads, threads);
@@ -297,17 +301,15 @@ void LinearCuda::backward(BaseDeltaStates &input_delta_states,
     if (state_udapte) {
         linear_state_backward_cuda(
             cu_input_delta_states, cu_output_delta_states, cu_next_bwd_states,
-            this->d_mu_w, this->input_size, this->output_size, batch_size);
+            this->d_mu_w, this->input_size, this->output_size, effective_batch);
     }
 
-    // Updated values for weights
     if (this->param_update) {
         linear_weight_backward_cuda(
             cu_input_delta_states, cu_output_delta_states, cu_next_bwd_states,
-            this->d_var_w, this->input_size, this->output_size, batch_size,
+            this->d_var_w, this->input_size, this->output_size, effective_batch,
             this->d_delta_mu_w, this->d_delta_var_w);
 
-        // Updated values for biases
         if (this->bias) {
             unsigned int grid_row_b =
                 (this->output_size + threads - 1) / threads;
@@ -316,7 +318,7 @@ void LinearCuda::backward(BaseDeltaStates &input_delta_states,
             linear_bwd_delta_b<<<grid_dim_b, block_dim>>>(
                 this->d_var_b, cu_input_delta_states->d_delta_mu,
                 cu_input_delta_states->d_delta_var, this->input_size,
-                this->output_size, batch_size, this->d_delta_mu_b,
+                this->output_size, effective_batch, this->d_delta_mu_b,
                 this->d_delta_var_b);
         }
     }

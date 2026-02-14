@@ -177,6 +177,8 @@ void AvgPool2dCuda::forward(BaseHiddenStates &input_states,
         dynamic_cast<HiddenStateCuda *>(&output_states);
 
     int batch_size = input_states.block_size;
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
     unsigned int threads = this->num_cuda_threads;
 
     if (this->pool_idx.size() == 0) {
@@ -188,13 +190,14 @@ void AvgPool2dCuda::forward(BaseHiddenStates &input_states,
     cu_output_states->height = this->out_height;
     cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = batch_size;
+    cu_output_states->seq_len = seq_len;
     cu_output_states->actual_size = this->output_size;
 
     // Launch kernels
     int woho = this->out_width * this->out_height;
     int wihi = this->in_width * this->in_height;
-    int num_states = woho * this->out_channels * batch_size;
-    int pad_idx_in = wihi * this->in_channels * batch_size + 1;
+    int num_states = woho * this->out_channels * effective_batch;
+    int pad_idx_in = wihi * this->in_channels * effective_batch + 1;
 
     unsigned int grid_size = (num_states + threads - 1) / threads;
 
@@ -232,16 +235,18 @@ void AvgPool2dCuda::backward(BaseDeltaStates &input_delta_states,
 
     // Initialization
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
     unsigned int num_threads = this->num_cuda_threads;
 
     // Launch kernel
     if (state_udapte) {
         int woho = this->out_width * this->out_height;
         int wihi = this->in_width * this->in_height;
-        int pad_out_idx = woho * this->out_channels * batch_size + 1;
+        int pad_out_idx = woho * this->out_channels * effective_batch + 1;
         if (overlap) {
             int num_in_states = this->in_width * this->in_height *
-                                this->in_channels * batch_size;
+                                this->in_channels * effective_batch;
             unsigned int grid_size =
                 (num_in_states + num_threads - 1) / num_threads;
 
@@ -254,7 +259,7 @@ void AvgPool2dCuda::backward(BaseDeltaStates &input_delta_states,
 
         } else {
             int kiwo = this->kernel_size * this->out_width;
-            int nums = wihi * this->in_channels * batch_size / kiwo;
+            int nums = wihi * this->in_channels * effective_batch / kiwo;
             unsigned int grid_row = (kiwo + num_threads - 1) / num_threads;
             unsigned int grid_col = (nums + num_threads - 1) / num_threads;
             dim3 dim_grid(grid_col, grid_row);

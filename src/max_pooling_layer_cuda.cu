@@ -145,9 +145,11 @@ void MaxPool2dCuda::forward(BaseHiddenStates &input_states,
         dynamic_cast<HiddenStateCuda *>(&output_states);
 
     int batch_size = input_states.block_size;
-    if (this->_batch_size != batch_size) {
-        this->_batch_size = batch_size;
-        this->allocate_max_val_index(batch_size);
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
+    if (this->_batch_size != effective_batch) {
+        this->_batch_size = effective_batch;
+        this->allocate_max_val_index(effective_batch);
     }
     if (this->pool_idx.size() == 0) {
         this->lazy_index_init();
@@ -158,12 +160,13 @@ void MaxPool2dCuda::forward(BaseHiddenStates &input_states,
     cu_output_states->height = this->out_height;
     cu_output_states->depth = this->out_channels;
     cu_output_states->block_size = batch_size;
+    cu_output_states->seq_len = seq_len;
     cu_output_states->actual_size = this->output_size;
 
     // Launch kernels
     int woho = this->out_width * this->out_height;
     int wihi = this->in_width * this->in_height;
-    int num_states = woho * this->out_channels * batch_size;
+    int num_states = woho * this->out_channels * effective_batch;
 
     int THREADS_PER_BLOCK = 256;
     unsigned int grid_size =
@@ -201,8 +204,10 @@ void MaxPool2dCuda::backward(BaseDeltaStates &input_delta_states,
 
     // Initialization
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
     int woho = this->out_width * this->out_height;
-    int num_out_states = woho * this->out_channels * batch_size;
+    int num_out_states = woho * this->out_channels * effective_batch;
     unsigned int THREADS_PER_BLOCK = 256;
     unsigned int grid_size =
         (num_out_states + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;

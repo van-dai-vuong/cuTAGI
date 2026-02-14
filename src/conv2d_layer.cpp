@@ -129,7 +129,9 @@ void Conv2d::forward(BaseHiddenStates &input_states,
     }
 
     int batch_size = input_states.block_size;
-    this->set_cap_factor_udapte(batch_size);
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
+    this->set_cap_factor_udapte(effective_batch);
 
     // Only need to initalize at the first iteration
     if (this->num_weights == 0) {
@@ -142,31 +144,31 @@ void Conv2d::forward(BaseHiddenStates &input_states,
         this->lazy_index_init();
     }
 
-    // Assign output dimensions
     output_states.width = this->out_width;
     output_states.height = this->out_height;
     output_states.depth = this->out_channels;
     output_states.block_size = batch_size;
+    output_states.seq_len = input_states.seq_len;
     output_states.actual_size = this->output_size;
 
     // Launch kernel
     int woho = this->out_width * this->out_height;
     int wihi = this->in_width * this->in_height;
-    int pad_idx = wihi * this->in_channels * batch_size + 1;
+    int pad_idx = wihi * this->in_channels * effective_batch + 1;
 
     if (this->num_threads > 1) {
-        conv2d_fwd_mean_var_mp(this->mu_w, this->var_w, this->mu_b, this->var_b,
-                               input_states.mu_a, input_states.var_a,
-                               this->idx_mwa_2, woho, this->out_channels, wihi,
-                               this->in_channels, this->kernel_size, batch_size,
-                               pad_idx, this->bias, this->num_threads,
-                               output_states.mu_a, output_states.var_a);
+        conv2d_fwd_mean_var_mp(
+            this->mu_w, this->var_w, this->mu_b, this->var_b, input_states.mu_a,
+            input_states.var_a, this->idx_mwa_2, woho, this->out_channels, wihi,
+            this->in_channels, this->kernel_size, effective_batch, pad_idx,
+            this->bias, this->num_threads, output_states.mu_a,
+            output_states.var_a);
     } else {
         conv2d_fwd_mean_var(
             this->mu_w, this->var_w, this->mu_b, this->var_b, input_states.mu_a,
             input_states.var_a, this->idx_mwa_2, woho, this->out_channels, wihi,
-            this->in_channels, this->kernel_size, batch_size, pad_idx,
-            this->bias, 0, woho * batch_size * this->out_channels,
+            this->in_channels, this->kernel_size, effective_batch, pad_idx,
+            this->bias, 0, woho * effective_batch * this->out_channels,
             output_states.mu_a, output_states.var_a);
     }
 
@@ -182,15 +184,17 @@ void Conv2d::backward(BaseDeltaStates &input_delta_states,
 {
     // Initialization
     int batch_size = input_delta_states.block_size;
+    int seq_len = input_delta_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
     int wihi = this->in_width * this->in_height;
     int woho = this->out_width * this->out_height;
     int row_zw_fo = this->row_zw * this->out_channels;
-    int pad_idx = woho * this->out_channels * batch_size + 1;
+    int pad_idx = woho * this->out_channels * effective_batch + 1;
 
     if (state_udapte) {
         permute_jacobian(this->bwd_states->jcb, wihi, this->in_channels,
-                         batch_size, temp_states.tmp_1);
+                         effective_batch, temp_states.tmp_1);
 
         if (this->num_threads > 1) {
             conv2d_bwd_delta_z_mp(
@@ -198,7 +202,7 @@ void Conv2d::backward(BaseDeltaStates &input_delta_states,
                 input_delta_states.delta_var, this->idx_cov_zwa_1,
                 this->idx_var_z_ud, woho, this->out_channels, wihi,
                 this->in_channels, this->kernel_size, this->row_zw, row_zw_fo,
-                batch_size, pad_idx, this->num_threads,
+                effective_batch, pad_idx, this->num_threads,
                 output_delta_states.delta_mu, output_delta_states.delta_var);
         } else {
             conv2d_bwd_delta_z(
@@ -206,36 +210,37 @@ void Conv2d::backward(BaseDeltaStates &input_delta_states,
                 input_delta_states.delta_var, this->idx_cov_zwa_1,
                 this->idx_var_z_ud, woho, this->out_channels, wihi,
                 this->in_channels, this->kernel_size, this->row_zw, row_zw_fo,
-                batch_size, pad_idx, 0, wihi * batch_size * this->in_channels,
+                effective_batch, pad_idx, 0,
+                wihi * effective_batch * this->in_channels,
                 output_delta_states.delta_mu, output_delta_states.delta_var);
         }
     }
 
     if (this->param_update) {
-        int woho_batch = woho * batch_size;
+        int woho_batch = woho * effective_batch;
         int wohofo = woho * this->out_channels;
-        int param_pad_idx = wihi * this->in_channels * batch_size + 1;
+        int param_pad_idx = wihi * this->in_channels * effective_batch + 1;
 
         permute_delta(input_delta_states.delta_mu, input_delta_states.delta_var,
-                      woho, wohofo, batch_size, temp_states.tmp_1,
+                      woho, wohofo, effective_batch, temp_states.tmp_1,
                       temp_states.tmp_2);
 
         if (this->num_threads > 1) {
             conv2d_bwd_delta_w_mp(
                 this->var_w, this->bwd_states->mu_a, temp_states.tmp_1,
-                temp_states.tmp_2, this->idx_mwa_2, batch_size,
+                temp_states.tmp_2, this->idx_mwa_2, effective_batch,
                 this->out_channels, woho, wihi, this->in_channels,
                 this->kernel_size, param_pad_idx, this->num_threads,
                 this->delta_mu_w, this->delta_var_w);
         } else {
             int end_chunk = this->kernel_size * this->kernel_size *
                             this->in_channels * this->out_channels;
-            conv2d_bwd_delta_w(this->var_w, this->bwd_states->mu_a,
-                               temp_states.tmp_1, temp_states.tmp_2,
-                               this->idx_mwa_2, batch_size, this->out_channels,
-                               woho, wihi, this->in_channels, this->kernel_size,
-                               param_pad_idx, 0, end_chunk, this->delta_mu_w,
-                               this->delta_var_w);
+            conv2d_bwd_delta_w(
+                this->var_w, this->bwd_states->mu_a, temp_states.tmp_1,
+                temp_states.tmp_2, this->idx_mwa_2, effective_batch,
+                this->out_channels, woho, wihi, this->in_channels,
+                this->kernel_size, param_pad_idx, 0, end_chunk,
+                this->delta_mu_w, this->delta_var_w);
         }
         if (this->bias) {
             conv2d_bwd_delta_b(

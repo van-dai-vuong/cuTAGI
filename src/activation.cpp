@@ -555,7 +555,8 @@ void ReLU::forward(BaseHiddenStates &input_states,
  */
 {
     int start_chunk = 0;
-    int end_chunk = input_states.actual_size * input_states.block_size;
+    int end_chunk = input_states.actual_size * input_states.block_size *
+                    input_states.seq_len;
     if (this->num_threads > 1) {
         relu_mean_var_mp(input_states.mu_a, input_states.var_a, end_chunk,
                          this->num_threads, output_states.mu_a,
@@ -569,10 +570,12 @@ void ReLU::forward(BaseHiddenStates &input_states,
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
-    output_states.size = input_states.size;
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
+    output_states.seq_len = input_states.seq_len;
 }
 
 #ifdef USE_CUDA
@@ -617,18 +620,21 @@ void Sigmoid::forward(BaseHiddenStates &input_states,
 {
     // TODO: replace this function by the multiprocessing one
     int start_chunk = 0;
-    int end_chunk = input_states.actual_size * input_states.block_size;
+    int end_chunk = input_states.actual_size * input_states.block_size *
+                    input_states.seq_len;
     sigmoid_mean_var(input_states.mu_a, input_states.var_a, start_chunk,
                      end_chunk, output_states.mu_a, output_states.jcb,
                      output_states.var_a);
 
-    // Save activation mean and jacobian to the class member for backward pass
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
+    output_states.seq_len = input_states.seq_len;
 }
 
 #ifdef USE_CUDA
@@ -673,17 +679,20 @@ void Tanh::forward(BaseHiddenStates &input_states,
 {
     // TODO: replace this function by the multiprocessing one
     int start_chunk = 0;
-    int end_chunk = input_states.actual_size * input_states.block_size;
+    int end_chunk = input_states.actual_size * input_states.block_size *
+                    input_states.seq_len;
     tanh_mean_var(input_states.mu_a, input_states.var_a, start_chunk, end_chunk,
                   output_states.mu_a, output_states.jcb, output_states.var_a);
 
-    // Save activation mean and jacobian to the class member for backward pass
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
+    output_states.seq_len = input_states.seq_len;
 }
 
 #ifdef USE_CUDA
@@ -729,18 +738,21 @@ void MixtureReLU::forward(BaseHiddenStates &input_states,
 {
     // TODO: replace this function by the multiprocessing one
     int start_chunk = 0;
-    int end_chunk = input_states.actual_size * input_states.block_size;
+    int end_chunk = input_states.actual_size * input_states.block_size *
+                    input_states.seq_len;
     mixture_relu_mean_var(input_states.mu_a, input_states.var_a, start_chunk,
                           end_chunk, output_states.mu_a, output_states.jcb,
                           output_states.var_a);
 
-    // Save activation mean and jacobian to the class member for backward pass
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
+    output_states.seq_len = input_states.seq_len;
 }
 
 #ifdef USE_CUDA
@@ -786,16 +798,18 @@ void MixtureSigmoid::forward(BaseHiddenStates &input_states,
 {
     // TODO: replace this function by the multiprocessing one
     int start_chunk = 0;
-    int end_chunk = input_states.actual_size * input_states.block_size;
+    int end_chunk = input_states.actual_size * input_states.block_size *
+                    input_states.seq_len;
     mixture_sigmoid_mean_var(input_states.mu_a, input_states.var_a, start_chunk,
                              end_chunk, output_states.mu_a, output_states.jcb,
                              output_states.var_a);
 
-    // Save activation mean and jacobian to the class member for backward pass
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
 }
@@ -843,16 +857,18 @@ void MixtureTanh::forward(BaseHiddenStates &input_states,
 {
     // TODO: replace this function by the multiprocessing one
     int start_chunk = 0;
-    int end_chunk = input_states.actual_size * input_states.block_size;
+    int end_chunk = input_states.actual_size * input_states.block_size *
+                    input_states.seq_len;
     mixture_tanh_mean_var(input_states.mu_a, input_states.var_a, start_chunk,
                           end_chunk, output_states.mu_a, output_states.jcb,
                           output_states.var_a);
 
-    // Save activation mean and jacobian to the class member for backward pass
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
 }
@@ -899,16 +915,18 @@ void Softplus::forward(BaseHiddenStates &input_states,
 {
     // TODO: replace this function by the multiprocessing one
     int start_chunk = 0;
-    int end_chunk = input_states.actual_size * input_states.block_size;
+    int end_chunk = input_states.actual_size * input_states.block_size *
+                    input_states.seq_len;
     softplus_mean_var(input_states.mu_a, input_states.var_a, start_chunk,
                       end_chunk, output_states.mu_a, output_states.jcb,
                       output_states.var_a);
 
-    // Save activation mean and jacobian to the class member for backward pass
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
 }
@@ -956,16 +974,18 @@ void LeakyReLU::forward(BaseHiddenStates &input_states,
 {
     // TODO: replace this function by the multiprocessing one
     int start_chunk = 0;
-    int end_chunk = input_states.actual_size * input_states.block_size;
+    int end_chunk = input_states.actual_size * input_states.block_size *
+                    input_states.seq_len;
     leaky_relu_mean_var(input_states.mu_a, input_states.var_a, start_chunk,
                         end_chunk, this->alpha, output_states.mu_a,
                         output_states.jcb, output_states.var_a);
 
-    // Save activation mean and jacobian to the class member for backward pass
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
 }
@@ -1011,17 +1031,17 @@ void Softmax::forward(BaseHiddenStates &input_states,
  */
 {
     // TODO: replace this function by the multiprocessing one
-    int batch_size = input_states.size / input_states.block_size;
+    int batch_size = input_states.block_size * input_states.seq_len;
     softmax_mean_var(input_states.mu_a, input_states.var_a,
                      input_states.block_size, batch_size, output_states.mu_a,
                      output_states.jcb, output_states.var_a);
 
-    // Save activation mean and jacobian to the class member for backward pass
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
-    output_states.size = input_states.size;
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
 }
@@ -1239,60 +1259,65 @@ void Remax::forward(BaseHiddenStates &input_states,
 {
     int batch_size = input_states.block_size;
     int hidden_size = input_states.actual_size;
+    int seq_len = input_states.seq_len;
+    int effective_batch = batch_size * seq_len;
 
-    if (this->batch_size_ != batch_size) {
-        this->batch_size_ = batch_size;
-        this->mu_m.resize(batch_size * hidden_size, 0.0f);
-        this->var_m.resize(batch_size * hidden_size, 0.0f);
-        this->jcb_m.resize(batch_size * hidden_size, 0.0f);
-        this->mu_log_m.resize(batch_size * hidden_size, 0.0f);
-        this->var_log_m.resize(batch_size * hidden_size, 0.0f);
-        this->mu_mt.resize(batch_size, 0.0f);
-        this->var_mt.resize(batch_size, 0.0f);
-        this->mu_log_mt.resize(batch_size, 0.0f);
-        this->var_log_mt.resize(batch_size, 0.0f);
-        this->cov_log_m_mt.resize(batch_size * hidden_size, 0.0f);
+    if (this->batch_size_ != effective_batch) {
+        this->batch_size_ = effective_batch;
+        this->mu_m.resize(effective_batch * hidden_size, 0.0f);
+        this->var_m.resize(effective_batch * hidden_size, 0.0f);
+        this->jcb_m.resize(effective_batch * hidden_size, 0.0f);
+        this->mu_log_m.resize(effective_batch * hidden_size, 0.0f);
+        this->var_log_m.resize(effective_batch * hidden_size, 0.0f);
+        this->mu_mt.resize(effective_batch, 0.0f);
+        this->var_mt.resize(effective_batch, 0.0f);
+        this->mu_log_mt.resize(effective_batch, 0.0f);
+        this->var_log_mt.resize(effective_batch, 0.0f);
+        this->cov_log_m_mt.resize(effective_batch * hidden_size, 0.0f);
     }
     // Compute mean and variance of M. NOTE: jcb_m = cdfn
     int start_chunk = 0;
-    int end_chunk = batch_size * hidden_size;
+    int end_chunk = effective_batch * hidden_size;
     mixture_relu_mean_var(input_states.mu_a, input_states.var_a, start_chunk,
                           end_chunk, this->mu_m, this->jcb_m, this->var_m);
 
     // Compute mean and variance of Mt
-    compute_mean_var_sum(this->mu_m, this->var_m, hidden_size, batch_size,
+    compute_mean_var_sum(this->mu_m, this->var_m, hidden_size, effective_batch,
                          this->mu_mt, this->var_mt);
 
     // Compute mean and variance of log(M)
-    to_log(this->mu_m, this->var_m, hidden_size, batch_size, this->mu_log_m,
-           this->var_log_m);
+    to_log(this->mu_m, this->var_m, hidden_size, effective_batch,
+           this->mu_log_m, this->var_log_m);
 
     // Compute mean and variance of log(Mt)
-    to_log(this->mu_mt, this->var_mt, 1, batch_size, this->mu_log_mt,
+    to_log(this->mu_mt, this->var_mt, 1, effective_batch, this->mu_log_mt,
            this->var_log_mt);
 
     // Compute covariance of log(M) and log(Mt)
     compute_cov_log_m_mt(this->mu_m, this->var_m, this->mu_mt, hidden_size,
-                         batch_size, this->cov_log_m_mt);
+                         effective_batch, this->cov_log_m_mt);
 
     // Compute mean and variance of A
     compute_remax_mean_var(this->mu_log_m, this->var_log_m, this->mu_log_mt,
                            this->var_log_mt, this->cov_log_m_mt, hidden_size,
-                           batch_size, output_states.mu_a, output_states.var_a);
+                           effective_batch, output_states.mu_a,
+                           output_states.var_a);
 
     // Compute covariance of A and Z i.e., Jacobian.
     compute_cov_a_z(output_states.mu_a, output_states.var_a, input_states.var_a,
                     this->mu_m, this->var_m, this->var_log_m,
-                    this->cov_log_m_mt, this->jcb_m, hidden_size, batch_size,
-                    output_states.jcb);
+                    this->cov_log_m_mt, this->jcb_m, hidden_size,
+                    effective_batch, output_states.jcb);
 
-    // Save activation mean and jacobian to the class member for backward pass
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
+    output_states.seq_len = input_states.seq_len;
 }
 
 #ifdef USE_CUDA
@@ -1411,40 +1436,43 @@ void ClosedFormSoftmax::forward(BaseHiddenStates &input_states,
 {
     int batch_size = input_states.block_size;
     int hidden_size = input_states.actual_size;
-
+    int effective_batch = batch_size * seq_len;
     if (this->batch_size_ != batch_size) {
-        this->batch_size_ = batch_size;
-        this->mu_e_sum.resize(batch_size, 0.0f);
-        this->var_e_sum.resize(batch_size, 0.0f);
-        this->cov_z_log_e_sum.resize(batch_size * hidden_size, 0.0f);
-        this->mu_log_e_sum.resize(batch_size, 0.0f);
-        this->var_log_e_sum.resize(batch_size, 0.0f);
-        this->cov_log_a_z.resize(batch_size * hidden_size, 0.0f);
-        this->mu_log_a.resize(batch_size * hidden_size, 0.0f);
-        this->var_log_a.resize(batch_size * hidden_size, 0.0f);
+        this->batch_size_ = effective_batch;
+        this->mu_e_sum.resize(effective_batch, 0.0f);
+        this->var_e_sum.resize(effective_batch, 0.0f);
+        this->cov_z_log_e_sum.resize(effective_batch * hidden_size, 0.0f);
+        this->mu_log_e_sum.resize(effective_batch, 0.0f);
+        this->var_log_e_sum.resize(effective_batch, 0.0f);
+        this->cov_log_a_z.resize(effective_batch * hidden_size, 0.0f);
+        this->mu_log_a.resize(effective_batch * hidden_size, 0.0f);
+        this->var_log_a.resize(effective_batch * hidden_size, 0.0f);
     }
 
     compute_mean_var_exp_sum(input_states.mu_a, input_states.var_a, hidden_size,
                              batch_size, this->mu_e_sum, this->var_e_sum);
-    to_log(this->mu_e_sum, this->var_e_sum, 1, batch_size, this->mu_log_e_sum,
-           this->var_log_e_sum);
+    to_log(this->mu_e_sum, this->var_e_sum, 1, effective_batch,
+           this->mu_log_e_sum, this->var_log_e_sum);
 
     compute_mean_var_log_a(
         input_states.mu_a, input_states.var_a, this->mu_log_e_sum,
         this->var_log_e_sum, this->mu_e_sum, this->var_e_sum, hidden_size,
-        batch_size, this->mu_log_a, this->var_log_a, this->cov_log_a_z);
+        effective_batch, this->mu_log_a, this->var_log_a, this->cov_log_a_z);
 
     compute_cfsoftmax_mean_var(this->mu_log_a, this->var_log_a,
                                this->cov_log_a_z, input_states.var_a,
-                               hidden_size, batch_size, output_states.mu_a,
+                               hidden_size, effective_batch, output_states.mu_a,
                                output_states.var_a, output_states.jcb);
 
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
+    output_states.seq_len = input_states.seq_len;
 }
 
 #ifdef USE_CUDA
@@ -1489,7 +1517,8 @@ void EvenExp::forward(BaseHiddenStates &input_states,
  */
 {
     int start_chunk = 0;
-    int end_chunk = input_states.actual_size * input_states.block_size;
+    int end_chunk = input_states.actual_size * input_states.block_size *
+                    input_states.seq_len;
     if (this->num_threads > 1) {
         even_exp_mean_var_mp(input_states.mu_a, input_states.var_a,
                              input_states.jcb, end_chunk, this->num_threads,
@@ -1505,10 +1534,12 @@ void EvenExp::forward(BaseHiddenStates &input_states,
     this->input_size = input_states.actual_size;
     this->output_size = input_states.actual_size;
 
-    // Update number of actual states.
-    output_states.size = input_states.size;
+    output_states.width = this->out_width;
+    output_states.height = this->out_height;
+    output_states.depth = this->out_channels;
     output_states.block_size = input_states.block_size;
     output_states.actual_size = input_states.actual_size;
+    output_states.seq_len = input_states.seq_len;
 }
 
 #ifdef USE_CUDA
