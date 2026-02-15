@@ -1,5 +1,6 @@
 #include "../include/sequential.h"
 
+#include "../include/attention.h"
 #include "../include/batchnorm_layer.h"
 #include "../include/common.h"
 #include "../include/config.h"
@@ -985,6 +986,26 @@ Sequential::get_lstm_states(int time_step)
     }
 
     return lstm_states;
+}
+
+std::unordered_map<int, std::tuple<std::vector<float>, std::vector<float>>>
+Sequential::get_attention_scores() const {
+    std::unordered_map<int, std::tuple<std::vector<float>, std::vector<float>>>
+        scores;
+
+    for (size_t i = 0; i < layers.size(); ++i) {
+        if (layers[i]->get_layer_type() == LayerType::MultiheadAttention) {
+            auto *attn_layer =
+                dynamic_cast<MultiheadAttention *>(layers[i].get());
+            if (attn_layer) {
+                scores[static_cast<int>(i)] =
+                    std::make_tuple(attn_layer->attn_states.mu_att_score,
+                                    attn_layer->attn_states.var_att_score);
+            }
+        }
+    }
+
+    return scores;
 }
 
 void Sequential::set_lstm_states(

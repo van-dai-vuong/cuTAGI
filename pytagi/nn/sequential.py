@@ -409,3 +409,13 @@ class Sequential:
         :type states: dict
         """
         self._cpp_backend.set_lstm_states(states)
+
+    def get_attention_scores(self) -> dict:
+        """Gets attention scores from all MultiheadAttention layers.
+
+        :return: A dictionary mapping layer indices to a 2-tuple of
+                 lists: (mu_att_score, var_att_score). Each has shape
+                 [batch_size * num_heads * seq_len * seq_len] (flattened).
+        :rtype: dict
+        """
+        return self._cpp_backend.get_attention_scores()

@@ -82,6 +82,7 @@ def main(
         for _ in range(steps_per_epoch):
             x, y = task.next_batch(batch_size)
             m_pred, v_pred = net(x)
+            # attention_scores = net.get_attention_scores()
 
             y_obs, y_idx, _ = utils.label_to_obs(
                 labels=y, num_classes=vocab_size

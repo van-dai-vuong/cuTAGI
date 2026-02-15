@@ -169,6 +169,9 @@ class Sequential {
                                        std::vector<float>, std::vector<float>>>
     get_lstm_states(int time_step) const;
 
+    std::unordered_map<int, std::tuple<std::vector<float>, std::vector<float>>>
+    get_attention_scores() const;
+
     void set_lstm_states(
         const std::unordered_map<
             int, std::tuple<std::vector<float>, std::vector<float>,
