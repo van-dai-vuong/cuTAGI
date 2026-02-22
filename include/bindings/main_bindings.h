@@ -21,4 +21,5 @@
 #include "sequential_bindings.h"
 #include "slinear_layer_bindings.h"
 #include "slstm_layer_bindings.h"
+#include "tlstm_layer_bindings.h"
 #include "utils_bindings.h"

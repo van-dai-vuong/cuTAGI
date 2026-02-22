@@ -38,8 +38,8 @@ Args:
 {
     int n = input_size;
     for (int i = start_chunk; i < end_chunk; i++) {
-        int row = i / batch_size;
-        int col = i % batch_size;
+        int row = i / batch_size;  // batch seq index
+        int col = i % batch_size;  // output node index
         float sum_mu_z = 0.0f;
         float sum_var_z = 0.0f;
         for (int j = 0; j < input_size; j++) {
@@ -619,9 +619,9 @@ void lstm_delta_mean_var_z_worker(
     float Czz_f, Czz_i, Czz_c, Czz_o;
     int k, m, i, x, y, z;
     for (int t = start_idx; t < end_idx; t++) {
-        x = t / (ni * seq_len);
-        y = (t % (ni * seq_len)) / ni;
-        z = t % ni;
+        x = t / (ni * seq_len);         // batch index
+        y = (t % (ni * seq_len)) / ni;  // sequence index
+        z = t % ni;                     // input index
 
         sum_mf = 0;
         sum_mi = 0;
@@ -819,8 +819,8 @@ void lstm_delta_mean_var_w_worker(
         sum_mo = 0;
         sum_So = 0;
         for (int j = 0; j < B * seq_len; j++) {
-            x = j / seq_len;
-            y = j % seq_len;
+            x = j / seq_len;  // batch index
+            y = j % seq_len;  // time step index
 
             k = col + y * no + no * seq_len * x;
             i = col + y * no + no * seq_len * x;
