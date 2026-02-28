@@ -33,6 +33,7 @@ saved_results/param_viz
 # claude
 CLAUDE.md
 ai_context
+.claude
 
 
 !test/data/*.csv

@@ -7,11 +7,11 @@
 
 void bind_tlstm_layer(pybind11::module_& modo) {
     pybind11::class_<TLSTM, std::shared_ptr<TLSTM>, BaseLayer>(modo, "TLSTM")
-        .def(pybind11::init<size_t, size_t, int, bool, float, float,
+        .def(pybind11::init<size_t, size_t, bool, int, bool, float, float,
                             std::string, int>(),
              pybind11::arg("input_size"), pybind11::arg("output_size"),
-             pybind11::arg("seq_len"), pybind11::arg("bias"),
-             pybind11::arg("gain_weight") = 1.0f,
+             pybind11::arg("output_seq") = true, pybind11::arg("seq_len") = 1,
+             pybind11::arg("bias") = true, pybind11::arg("gain_weight") = 1.0f,
              pybind11::arg("gain_bias") = 1.0f, pybind11::arg("method") = "He",
              pybind11::arg("device_idx") = 0)
         .def("get_layer_info", &TLSTM::get_layer_info)

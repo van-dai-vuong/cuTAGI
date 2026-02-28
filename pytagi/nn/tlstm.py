@@ -11,7 +11,8 @@ class TLSTM(BaseLayer):
         self,
         input_size: int,
         output_size: int,
-        seq_len: int,
+        output_seq: bool = True,
+        seq_len: int = 1,
         bias: bool = True,
         gain_weight: float = 1.0,
         gain_bias: float = 1.0,
@@ -21,6 +22,7 @@ class TLSTM(BaseLayer):
 
         self.input_size = input_size
         self.output_size = output_size
+        self.output_seq = output_seq
         self.seq_len = seq_len
         self.bias = bias
         self.gain_weight = gain_weight
@@ -30,6 +32,7 @@ class TLSTM(BaseLayer):
         self._cpp_backend = cutagi.TLSTM(
             input_size,
             output_size,
+            output_seq,
             seq_len,
             bias,
             gain_weight,

@@ -51,18 +51,36 @@ void tlstm_fwd_mean_var(std::vector<float> &mu_w, std::vector<float> &var_w,
     }
 }
 
-void tlstm_cat_activations_and_prev_states(std::vector<float> &a,
-                                           std::vector<float> &b, int n, int m,
-                                           int batch_size, int x_offset,
-                                           int input_offset,
-                                           std::vector<float> &c) {
-    for (int k = 0; k < batch_size; k++) {
+void tlstm_cat_activations_and_prev_states(std::vector<float> &vec_a,
+                                           std::vector<float> &vec_b, int n,
+                                           int m, int batch_size, int seq_len,
+                                           int time_step,
+                                           std::vector<float> &vec_c) {
+    int ni_c = n + m;
+    for (int b = 0; b < batch_size; b++) {
+        int a_off = b * seq_len * n + time_step * n;
+        int b_off = b * seq_len * m + time_step * m;
+        int c_off = b * seq_len * ni_c + time_step * ni_c;
         for (int i = 0; i < n; i++) {
-            c[input_offset + i + k * (n + m)] = a[x_offset + i + k * n];
+            vec_c[c_off + i] = vec_a[a_off + i];
         }
         for (int j = 0; j < m; j++) {
-            c[input_offset + j + n + k * (n + m)] = b[j + k * m];
+            vec_c[c_off + n + j] = vec_b[b_off + j];
         }
+    }
+}
+
+using ActivationFn = void (*)(std::vector<float> &, std::vector<float> &, int,
+                              int, std::vector<float> &, std::vector<float> &,
+                              std::vector<float> &);
+
+void tlstm_activate_gate(std::vector<float> &mu_z, std::vector<float> &var_z,
+                         int batch_size, int seq_len, int no, int time_step,
+                         ActivationFn act_fn, std::vector<float> &mu_a,
+                         std::vector<float> &jcb, std::vector<float> &var_a) {
+    for (int b = 0; b < batch_size; b++) {
+        int off = b * seq_len * no + time_step * no;
+        act_fn(mu_z, var_z, off, off + no, mu_a, jcb, var_a);
     }
 }
 
@@ -179,11 +197,12 @@ void tlstm_delta_mean_var_z(
     std::vector<float> &delta_mu, std::vector<float> &delta_var) {
     int ni_c = ni + no;
     for (int x = 0; x < batch_size; x++) {
-        for (int z = 0; z < ni; z++) {
+        for (int z = 0; z < ni_c; z++) {
             float sum_mf = 0, sum_mi = 0, sum_mc = 0, sum_mo = 0;
             float sum_var_z = 0;
             for (int j = 0; j < no; j++) {
                 int k = j + x * seq_len * no + time_step * no;
+                int delta_idx = x * no + j;
 
                 // Forget gate
                 float Czz_f = Jca[k] * mo_ga[k] * Jf_ga[k] *
@@ -200,14 +219,14 @@ void tlstm_delta_mean_var_z(
                 // Output gate
                 float Czz_o = Jo_ga[k] * mw[ni_c * j + z + w_pos_o] * mca[k];
 
-                sum_mf += Czz_f * delta_mu_out[k];
-                sum_mi += Czz_i * delta_mu_out[k];
-                sum_mc += Czz_c * delta_mu_out[k];
-                sum_mo += Czz_o * delta_mu_out[k];
-                sum_var_z +=
-                    powf(Czz_f + Czz_i + Czz_c + Czz_o, 2) * delta_var_out[k];
+                sum_mf += Czz_f * delta_mu_out[delta_idx];
+                sum_mi += Czz_i * delta_mu_out[delta_idx];
+                sum_mc += Czz_c * delta_mu_out[delta_idx];
+                sum_mo += Czz_o * delta_mu_out[delta_idx];
+                sum_var_z += powf(Czz_f + Czz_i + Czz_c + Czz_o, 2) *
+                             delta_var_out[delta_idx];
             }
-            int m = x * ni + z;
+            int m = x * ni_c + z;
             delta_mu[m] = sum_mf + sum_mi + sum_mc + sum_mo;
             delta_var[m] = sum_var_z;
         }
@@ -235,22 +254,23 @@ void tlstm_delta_mean_var_w(
             for (int x = 0; x < batch_size; x++) {
                 int k = col + x * seq_len * no + time_step * no;
                 int l = row + x * seq_len * ni_c + time_step * ni_c;
+                int delta_idx = x * no + col;
 
                 float Cwa_f = Jc[k] * Jf_ga[k] * mc_prev[k] * mo_ga[k] * mha[l];
-                s_mu_f += Cwa_f * delta_mu[k];
-                s_var_f += Cwa_f * delta_var[k] * Cwa_f;
+                s_mu_f += Cwa_f * delta_mu[delta_idx];
+                s_var_f += Cwa_f * delta_var[delta_idx] * Cwa_f;
 
                 float Cwa_i = Jc[k] * Ji_ga[k] * mc_ga[k] * mo_ga[k] * mha[l];
-                s_mu_i += Cwa_i * delta_mu[k];
-                s_var_i += Cwa_i * delta_var[k] * Cwa_i;
+                s_mu_i += Cwa_i * delta_mu[delta_idx];
+                s_var_i += Cwa_i * delta_var[delta_idx] * Cwa_i;
 
                 float Cwa_c = Jc[k] * Jc_ga[k] * mi_ga[k] * mo_ga[k] * mha[l];
-                s_mu_c += Cwa_c * delta_mu[k];
-                s_var_c += Cwa_c * delta_var[k] * Cwa_c;
+                s_mu_c += Cwa_c * delta_mu[delta_idx];
+                s_var_c += Cwa_c * delta_var[delta_idx] * Cwa_c;
 
                 float Cwa_o = Jo_ga[k] * mca[k] * mha[l];
-                s_mu_o += Cwa_o * delta_mu[k];
-                s_var_o += Cwa_o * delta_var[k] * Cwa_o;
+                s_mu_o += Cwa_o * delta_mu[delta_idx];
+                s_var_o += Cwa_o * delta_var[delta_idx] * Cwa_o;
             }
             int m = col * ni_c + row;
             sum_mu_w_f[m] += s_mu_f;
@@ -282,22 +302,23 @@ void tlstm_delta_mean_var_b(
         float s_mu_c = 0, s_var_c = 0, s_mu_o = 0, s_var_o = 0;
         for (int x = 0; x < batch_size; x++) {
             int k = row + x * seq_len * no + time_step * no;
+            int delta_idx = x * no + row;
 
             float Cwa_f = Jc[k] * Jf_ga[k] * mc_prev[k] * mo_ga[k];
-            s_mu_f += Cwa_f * delta_mu[k];
-            s_var_f += Cwa_f * delta_var[k] * Cwa_f;
+            s_mu_f += Cwa_f * delta_mu[delta_idx];
+            s_var_f += Cwa_f * delta_var[delta_idx] * Cwa_f;
 
             float Cwa_i = Jc[k] * Ji_ga[k] * mc_ga[k] * mo_ga[k];
-            s_mu_i += Cwa_i * delta_mu[k];
-            s_var_i += Cwa_i * delta_var[k] * Cwa_i;
+            s_mu_i += Cwa_i * delta_mu[delta_idx];
+            s_var_i += Cwa_i * delta_var[delta_idx] * Cwa_i;
 
             float Cwa_c = Jc[k] * Jc_ga[k] * mi_ga[k] * mo_ga[k];
-            s_mu_c += Cwa_c * delta_mu[k];
-            s_var_c += Cwa_c * delta_var[k] * Cwa_c;
+            s_mu_c += Cwa_c * delta_mu[delta_idx];
+            s_var_c += Cwa_c * delta_var[delta_idx] * Cwa_c;
 
             float Cwa_o = Jo_ga[k] * mca[k];
-            s_mu_o += Cwa_o * delta_mu[k];
-            s_var_o += Cwa_o * delta_var[k] * Cwa_o;
+            s_mu_o += Cwa_o * delta_mu[delta_idx];
+            s_var_o += Cwa_o * delta_var[delta_idx] * Cwa_o;
         }
         sum_mu_b_f[row] += s_mu_f;
         sum_var_b_f[row] += s_var_f;
@@ -310,14 +331,45 @@ void tlstm_delta_mean_var_b(
     }
 }
 
+void tlstm_update_prev_hidden_states_worker(
+    std::vector<float> &mu_h_prior, std::vector<float> &var_h_prior,
+    std::vector<float> &delta_mu, std::vector<float> &delta_var, int start_idx,
+    int end_idx, std::vector<float> &mu_h_prev, std::vector<float> &var_h_prev)
+/*
+ */
+{
+    for (size_t i = start_idx; i < end_idx; i++) {
+        mu_h_prev[i] = mu_h_prior[i] + delta_mu[i] * var_h_prior[i];
+        var_h_prev[i] = (1.0f + delta_var[i] * var_h_prior[i]) * var_h_prior[i];
+    }
+}
+
+void tlstm_update_prev_cell_states_worker(
+    std::vector<float> &mu_c_prior, std::vector<float> &var_c_prior,
+    std::vector<float> &jcb_ca, std::vector<float> &mu_o_ga,
+    std::vector<float> &delta_mu, std::vector<float> &delta_var, int start_idx,
+    int end_idx, std::vector<float> &mu_c_prev, std::vector<float> &var_c_prev)
+/*
+ */
+{
+    for (size_t i = start_idx; i < end_idx; i++) {
+        float tmp = var_c_prior[i] * jcb_ca[i] * mu_o_ga[i];
+        mu_c_prev[i] = mu_c_prior[i] + tmp * delta_mu[i];
+        var_c_prev[i] = var_c_prior[i] + tmp * delta_var[i] * tmp;
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // TLSTM CLASS
 ////////////////////////////////////////////////////////////////////////////////
 
-TLSTM::TLSTM(size_t input_size, size_t output_size, int seq_len, bool bias,
-             float gain_w, float gain_b, std::string init_method,
-             int device_idx)
-    : gain_w(gain_w), gain_b(gain_b), init_method(init_method) {
+TLSTM::TLSTM(size_t input_size, size_t output_size, bool output_seq,
+             int seq_len, bool bias, float gain_w, float gain_b,
+             std::string init_method, int device_idx)
+    : gain_w(gain_w),
+      gain_b(gain_b),
+      init_method(init_method),
+      output_seq(output_seq) {
     this->input_size = input_size;
     this->output_size = output_size;
     this->seq_len = seq_len;
@@ -344,7 +396,12 @@ LayerType TLSTM::get_layer_type() const { return LayerType::TLSTM; }
 
 int TLSTM::get_input_size() { return this->input_size * this->seq_len; }
 
-int TLSTM::get_output_size() { return this->output_size * this->seq_len; }
+int TLSTM::get_output_size() {
+    if (this->output_seq) {
+        return this->output_size * this->seq_len;
+    }
+    return this->output_size;
+}
 
 int TLSTM::get_max_num_states() {
     int in_size = static_cast<int>(this->input_size) * this->seq_len;
@@ -382,15 +439,15 @@ void TLSTM::init_weight_bias() {
 void TLSTM::forward(BaseHiddenStates &input_states,
                     BaseHiddenStates &output_states,
                     BaseTempStates &temp_states) {
-    if (this->input_size * this->seq_len != input_states.actual_size) {
-        std::string message = "Input size mismatch: " +
-                              std::to_string(this->input_size * this->seq_len) +
-                              " vs " + std::to_string(input_states.actual_size);
+    if (this->input_size != input_states.actual_size) {
+        std::string message =
+            "Input size mismatch: " + std::to_string(this->input_size) +
+            " vs " + std::to_string(input_states.actual_size);
         LOG(LogLevel::ERROR, message);
     }
 
     int batch_size = input_states.block_size;
-    int T = this->seq_len;
+    int seq_len = this->seq_len;
     int ni = this->input_size;
     int no = this->output_size;
     int ni_c = ni + no;
@@ -399,8 +456,8 @@ void TLSTM::forward(BaseHiddenStates &input_states,
 
     if (this->_batch_size != batch_size) {
         this->_batch_size = batch_size;
-        this->lstm_states.set_num_states(batch_size * T * no,
-                                         batch_size * T * ni);
+        this->lstm_states.set_num_states(batch_size * seq_len * no,
+                                         batch_size * seq_len * ni);
     }
 
     output_states.width = this->out_width;
@@ -410,118 +467,139 @@ void TLSTM::forward(BaseHiddenStates &input_states,
     output_states.seq_len = this->seq_len;
     output_states.actual_size = this->output_size;
 
-    int state_size = batch_size * no;
-    std::vector<float> h_prev_mu(state_size);
-    std::vector<float> h_prev_var(state_size);
-    std::vector<float> c_prev_mu(state_size);
-    std::vector<float> c_prev_var(state_size);
-
-    for (int i = 0; i < state_size; i++) {
-        h_prev_mu[i] = this->lstm_states.mu_h_prior[i];
-        h_prev_var[i] = this->lstm_states.var_h_prior[i];
-        c_prev_mu[i] = this->lstm_states.mu_c_prior[i];
-        c_prev_var[i] = this->lstm_states.var_c_prior[i];
+    int end_chunk = no * batch_size;
+    for (int b = 0; b < batch_size; b++) {
+        for (int z = 0; z < no; z++) {
+            int prior_idx = b * no + z;
+            int prev_idx = b * seq_len * no + z;
+            lstm_states.mu_h_prev[prev_idx] = lstm_states.mu_h_prior[prior_idx];
+            lstm_states.var_h_prev[prev_idx] =
+                lstm_states.var_h_prior[prior_idx];
+            lstm_states.mu_c_prev[prev_idx] = lstm_states.mu_c_prior[prior_idx];
+            lstm_states.var_c_prev[prev_idx] =
+                lstm_states.var_c_prior[prior_idx];
+        }
     }
 
-    int end_chunk = no * batch_size;
+    for (int t = 0; t < seq_len; t++) {
+        tlstm_cat_activations_and_prev_states(
+            input_states.mu_a, lstm_states.mu_h_prev, ni, no, batch_size,
+            seq_len, t, lstm_states.mu_ha);
+        tlstm_cat_activations_and_prev_states(
+            input_states.var_a, lstm_states.var_h_prev, ni, no, batch_size,
+            seq_len, t, lstm_states.var_ha);
 
-    for (int t = 0; t < T; t++) {
-        int state_off = t * state_size;
-        int input_off = t * batch_size * ni_c;
-        int x_off = t * batch_size * ni;
-
-        for (int i = 0; i < state_size; i++) {
-            lstm_states.mu_h_prev[state_off + i] = h_prev_mu[i];
-            lstm_states.var_h_prev[state_off + i] = h_prev_var[i];
-            lstm_states.mu_c_prev[state_off + i] = c_prev_mu[i];
-            lstm_states.var_c_prev[state_off + i] = c_prev_var[i];
-        }
-
-        tlstm_cat_activations_and_prev_states(input_states.mu_a, h_prev_mu, ni,
-                                              no, batch_size, x_off, input_off,
-                                              lstm_states.mu_ha);
-        tlstm_cat_activations_and_prev_states(input_states.var_a, h_prev_var,
-                                              ni, no, batch_size, x_off,
-                                              input_off, lstm_states.var_ha);
-
+        // Forget gate
         tlstm_fwd_mean_var(this->mu_w, this->var_w, this->mu_b, this->var_b,
                            lstm_states.mu_ha, lstm_states.var_ha, 0, end_chunk,
-                           ni_c, no, batch_size, this->seq_len, t, this->bias,
+                           ni_c, no, batch_size, seq_len, t, this->bias,
                            this->w_pos_f, this->b_pos_f, lstm_states.mu_f_ga,
                            lstm_states.var_f_ga);
-        sigmoid_mean_var(lstm_states.mu_f_ga, lstm_states.var_f_ga, state_off,
-                         state_off + state_size, lstm_states.mu_f_ga,
-                         lstm_states.jcb_f_ga, lstm_states.var_f_ga);
+        tlstm_activate_gate(lstm_states.mu_f_ga, lstm_states.var_f_ga,
+                            batch_size, seq_len, no, t, sigmoid_mean_var,
+                            lstm_states.mu_f_ga, lstm_states.jcb_f_ga,
+                            lstm_states.var_f_ga);
 
+        // Input gate
         tlstm_fwd_mean_var(this->mu_w, this->var_w, this->mu_b, this->var_b,
                            lstm_states.mu_ha, lstm_states.var_ha, 0, end_chunk,
-                           ni_c, no, batch_size, this->seq_len, t, this->bias,
+                           ni_c, no, batch_size, seq_len, t, this->bias,
                            this->w_pos_i, this->b_pos_i, lstm_states.mu_i_ga,
                            lstm_states.var_i_ga);
-        sigmoid_mean_var(lstm_states.mu_i_ga, lstm_states.var_i_ga, state_off,
-                         state_off + state_size, lstm_states.mu_i_ga,
-                         lstm_states.jcb_i_ga, lstm_states.var_i_ga);
+        tlstm_activate_gate(lstm_states.mu_i_ga, lstm_states.var_i_ga,
+                            batch_size, seq_len, no, t, sigmoid_mean_var,
+                            lstm_states.mu_i_ga, lstm_states.jcb_i_ga,
+                            lstm_states.var_i_ga);
 
+        // Cell state gate
         tlstm_fwd_mean_var(this->mu_w, this->var_w, this->mu_b, this->var_b,
                            lstm_states.mu_ha, lstm_states.var_ha, 0, end_chunk,
-                           ni_c, no, batch_size, this->seq_len, t, this->bias,
+                           ni_c, no, batch_size, seq_len, t, this->bias,
                            this->w_pos_c, this->b_pos_c, lstm_states.mu_c_ga,
                            lstm_states.var_c_ga);
-        tanh_mean_var(lstm_states.mu_c_ga, lstm_states.var_c_ga, state_off,
-                      state_off + state_size, lstm_states.mu_c_ga,
-                      lstm_states.jcb_c_ga, lstm_states.var_c_ga);
+        tlstm_activate_gate(lstm_states.mu_c_ga, lstm_states.var_c_ga,
+                            batch_size, seq_len, no, t, tanh_mean_var,
+                            lstm_states.mu_c_ga, lstm_states.jcb_c_ga,
+                            lstm_states.var_c_ga);
 
+        // Output gate
         tlstm_fwd_mean_var(this->mu_w, this->var_w, this->mu_b, this->var_b,
                            lstm_states.mu_ha, lstm_states.var_ha, 0, end_chunk,
-                           ni_c, no, batch_size, this->seq_len, t, this->bias,
+                           ni_c, no, batch_size, seq_len, t, this->bias,
                            this->w_pos_o, this->b_pos_o, lstm_states.mu_o_ga,
                            lstm_states.var_o_ga);
-        sigmoid_mean_var(lstm_states.mu_o_ga, lstm_states.var_o_ga, state_off,
-                         state_off + state_size, lstm_states.mu_o_ga,
-                         lstm_states.jcb_o_ga, lstm_states.var_o_ga);
+        tlstm_activate_gate(lstm_states.mu_o_ga, lstm_states.var_o_ga,
+                            batch_size, seq_len, no, t, sigmoid_mean_var,
+                            lstm_states.mu_o_ga, lstm_states.jcb_o_ga,
+                            lstm_states.var_o_ga);
 
         tlstm_cov_input_cell_states(
             lstm_states.var_ha, this->mu_w, lstm_states.jcb_i_ga,
             lstm_states.jcb_c_ga, this->w_pos_i, this->w_pos_c, ni, no,
-            batch_size, this->seq_len, t, lstm_states.cov_i_c);
+            batch_size, seq_len, t, lstm_states.cov_i_c);
 
-        // TODO: need to review c_prev_mu as this function consider c_prev_mu =
-        // batch size  * seq_len * no
         tlstm_cell_state_mean_var(
             lstm_states.mu_f_ga, lstm_states.var_f_ga, lstm_states.mu_i_ga,
             lstm_states.var_i_ga, lstm_states.mu_c_ga, lstm_states.var_c_ga,
-            c_prev_mu, c_prev_var, lstm_states.cov_i_c, no, batch_size,
-            this->seq_len, t, lstm_states.mu_c, lstm_states.var_c);
+            lstm_states.mu_c_prev, lstm_states.var_c_prev, lstm_states.cov_i_c,
+            no, batch_size, seq_len, t, lstm_states.mu_c, lstm_states.var_c);
 
-        tanh_mean_var(lstm_states.mu_c, lstm_states.var_c, state_off,
-                      state_off + state_size, lstm_states.mu_ca,
-                      lstm_states.jcb_ca, lstm_states.var_ca);
+        tlstm_activate_gate(lstm_states.mu_c, lstm_states.var_c, batch_size,
+                            seq_len, no, t, tanh_mean_var, lstm_states.mu_ca,
+                            lstm_states.jcb_ca, lstm_states.var_ca);
 
         tlstm_cov_output_tanh_cell_states(
-            this->mu_w, lstm_states.var_ha, c_prev_mu, lstm_states.jcb_ca,
-            lstm_states.jcb_f_ga, lstm_states.mu_i_ga, lstm_states.jcb_i_ga,
-            lstm_states.mu_c_ga, lstm_states.jcb_c_ga, lstm_states.jcb_o_ga,
-            this->w_pos_f, this->w_pos_i, this->w_pos_c, this->w_pos_o, ni, no,
-            batch_size, this->seq_len, t, lstm_states.cov_o_tanh_c);
+            this->mu_w, lstm_states.var_ha, lstm_states.mu_c_prev,
+            lstm_states.jcb_ca, lstm_states.jcb_f_ga, lstm_states.mu_i_ga,
+            lstm_states.jcb_i_ga, lstm_states.mu_c_ga, lstm_states.jcb_c_ga,
+            lstm_states.jcb_o_ga, this->w_pos_f, this->w_pos_i, this->w_pos_c,
+            this->w_pos_o, ni, no, batch_size, this->seq_len, t,
+            lstm_states.cov_o_tanh_c);
 
         tlstm_hidden_state_mean_var(
             lstm_states.mu_o_ga, lstm_states.var_o_ga, lstm_states.mu_ca,
             lstm_states.var_ca, lstm_states.cov_o_tanh_c, no, batch_size,
             this->seq_len, t, output_states.mu_a, output_states.var_a);
-
-        for (int i = 0; i < state_size; i++) {
-            h_prev_mu[i] = output_states.mu_a[state_off + i];
-            h_prev_var[i] = output_states.var_a[state_off + i];
-            c_prev_mu[i] = lstm_states.mu_c[state_off + i];
-            c_prev_var[i] = lstm_states.var_c[state_off + i];
+        if (t < seq_len - 1) {
+            for (int b = 0; b < batch_size; b++) {
+                for (int z = 0; z < no; z++) {
+                    int prev_idx = b * seq_len * no + (t + 1) * no + z;
+                    int curr_idx = b * seq_len * no + t * no + z;
+                    lstm_states.mu_h_prev[prev_idx] =
+                        output_states.mu_a[curr_idx];
+                    lstm_states.var_h_prev[prev_idx] =
+                        output_states.var_a[curr_idx];
+                    lstm_states.mu_c_prev[prev_idx] =
+                        lstm_states.mu_c[curr_idx];
+                    lstm_states.var_c_prev[prev_idx] =
+                        lstm_states.var_c[curr_idx];
+                }
+            }
         }
     }
 
-    for (int i = 0; i < state_size; i++) {
-        this->lstm_states.mu_h_prior[i] = h_prev_mu[i];
-        this->lstm_states.var_h_prior[i] = h_prev_var[i];
-        this->lstm_states.mu_c_prior[i] = c_prev_mu[i];
-        this->lstm_states.var_c_prior[i] = c_prev_var[i];
+    // Save priors from last timestep
+    for (int b = 0; b < batch_size; b++) {
+        int src = b * seq_len * no + (seq_len - 1) * no;
+        int dst = b * no;
+        for (int z = 0; z < no; z++) {
+            lstm_states.mu_h_prior[dst + z] = output_states.mu_a[src + z];
+            lstm_states.var_h_prior[dst + z] = output_states.var_a[src + z];
+            lstm_states.mu_c_prior[dst + z] = lstm_states.mu_c[src + z];
+            lstm_states.var_c_prior[dst + z] = lstm_states.var_c[src + z];
+        }
+    }
+
+    if (!this->output_seq) {
+        for (int b = 0; b < batch_size; b++) {
+            int src = b * seq_len * no + (seq_len - 1) * no;
+            int dst = b * no;
+            for (int z = 0; z < no; z++) {
+                output_states.mu_a[dst + z] = output_states.mu_a[src + z];
+                output_states.var_a[dst + z] = output_states.var_a[src + z];
+            }
+        }
+        output_states.seq_len = 1;
     }
 
     if (this->training) {
@@ -533,105 +611,71 @@ void TLSTM::backward(BaseDeltaStates &input_delta_states,
                      BaseDeltaStates &output_delta_states,
                      BaseTempStates &temp_states, bool state_udapte) {
     int batch_size = input_delta_states.block_size;
-    int T = this->seq_len;
+    int seq_len = this->seq_len;
     int ni = this->input_size;
     int no = this->output_size;
     int ni_c = ni + no;
-    int state_size = batch_size * no;
 
-    // Recurrent deltas from t+1, initialized to zero
-    std::vector<float> delta_rec_mu(state_size, 0.0f);
-    std::vector<float> delta_rec_var(state_size, 0.0f);
+    // Recurrent deltas from t+1
+    std::vector<float> delta_rec_mu(batch_size * no, 0.0f);
+    std::vector<float> delta_rec_var(batch_size * no, 0.0f);
+    std::vector<float> combined_delta_mu(batch_size * no, 0.0f);
+    std::vector<float> combined_delta_var(batch_size * no, 0.0f);
 
-    // Temp buffer for full [x(t), h(t-1)] deltas
-    std::vector<float> delta_full_mu(batch_size * ni_c, 0.0f);
-    std::vector<float> delta_full_var(batch_size * ni_c, 0.0f);
+    // Temp buffer for full [x(t), h(t-1)]
+    std::vector<float> delta_xh_mu(batch_size * ni_c, 0.0f);
+    std::vector<float> delta_xh_var(batch_size * ni_c, 0.0f);
 
-    // Combined delta (direct + recurrent)
-    std::vector<float> combined_delta_mu(state_size);
-    std::vector<float> combined_delta_var(state_size);
-
-    // Accumulators for weight and bias deltas (raw sums, no Sw/Sb yet)
-    int w_size = ni_c * no;
-    std::vector<float> sum_mw_f(w_size, 0.0f), sum_Sw_f(w_size, 0.0f);
-    std::vector<float> sum_mw_i(w_size, 0.0f), sum_Sw_i(w_size, 0.0f);
-    std::vector<float> sum_mw_c(w_size, 0.0f), sum_Sw_c(w_size, 0.0f);
-    std::vector<float> sum_mw_o(w_size, 0.0f), sum_Sw_o(w_size, 0.0f);
-
-    std::vector<float> sum_mb_f(no, 0.0f), sum_Sb_f(no, 0.0f);
-    std::vector<float> sum_mb_i(no, 0.0f), sum_Sb_i(no, 0.0f);
-    std::vector<float> sum_mb_c(no, 0.0f), sum_Sb_c(no, 0.0f);
-    std::vector<float> sum_mb_o(no, 0.0f), sum_Sb_o(no, 0.0f);
-
-    // We need a temporary buffer for combined deltas stored in the same layout
-    // as lstm_states (to pass to delta_z, delta_w, delta_b functions).
-    // We reuse input_delta_states for the combined output delta.
-    // But we need to be careful: input_delta_states.delta_mu/var has size
-    // B * T * no. We'll write the combined delta at each timestep's slot.
     std::vector<float> &delta_mu_buf = input_delta_states.delta_mu;
     std::vector<float> &delta_var_buf = input_delta_states.delta_var;
 
-    for (int t = T - 1; t >= 0; t--) {
-        int state_off = t * state_size;
-        int input_off = t * batch_size * ni_c;
+    // Accumulators for weight and bias deltas (raw sums, no Sw/Sb yet)
+    int w_size = ni_c * no;
+    std::vector<float> sum_mu_w_f(w_size, 0.0f), sum_var_w_f(w_size, 0.0f);
+    std::vector<float> sum_mu_w_i(w_size, 0.0f), sum_var_w_i(w_size, 0.0f);
+    std::vector<float> sum_mu_w_c(w_size, 0.0f), sum_var_w_c(w_size, 0.0f);
+    std::vector<float> sum_mu_w_o(w_size, 0.0f), sum_var_w_o(w_size, 0.0f);
 
-        // Combine: delta_h(t) = direct_delta[t] + delta_recurrent
-        for (int i = 0; i < state_size; i++) {
-            combined_delta_mu[i] =
-                delta_mu_buf[state_off + i] + delta_rec_mu[i];
-            combined_delta_var[i] =
-                delta_var_buf[state_off + i] + delta_rec_var[i];
-        }
+    std::vector<float> sum_mu_b_f(no, 0.0f), sum_var_b_f(no, 0.0f);
+    std::vector<float> sum_mu_b_i(no, 0.0f), sum_var_b_i(no, 0.0f);
+    std::vector<float> sum_mu_b_c(no, 0.0f), sum_var_b_c(no, 0.0f);
+    std::vector<float> sum_mu_b_o(no, 0.0f), sum_var_b_o(no, 0.0f);
 
-        // Write combined delta back so delta functions can read from state_off
-        for (int i = 0; i < state_size; i++) {
-            delta_mu_buf[state_off + i] = combined_delta_mu[i];
-            delta_var_buf[state_off + i] = combined_delta_var[i];
-        }
-
-        if (state_udapte) {
-            // Compute delta for full [x(t), h(t-1)]
-            std::fill(delta_full_mu.begin(), delta_full_mu.end(), 0.0f);
-            std::fill(delta_full_var.begin(), delta_full_var.end(), 0.0f);
-
-            tlstm_delta_mean_var_z(
-                this->mu_w, lstm_states.jcb_f_ga, lstm_states.mu_i_ga,
-                lstm_states.jcb_i_ga, lstm_states.mu_c_ga, lstm_states.jcb_c_ga,
-                lstm_states.mu_o_ga, lstm_states.jcb_o_ga,
-                lstm_states.mu_c_prev, lstm_states.mu_ca, lstm_states.jcb_ca,
-                delta_mu_buf, delta_var_buf, this->w_pos_f, this->w_pos_i,
-                this->w_pos_c, this->w_pos_o, no, ni, batch_size, T, t,
-                delta_full_mu, delta_full_var);
-
-            // Split: first ni per sample -> output_delta (for previous layer)
-            //        last no per sample  -> delta_rec (for next backward iter)
-            int x_off = t * batch_size * ni;
+    for (int t = seq_len - 1; t >= 0; t--) {
+        // Combine incoming + recurrent deltas
+        if (this->output_seq) {
             for (int b = 0; b < batch_size; b++) {
-                for (int j = 0; j < ni; j++) {
-                    output_delta_states.delta_mu[x_off + b * ni + j] =
-                        delta_full_mu[b * ni_c + j];
-                    output_delta_states.delta_var[x_off + b * ni + j] =
-                        delta_full_var[b * ni_c + j];
-                }
+                int t_off = b * seq_len * no + t * no;
+                int b_off = b * no;
                 for (int j = 0; j < no; j++) {
-                    delta_rec_mu[b * no + j] = delta_full_mu[b * ni_c + ni + j];
-                    delta_rec_var[b * no + j] =
-                        delta_full_var[b * ni_c + ni + j];
+                    combined_delta_mu[b_off + j] =
+                        delta_mu_buf[t_off + j] + delta_rec_mu[b_off + j];
+                    combined_delta_var[b_off + j] =
+                        delta_var_buf[t_off + j] + delta_rec_var[b_off + j];
                 }
             }
+        } else if (t == seq_len - 1) {
+            for (int i = 0; i < batch_size * no; i++) {
+                combined_delta_mu[i] = delta_mu_buf[i] + delta_rec_mu[i];
+                combined_delta_var[i] = delta_var_buf[i] + delta_rec_var[i];
+            }
+        } else {
+            std::copy(delta_rec_mu.begin(), delta_rec_mu.end(),
+                      combined_delta_mu.begin());
+            std::copy(delta_rec_var.begin(), delta_rec_var.end(),
+                      combined_delta_var.begin());
         }
 
         if (param_update) {
-            // Accumulate weight deltas
             tlstm_delta_mean_var_w(
                 lstm_states.mu_ha, lstm_states.jcb_f_ga, lstm_states.mu_i_ga,
                 lstm_states.jcb_i_ga, lstm_states.mu_c_ga, lstm_states.jcb_c_ga,
                 lstm_states.mu_o_ga, lstm_states.jcb_o_ga,
                 lstm_states.mu_c_prev, lstm_states.mu_ca, lstm_states.jcb_ca,
-                delta_mu_buf, delta_var_buf, this->w_pos_f, this->w_pos_i,
-                this->w_pos_c, this->w_pos_o, no, ni, batch_size, T, t,
-                sum_mw_f, sum_Sw_f, sum_mw_i, sum_Sw_i, sum_mw_c, sum_Sw_c,
-                sum_mw_o, sum_Sw_o);
+                combined_delta_mu, combined_delta_var, this->w_pos_f,
+                this->w_pos_i, this->w_pos_c, this->w_pos_o, no, ni, batch_size,
+                seq_len, t, sum_mu_w_f, sum_var_w_f, sum_mu_w_i, sum_var_w_i,
+                sum_mu_w_c, sum_var_w_c, sum_mu_w_o, sum_var_w_o);
 
             if (this->bias) {
                 tlstm_delta_mean_var_b(
@@ -639,84 +683,109 @@ void TLSTM::backward(BaseDeltaStates &input_delta_states,
                     lstm_states.jcb_i_ga, lstm_states.mu_c_ga,
                     lstm_states.jcb_c_ga, lstm_states.mu_o_ga,
                     lstm_states.jcb_o_ga, lstm_states.mu_c_prev,
-                    lstm_states.mu_ca, lstm_states.jcb_ca, delta_mu_buf,
-                    delta_var_buf, no, batch_size, T, t, sum_mb_f, sum_Sb_f,
-                    sum_mb_i, sum_Sb_i, sum_mb_c, sum_Sb_c, sum_mb_o, sum_Sb_o);
+                    lstm_states.mu_ca, lstm_states.jcb_ca, combined_delta_mu,
+                    combined_delta_var, no, batch_size, seq_len, t, sum_mu_b_f,
+                    sum_var_b_f, sum_mu_b_i, sum_var_b_i, sum_mu_b_c,
+                    sum_var_b_c, sum_mu_b_o, sum_var_b_o);
+            }
+        }
+
+        if (state_udapte) {
+            std::fill(delta_xh_mu.begin(), delta_xh_mu.end(), 0.0f);
+            std::fill(delta_xh_var.begin(), delta_xh_var.end(), 0.0f);
+
+            tlstm_delta_mean_var_z(
+                this->mu_w, lstm_states.jcb_f_ga, lstm_states.mu_i_ga,
+                lstm_states.jcb_i_ga, lstm_states.mu_c_ga, lstm_states.jcb_c_ga,
+                lstm_states.mu_o_ga, lstm_states.jcb_o_ga,
+                lstm_states.mu_c_prev, lstm_states.mu_ca, lstm_states.jcb_ca,
+                combined_delta_mu, combined_delta_var, this->w_pos_f,
+                this->w_pos_i, this->w_pos_c, this->w_pos_o, no, ni, batch_size,
+                seq_len, t, delta_xh_mu, delta_xh_var);
+
+            for (int b = 0; b < batch_size; b++) {
+                for (int j = 0; j < ni; j++) {
+                    int idx = b * seq_len * ni + t * ni + j;
+                    output_delta_states.delta_mu[idx] =
+                        delta_xh_mu[b * ni_c + j];
+                    output_delta_states.delta_var[idx] =
+                        delta_xh_var[b * ni_c + j];
+                }
+                for (int j = 0; j < no; j++) {
+                    delta_rec_mu[b * no + j] = delta_xh_mu[b * ni_c + ni + j];
+                    delta_rec_var[b * no + j] = delta_xh_var[b * ni_c + ni + j];
+                }
             }
         }
     }
 
-    // Multiply accumulated sums by Sw/Sb to get final deltas
+    // Multiply accumulated sums by var_w/var_b to get final deltas
     if (param_update) {
         for (int m = 0; m < w_size; m++) {
             this->delta_mu_w[m + this->w_pos_f] =
-                sum_mw_f[m] * this->var_w[m + this->w_pos_f];
+                sum_mu_w_f[m] * this->var_w[m + this->w_pos_f];
             this->delta_var_w[m + this->w_pos_f] =
-                this->var_w[m + this->w_pos_f] * sum_Sw_f[m] *
+                this->var_w[m + this->w_pos_f] * sum_var_w_f[m] *
                 this->var_w[m + this->w_pos_f];
 
             this->delta_mu_w[m + this->w_pos_i] =
-                sum_mw_i[m] * this->var_w[m + this->w_pos_i];
+                sum_mu_w_i[m] * this->var_w[m + this->w_pos_i];
             this->delta_var_w[m + this->w_pos_i] =
-                this->var_w[m + this->w_pos_i] * sum_Sw_i[m] *
+                this->var_w[m + this->w_pos_i] * sum_var_w_i[m] *
                 this->var_w[m + this->w_pos_i];
 
             this->delta_mu_w[m + this->w_pos_c] =
-                sum_mw_c[m] * this->var_w[m + this->w_pos_c];
+                sum_mu_w_c[m] * this->var_w[m + this->w_pos_c];
             this->delta_var_w[m + this->w_pos_c] =
-                this->var_w[m + this->w_pos_c] * sum_Sw_c[m] *
+                this->var_w[m + this->w_pos_c] * sum_var_w_c[m] *
                 this->var_w[m + this->w_pos_c];
 
             this->delta_mu_w[m + this->w_pos_o] =
-                sum_mw_o[m] * this->var_w[m + this->w_pos_o];
+                sum_mu_w_o[m] * this->var_w[m + this->w_pos_o];
             this->delta_var_w[m + this->w_pos_o] =
-                this->var_w[m + this->w_pos_o] * sum_Sw_o[m] *
+                this->var_w[m + this->w_pos_o] * sum_var_w_o[m] *
                 this->var_w[m + this->w_pos_o];
         }
 
         if (this->bias) {
             for (int r = 0; r < no; r++) {
                 this->delta_mu_b[r + this->b_pos_f] =
-                    sum_mb_f[r] * this->var_b[r + this->b_pos_f];
+                    sum_mu_b_f[r] * this->var_b[r + this->b_pos_f];
                 this->delta_var_b[r + this->b_pos_f] =
-                    this->var_b[r + this->b_pos_f] * sum_Sb_f[r] *
+                    this->var_b[r + this->b_pos_f] * sum_var_b_f[r] *
                     this->var_b[r + this->b_pos_f];
 
                 this->delta_mu_b[r + this->b_pos_i] =
-                    sum_mb_i[r] * this->var_b[r + this->b_pos_i];
+                    sum_mu_b_i[r] * this->var_b[r + this->b_pos_i];
                 this->delta_var_b[r + this->b_pos_i] =
-                    this->var_b[r + this->b_pos_i] * sum_Sb_i[r] *
+                    this->var_b[r + this->b_pos_i] * sum_var_b_i[r] *
                     this->var_b[r + this->b_pos_i];
 
                 this->delta_mu_b[r + this->b_pos_c] =
-                    sum_mb_c[r] * this->var_b[r + this->b_pos_c];
+                    sum_mu_b_c[r] * this->var_b[r + this->b_pos_c];
                 this->delta_var_b[r + this->b_pos_c] =
-                    this->var_b[r + this->b_pos_c] * sum_Sb_c[r] *
+                    this->var_b[r + this->b_pos_c] * sum_var_b_c[r] *
                     this->var_b[r + this->b_pos_c];
 
                 this->delta_mu_b[r + this->b_pos_o] =
-                    sum_mb_o[r] * this->var_b[r + this->b_pos_o];
+                    sum_mu_b_o[r] * this->var_b[r + this->b_pos_o];
                 this->delta_var_b[r + this->b_pos_o] =
-                    this->var_b[r + this->b_pos_o] * sum_Sb_o[r] *
+                    this->var_b[r + this->b_pos_o] * sum_var_b_o[r] *
                     this->var_b[r + this->b_pos_o];
             }
         }
     }
 
-    // Update priors using the recurrent delta that reached t=0
-    // delta_rec now contains the delta for h at t=-1 (unused by previous layer,
-    // but used to update the hidden state prior)
-    lstm_update_prev_hidden_states_worker(
+    int state_size = batch_size * no;
+    tlstm_update_prev_hidden_states_worker(
         this->lstm_states.mu_h_prior, this->lstm_states.var_h_prior,
         delta_rec_mu, delta_rec_var, 0, state_size,
         this->lstm_states.mu_h_prior, this->lstm_states.var_h_prior);
 
-    // For cell state prior update, we need the delta at the output (t=0)
-    // and the jcb_ca, mu_o_ga at t=0
-    lstm_update_prev_cell_states_worker(
+    tlstm_update_prev_cell_states_worker(
         this->lstm_states.mu_c_prior, this->lstm_states.var_c_prior,
-        this->lstm_states.jcb_ca, this->lstm_states.mu_o_ga, combined_delta_mu,
-        combined_delta_var, 0, state_size, this->lstm_states.mu_c_prior,
+        this->lstm_states.jcb_ca, this->lstm_states.mu_o_ga, delta_rec_mu,
+        delta_rec_var, 0, state_size, this->lstm_states.mu_c_prior,
         this->lstm_states.var_c_prior);
 }
 

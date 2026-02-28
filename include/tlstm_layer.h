@@ -16,9 +16,9 @@ void tlstm_fwd_mean_var(std::vector<float> &mu_w, std::vector<float> &var_w,
 
 void tlstm_cat_activations_and_prev_states(std::vector<float> &a,
                                            std::vector<float> &b, int n, int m,
-                                           int B, std::vector<float> &c,
-                                           int x_offset = 0,
-                                           int input_offset = 0);
+                                           int batch_size, int seq_len,
+                                           int time_step,
+                                           std::vector<float> &c);
 
 void tlstm_cov_input_cell_states(std::vector<float> &var_ha,
                                  std::vector<float> &mu_w,
@@ -98,11 +98,13 @@ class TLSTM : public BaseLayer {
     float gain_b;
     std::string init_method;
     int w_pos_f, b_pos_f, w_pos_i, b_pos_i, w_pos_c, b_pos_c, w_pos_o, b_pos_o;
+    bool output_seq = true;
     BaseLSTMStates lstm_states;
 
-    TLSTM(size_t input_size, size_t output_size, int seq_len = 1,
-          bool bias = true, float gain_w = 1.0f, float gain_b = 1.0f,
-          std::string init_method = "Xavier", int device_idx = 0);
+    TLSTM(size_t input_size, size_t output_size, bool output_seq = true,
+          int seq_len = 1, bool bias = true, float gain_w = 1.0f,
+          float gain_b = 1.0f, std::string init_method = "Xavier",
+          int device_idx = 0);
 
     ~TLSTM();
 

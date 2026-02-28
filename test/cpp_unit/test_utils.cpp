@@ -194,9 +194,9 @@ void sin_signal_lstm_test_runner(Sequential &model, int input_seq_len,
     OutputUpdater output_updater(model.device);
     unsigned seed = 42;
     std::default_random_engine seed_e(seed);
-    int n_epochs = 2;
+    int n_epochs = 5;
     int batch_size = 8;
-    float sigma_obs = 0.02;
+    float sigma_obs = 0.2;
 
     int iters = train_db.num_data / batch_size;
     std::vector<float> x_batch(batch_size * train_db.nx, 0.0f);
@@ -208,6 +208,8 @@ void sin_signal_lstm_test_runner(Sequential &model, int input_seq_len,
     auto data_idx = create_range(train_db.num_data);
     float decay_factor = 0.95f;
     float min_sigma_obs = 0.3f;
+    std::vector<int> shapes = {batch_size, input_seq_len, 1};
+    std::vector<float> var_x;
 
     for (int e = 0; e < n_epochs; e++) {
         if (e > 0) {
@@ -224,7 +226,7 @@ void sin_signal_lstm_test_runner(Sequential &model, int input_seq_len,
             get_batch_data(train_db.y, batch_idx, train_db.ny, y_batch);
 
             // Forward
-            model.forward(x_batch);
+            model.forward(x_batch, var_x, shapes);
             output_updater.update(*model.output_z_buffer, y_batch, var_obs,
                                   *model.input_delta_z_buffer);
 
@@ -255,7 +257,7 @@ void sin_signal_lstm_test_runner(Sequential &model, int input_seq_len,
         get_batch_data(test_db.y, batch_idx, test_db.ny, y_batch);
 
         // Forward
-        model.forward(x_batch);
+        model.forward(x_batch, var_x, shapes);
 
         // Extract output
         if (model.device == "cuda") {
