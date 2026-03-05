@@ -363,13 +363,13 @@ void tlstm_update_prev_cell_states_worker(
 // TLSTM CLASS
 ////////////////////////////////////////////////////////////////////////////////
 
-TLSTM::TLSTM(size_t input_size, size_t output_size, bool output_seq,
+TLSTM::TLSTM(size_t input_size, size_t output_size, bool last_timestep,
              int seq_len, bool bias, float gain_w, float gain_b,
              std::string init_method, int device_idx)
     : gain_w(gain_w),
       gain_b(gain_b),
       init_method(init_method),
-      output_seq(output_seq) {
+      last_timestep(last_timestep) {
     this->input_size = input_size;
     this->output_size = output_size;
     this->seq_len = seq_len;
@@ -397,10 +397,10 @@ LayerType TLSTM::get_layer_type() const { return LayerType::TLSTM; }
 int TLSTM::get_input_size() { return this->input_size * this->seq_len; }
 
 int TLSTM::get_output_size() {
-    if (this->output_seq) {
-        return this->output_size * this->seq_len;
+    if (this->last_timestep) {
+        return this->output_size;
     }
-    return this->output_size;
+    return this->output_size * this->seq_len;
 }
 
 int TLSTM::get_max_num_states() {
@@ -590,7 +590,7 @@ void TLSTM::forward(BaseHiddenStates &input_states,
         }
     }
 
-    if (!this->output_seq) {
+    if (this->last_timestep) {
         for (int b = 0; b < batch_size; b++) {
             int src = b * seq_len * no + (seq_len - 1) * no;
             int dst = b * no;
@@ -643,7 +643,7 @@ void TLSTM::backward(BaseDeltaStates &input_delta_states,
 
     for (int t = seq_len - 1; t >= 0; t--) {
         // Combine incoming + recurrent deltas
-        if (this->output_seq) {
+        if (!this->last_timestep) {
             for (int b = 0; b < batch_size; b++) {
                 int t_off = b * seq_len * no + t * no;
                 int b_off = b * no;
@@ -664,6 +664,8 @@ void TLSTM::backward(BaseDeltaStates &input_delta_states,
                       combined_delta_mu.begin());
             std::copy(delta_rec_var.begin(), delta_rec_var.end(),
                       combined_delta_var.begin());
+        }
+        if (t == seq_len - 1) {
         }
 
         if (param_update) {
@@ -776,17 +778,17 @@ void TLSTM::backward(BaseDeltaStates &input_delta_states,
         }
     }
 
-    int state_size = batch_size * no;
-    tlstm_update_prev_hidden_states_worker(
-        this->lstm_states.mu_h_prior, this->lstm_states.var_h_prior,
-        delta_rec_mu, delta_rec_var, 0, state_size,
-        this->lstm_states.mu_h_prior, this->lstm_states.var_h_prior);
+    // int state_size = batch_size * no;
+    // tlstm_update_prev_hidden_states_worker(
+    //     this->lstm_states.mu_h_prior, this->lstm_states.var_h_prior,
+    //     delta_rec_mu, delta_rec_var, 0, state_size,
+    //     this->lstm_states.mu_h_prior, this->lstm_states.var_h_prior);
 
-    tlstm_update_prev_cell_states_worker(
-        this->lstm_states.mu_c_prior, this->lstm_states.var_c_prior,
-        this->lstm_states.jcb_ca, this->lstm_states.mu_o_ga, delta_rec_mu,
-        delta_rec_var, 0, state_size, this->lstm_states.mu_c_prior,
-        this->lstm_states.var_c_prior);
+    // tlstm_update_prev_cell_states_worker(
+    //     this->lstm_states.mu_c_prior, this->lstm_states.var_c_prior,
+    //     this->lstm_states.jcb_ca, this->lstm_states.mu_o_ga, delta_rec_mu,
+    //     delta_rec_var, 0, state_size, this->lstm_states.mu_c_prior,
+    //     this->lstm_states.var_c_prior);
 }
 
 std::tuple<std::vector<float>, std::vector<float>, std::vector<float>,

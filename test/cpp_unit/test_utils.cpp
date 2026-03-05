@@ -196,7 +196,7 @@ void sin_signal_lstm_test_runner(Sequential &model, int input_seq_len,
     std::default_random_engine seed_e(seed);
     int n_epochs = 5;
     int batch_size = 8;
-    float sigma_obs = 0.2;
+    float sigma_obs = 1.0;
 
     int iters = train_db.num_data / batch_size;
     std::vector<float> x_batch(batch_size * train_db.nx, 0.0f);
@@ -242,29 +242,35 @@ void sin_signal_lstm_test_runner(Sequential &model, int input_seq_len,
     std::vector<float> mu_a_output_test(test_db.num_data * test_db.ny, 0);
     std::vector<float> var_a_output_test(test_db.num_data * test_db.ny, 0);
     auto test_data_idx = create_range(test_db.num_data);
-
-    int n_iter =
-        static_cast<float>(test_db.num_data) / static_cast<float>(batch_size);
+    int test_batch_size = 1;
+    std::vector<float> x_batch_test(test_batch_size * test_db.nx, 0.0f);
+    std::vector<float> var_x_test(test_batch_size * test_db.nx, 0.0f);
+    std::vector<int> test_shapes = {test_batch_size, input_seq_len, 1};
+    std::vector<float> y_batch_test(test_batch_size * test_db.ny, 0.0f);
+    std::vector<int> test_batch_idx(test_batch_size);
+    int n_iter = static_cast<float>(test_db.num_data) /
+                 static_cast<float>(test_batch_size);
     // int n_iter = ceil(n_iter_round);
     int mt_idx = 0;
 
     for (int i = 0; i < n_iter; i++) {
-        mt_idx = i * test_db.ny * batch_size;
+        mt_idx = i * test_db.ny * test_batch_size;
 
         // Data
-        get_batch_idx(test_data_idx, i * batch_size, batch_size, batch_idx);
-        get_batch_data(test_db.x, batch_idx, test_db.nx, x_batch);
-        get_batch_data(test_db.y, batch_idx, test_db.ny, y_batch);
+        get_batch_idx(test_data_idx, i * test_batch_size, test_batch_size,
+                      test_batch_idx);
+        get_batch_data(test_db.x, test_batch_idx, test_db.nx, x_batch_test);
+        get_batch_data(test_db.y, test_batch_idx, test_db.ny, y_batch_test);
 
         // Forward
-        model.forward(x_batch, var_x, shapes);
+        model.forward(x_batch_test, var_x_test, test_shapes);
 
         // Extract output
         if (model.device == "cuda") {
             model.output_to_host();
         }
 
-        for (int j = 0; j < batch_size * test_db.ny; j++) {
+        for (int j = 0; j < test_batch_size * test_db.ny; j++) {
             mu_a_output_test[j + mt_idx] = model.output_z_buffer->mu_a[j];
             var_a_output_test[j + mt_idx] = model.output_z_buffer->var_a[j];
         }

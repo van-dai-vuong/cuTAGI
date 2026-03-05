@@ -24,8 +24,8 @@ class SineSignalTest : public ::testing::Test {
 
 TEST_F(SineSignalTest, LSTMTest_CPU) {
     int input_seq_len = 4;
-    Sequential model(TLSTM(1, 8, input_seq_len),
-                     TLSTM(8, 8, false, input_seq_len), Linear(8, 1));
+    Sequential model(TLSTM(1, 8, false, input_seq_len),
+                     TLSTM(8, 8, true, input_seq_len), Linear(8, 1));
     model.set_threads(2);
     float avg_error;
     float log_lik;

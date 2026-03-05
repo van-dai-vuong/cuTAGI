@@ -98,10 +98,10 @@ class TLSTM : public BaseLayer {
     float gain_b;
     std::string init_method;
     int w_pos_f, b_pos_f, w_pos_i, b_pos_i, w_pos_c, b_pos_c, w_pos_o, b_pos_o;
-    bool output_seq = true;
+    bool last_timestep = false;
     BaseLSTMStates lstm_states;
 
-    TLSTM(size_t input_size, size_t output_size, bool output_seq = true,
+    TLSTM(size_t input_size, size_t output_size, bool last_timestep = false,
           int seq_len = 1, bool bias = true, float gain_w = 1.0f,
           float gain_b = 1.0f, std::string init_method = "Xavier",
           int device_idx = 0);

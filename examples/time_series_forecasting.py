@@ -21,7 +21,7 @@ from pytagi import exponential_scheduler
 from pytagi.nn import LSTM, TLSTM, Linear, OutputUpdater, Sequential
 
 
-def main(num_epochs: int = 50, batch_size: int = 5, sigma_v: float = 1):
+def main(num_epochs: int = 100, batch_size: int = 5, sigma_v: float = 1.0):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
@@ -56,13 +56,13 @@ def main(num_epochs: int = 50, batch_size: int = 5, sigma_v: float = 1):
 
     # Network
     net = Sequential(
-        TLSTM(1, 8, input_seq_len),
-        TLSTM(8, 8, False, input_seq_len),
-        Linear(8 * input_seq_len, 1),
+        TLSTM(1, 8, False, input_seq_len),
+        TLSTM(8, 8, True, input_seq_len),
+        Linear(8, 1),
     )
     # net.to_device("cuda")
     net.set_threads(1)  # multi-processing is slow on a small net
-    # net.input_state_update = True
+    net.input_state_update = True
     out_updater = OutputUpdater(net.device)
 
     # -------------------------------------------------------------------------#
@@ -118,7 +118,7 @@ def main(num_epochs: int = 50, batch_size: int = 5, sigma_v: float = 1):
 
     # -------------------------------------------------------------------------#
     # Testing
-    test_batch_iter = test_dtl.create_data_loader(batch_size, shuffle=False)
+    test_batch_iter = test_dtl.create_data_loader(1, shuffle=False)
     mu_preds = []
     var_preds = []
     y_test = []
