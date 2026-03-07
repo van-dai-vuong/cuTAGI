@@ -23,30 +23,30 @@ void tlstm_fwd_mean_var(std::vector<float> &mu_w, std::vector<float> &var_w,
                         int time_step, bool bias, int w_pos, int b_pos,
                         std::vector<float> &mu_z, std::vector<float> &var_z) {
     for (int i = start_chunk; i < end_chunk; i++) {
-        int row = i / output_size;  // batch index
-        int col = i % output_size;  // output node index
+        int row = i / batch_size;  // batch index
+        int col = i % batch_size;  // output node index
         float sum_mu_z = 0.0f;
         float sum_var_z = 0.0f;
-        int input_offset = row * seq_len * input_size + time_step * input_size;
+        int input_offset = col * seq_len * input_size + time_step * input_size;
         int output_offset =
-            row * seq_len * output_size + time_step * output_size;
+            col * seq_len * output_size + time_step * output_size;
 
         for (int j = 0; j < input_size; j++) {
             float mu_a_tmp = mu_a[input_offset + j];
             float var_a_tmp = var_a[input_offset + j];
-            float mu_w_tmp = mu_w[col * input_size + j + w_pos];
-            float var_w_tmp = var_w[col * input_size + j + w_pos];
+            float mu_w_tmp = mu_w[row * input_size + j + w_pos];
+            float var_w_tmp = var_w[row * input_size + j + w_pos];
 
             sum_mu_z += mu_w_tmp * mu_a_tmp;
             sum_var_z += (mu_w_tmp * mu_w_tmp + var_w_tmp) * var_a_tmp +
                          var_w_tmp * mu_a_tmp * mu_a_tmp;
         }
         if (bias) {
-            mu_z[output_offset + col] = sum_mu_z + mu_b[row + b_pos];
-            var_z[output_offset + col] = sum_var_z + var_b[row + b_pos];
+            mu_z[output_offset + row] = sum_mu_z + mu_b[row + b_pos];
+            var_z[output_offset + row] = sum_var_z + var_b[row + b_pos];
         } else {
-            mu_z[output_offset + col] = sum_mu_z;
-            var_z[output_offset + col] = sum_var_z;
+            mu_z[output_offset + row] = sum_mu_z;
+            var_z[output_offset + row] = sum_var_z;
         }
     }
 }
@@ -577,10 +577,22 @@ void TLSTM::forward(BaseHiddenStates &input_states,
                            ni_c, no, batch_size, seq_len, t, this->bias,
                            this->w_pos_f, this->b_pos_f, lstm_states.mu_f_ga,
                            lstm_states.var_f_ga);
-        // tlstm_activate_gate(lstm_states.mu_f_ga, lstm_states.var_f_ga,
-        //                     batch_size, seq_len, no, t, sigmoid_mean_var,
-        //                     lstm_states.mu_f_ga, lstm_states.jcb_f_ga,
-        //                     lstm_states.var_f_ga);
+
+        // // print mu_f_ga and var_f_ga for b * no at time step t
+        // for (int b = 0; b < batch_size; b++) {
+        //     for (int z = 0; z < no; z++) {
+        //         int idx = b * no + z;
+        //         std::cout << "mu_f_ga[" << idx << "] = " <<
+        //         lstm_states.mu_f_ga[idx] << std::endl; std::cout <<
+        //         "var_f_ga[" << idx << "] = " << lstm_states.var_f_ga[idx] <<
+        //         std::endl;
+        //     }
+        // }
+
+        tlstm_activate_gate(lstm_states.mu_f_ga, lstm_states.var_f_ga,
+                            batch_size, seq_len, no, t, sigmoid_mean_var,
+                            lstm_states.mu_f_ga, lstm_states.jcb_f_ga,
+                            lstm_states.var_f_ga);
 
         tsigmoid_mean_var(lstm_states.mu_f_ga, lstm_states.var_f_ga, batch_size,
                           seq_len, no, t, lstm_states.mu_f_ga,
@@ -592,10 +604,10 @@ void TLSTM::forward(BaseHiddenStates &input_states,
                            ni_c, no, batch_size, seq_len, t, this->bias,
                            this->w_pos_i, this->b_pos_i, lstm_states.mu_i_ga,
                            lstm_states.var_i_ga);
-        // tlstm_activate_gate(lstm_states.mu_i_ga, lstm_states.var_i_ga,
-        //                     batch_size, seq_len, no, t, sigmoid_mean_var,
-        //                     lstm_states.mu_i_ga, lstm_states.jcb_i_ga,
-        //                     lstm_states.var_i_ga);
+        tlstm_activate_gate(lstm_states.mu_i_ga, lstm_states.var_i_ga,
+                            batch_size, seq_len, no, t, sigmoid_mean_var,
+                            lstm_states.mu_i_ga, lstm_states.jcb_i_ga,
+                            lstm_states.var_i_ga);
 
         tsigmoid_mean_var(lstm_states.mu_i_ga, lstm_states.var_i_ga, batch_size,
                           seq_len, no, t, lstm_states.mu_i_ga,
@@ -607,10 +619,22 @@ void TLSTM::forward(BaseHiddenStates &input_states,
                            ni_c, no, batch_size, seq_len, t, this->bias,
                            this->w_pos_c, this->b_pos_c, lstm_states.mu_c_ga,
                            lstm_states.var_c_ga);
-        // tlstm_activate_gate(lstm_states.mu_c_ga, lstm_states.var_c_ga,
-        //                     batch_size, seq_len, no, t, tanh_mean_var,
-        //                     lstm_states.mu_c_ga, lstm_states.jcb_c_ga,
-        //                     lstm_states.var_c_ga);
+
+        // // print mu_c_ga and var_c_ga for b * no at time step t
+        // for (int b = 0; b < batch_size; b++) {
+        //     for (int z = 0; z < no; z++) {
+        //         int idx = b * no + z;
+        //         std::cout << "mu_c_ga[" << idx << "] = " <<
+        //         lstm_states.mu_c_ga[idx] << std::endl; std::cout <<
+        //         "var_c_ga[" << idx << "] = " << lstm_states.var_c_ga[idx] <<
+        //         std::endl;
+        //     }
+        // }
+
+        tlstm_activate_gate(lstm_states.mu_c_ga, lstm_states.var_c_ga,
+                            batch_size, seq_len, no, t, tanh_mean_var,
+                            lstm_states.mu_c_ga, lstm_states.jcb_c_ga,
+                            lstm_states.var_c_ga);
 
         ttanh_mean_var(lstm_states.mu_c_ga, lstm_states.var_c_ga, batch_size,
                        seq_len, no, t, lstm_states.mu_c_ga,
@@ -622,10 +646,10 @@ void TLSTM::forward(BaseHiddenStates &input_states,
                            ni_c, no, batch_size, seq_len, t, this->bias,
                            this->w_pos_o, this->b_pos_o, lstm_states.mu_o_ga,
                            lstm_states.var_o_ga);
-        // tlstm_activate_gate(lstm_states.mu_o_ga, lstm_states.var_o_ga,
-        //                     batch_size, seq_len, no, t, sigmoid_mean_var,
-        //                     lstm_states.mu_o_ga, lstm_states.jcb_o_ga,
-        //                     lstm_states.var_o_ga);
+        tlstm_activate_gate(lstm_states.mu_o_ga, lstm_states.var_o_ga,
+                            batch_size, seq_len, no, t, sigmoid_mean_var,
+                            lstm_states.mu_o_ga, lstm_states.jcb_o_ga,
+                            lstm_states.var_o_ga);
 
         tsigmoid_mean_var(lstm_states.mu_o_ga, lstm_states.var_o_ga, batch_size,
                           seq_len, no, t, lstm_states.mu_o_ga,
@@ -642,9 +666,9 @@ void TLSTM::forward(BaseHiddenStates &input_states,
             lstm_states.mu_c_prev, lstm_states.var_c_prev, lstm_states.cov_i_c,
             no, batch_size, seq_len, t, lstm_states.mu_c, lstm_states.var_c);
 
-        // tlstm_activate_gate(lstm_states.mu_c, lstm_states.var_c, batch_size,
-        //                     seq_len, no, t, tanh_mean_var, lstm_states.mu_ca,
-        //                     lstm_states.jcb_ca, lstm_states.var_ca);
+        tlstm_activate_gate(lstm_states.mu_c, lstm_states.var_c, batch_size,
+                            seq_len, no, t, tanh_mean_var, lstm_states.mu_ca,
+                            lstm_states.jcb_ca, lstm_states.var_ca);
 
         ttanh_mean_var(lstm_states.mu_c, lstm_states.var_c, batch_size, seq_len,
                        no, t, lstm_states.mu_ca, lstm_states.jcb_ca,
