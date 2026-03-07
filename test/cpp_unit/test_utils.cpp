@@ -242,7 +242,7 @@ void sin_signal_lstm_test_runner(Sequential &model, int input_seq_len,
     std::vector<float> mu_a_output_test(test_db.num_data * test_db.ny, 0);
     std::vector<float> var_a_output_test(test_db.num_data * test_db.ny, 0);
     auto test_data_idx = create_range(test_db.num_data);
-    int test_batch_size = 1;
+    int test_batch_size = 8;
     std::vector<float> x_batch_test(test_batch_size * test_db.nx, 0.0f);
     std::vector<float> var_x_test(test_batch_size * test_db.nx, 0.0f);
     std::vector<int> test_shapes = {test_batch_size, input_seq_len, 1};

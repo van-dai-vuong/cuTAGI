@@ -21,7 +21,7 @@ from pytagi import exponential_scheduler
 from pytagi.nn import LSTM, TLSTM, Linear, OutputUpdater, Sequential
 
 
-def main(num_epochs: int = 100, batch_size: int = 5, sigma_v: float = 1.0):
+def main(num_epochs: int = 100, batch_size: int = 4, sigma_v: float = 1.0):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
@@ -69,6 +69,7 @@ def main(num_epochs: int = 100, batch_size: int = 5, sigma_v: float = 1.0):
     # Training
     mses = []
     pbar = tqdm(range(num_epochs), desc="Training Progress")
+    batch_size = 8
     for epoch in pbar:
         batch_iter = train_dtl.create_data_loader(batch_size, False)
 

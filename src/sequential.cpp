@@ -369,6 +369,7 @@ void Sequential::forward(const std::vector<float> &mu_x,
         this->z_buffer_seq_len = seq_len;
 
         this->input_z_buffer->set_size(this->z_buffer_size, batch_size);
+        this->output_z_buffer->set_size(this->z_buffer_size, batch_size);
         if (this->training) {
             this->input_delta_z_buffer->set_size(this->z_buffer_size,
                                                  batch_size);
