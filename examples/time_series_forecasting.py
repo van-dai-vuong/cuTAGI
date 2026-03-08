@@ -26,7 +26,7 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
     # Dataset
     output_col = [0]
     num_features = 1
-    input_seq_len = 5
+    input_seq_len = 8
     output_seq_len = 1
     seq_stride = 1
 
@@ -83,16 +83,7 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
         for x, y in batch_iter:
             # Feed forward
             x = x.reshape(-1, input_seq_len, 1)
-            # x_b1 = x[0:2]
-            # x_b2 = x[1:3]
             m_pred, _ = net(x)
-            # m_pred_b1, _ = net(x_b1)
-            # m_pred_b2, _ = net(x_b2)
-            # print(x_b1)
-            # print(x_b2)
-            # print(m_pred_b1)
-            # print(m_pred_b2)
-            # breakpoint()
 
             # Update output layer
             out_updater.update(
@@ -127,7 +118,7 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
 
     # -------------------------------------------------------------------------#
     # Testing
-    test_batch_iter = test_dtl.create_data_loader(8, shuffle=False)
+    test_batch_iter = test_dtl.create_data_loader(batch_size, shuffle=False)
     mu_preds = []
     var_preds = []
     y_test = []
