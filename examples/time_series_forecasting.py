@@ -26,7 +26,7 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
     # Dataset
     output_col = [0]
     num_features = 1
-    input_seq_len = 8
+    input_seq_len = 5
     output_seq_len = 1
     seq_stride = 1
 
@@ -62,7 +62,6 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
     )
     # net.to_device("cuda")
     net.set_threads(1)  # multi-processing is slow on a small net
-    net.input_state_update = True
     out_updater = OutputUpdater(net.device)
 
     # -------------------------------------------------------------------------#
@@ -70,7 +69,7 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
     mses = []
     pbar = tqdm(range(num_epochs), desc="Training Progress")
     for epoch in pbar:
-        batch_iter = train_dtl.create_data_loader(batch_size, False)
+        batch_iter = train_dtl.create_data_loader(batch_size, True)
 
         # Decaying observation's variance
         sigma_v = exponential_scheduler(
