@@ -344,6 +344,15 @@ void BaseLSTMStates::reset_zeros()
     for (auto& val : var_h_prior) val = 0;
 }
 
+void BaseLSTMStates::reset_prev_states()
+/**/
+{
+    for (auto& val : mu_h_prev) val = 0;
+    for (auto& val : var_h_prev) val = 0;
+    for (auto& val : mu_c_prev) val = 0;
+    for (auto& val : var_c_prev) val = 0;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Smoother for Slinear layer
 ////////////////////////////////////////////////////////////////////////////////
