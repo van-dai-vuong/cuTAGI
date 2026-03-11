@@ -1279,7 +1279,7 @@ void LSTM::forward(BaseHiddenStates &input_states,
 
     // TODO: This is not efficient for memory and performance. Update the
     // previous states
-    if (this->seq_len == 1 && batch_size == 1) {
+    if (this->seq_len == 1) {
         lstm_to_prev_states(this->lstm_states.mu_h_prior,
                             this->lstm_states.mu_h_prior.size(),
                             this->lstm_states.mu_h_prev);
@@ -1370,7 +1370,7 @@ void LSTM::forward(BaseHiddenStates &input_states,
         this->storing_states_for_training(input_states, output_states);
     }
     // Save the previous states
-    if (this->seq_len == 1 && batch_size == 1) {
+    if (this->seq_len == 1) {
         lstm_to_prev_states(output_states.mu_a,
                             this->lstm_states.mu_h_prior.size(),
                             this->lstm_states.mu_h_prior);
@@ -1471,7 +1471,7 @@ void LSTM::backward(BaseDeltaStates &input_delta_states,
             }
         }
     }
-    if (this->seq_len == 1 && batch_size == 1) {
+    if (this->seq_len == 1 ) {
         if (this->num_threads > 1) {
             lstm_update_prev_hidden_states_mp(
                 this->lstm_states.mu_h_prior, this->lstm_states.var_h_prior,
