@@ -18,158 +18,232 @@ import pytagi.metric as metric
 from examples.data_loader import TimeSeriesDataloader
 from pytagi import Normalizer as normalizer
 from pytagi import exponential_scheduler
-from pytagi.nn import LSTM, TLSTM, Linear, OutputUpdater, Sequential
+from pytagi.nn import Linear, OutputUpdater, Sequential
+from pytagi.nn import TLSTM as LSTM
 
 
-def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
+def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 3):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
     num_features = 1
-    input_seq_len = 5
+    input_seq_len = 12
     output_seq_len = 1
     seq_stride = 1
 
-    train_dtl = TimeSeriesDataloader(
-        x_file="data/toy_time_series/x_train_sin_data.csv",
-        date_time_file="data/toy_time_series/train_sin_datetime.csv",
-        output_col=output_col,
-        input_seq_len=input_seq_len,
-        output_seq_len=output_seq_len,
-        num_features=num_features,
-        stride=seq_stride,
-    )
-    test_dtl = TimeSeriesDataloader(
-        x_file="data/toy_time_series/x_test_sin_data.csv",
-        date_time_file="data/toy_time_series/test_sin_datetime.csv",
-        output_col=output_col,
-        input_seq_len=input_seq_len,
-        output_seq_len=output_seq_len,
-        num_features=num_features,
-        stride=seq_stride,
-        x_mean=train_dtl.x_mean,
-        x_std=train_dtl.x_std,
-    )
+    data_file_train = "./data/hq/train100/split_train_values.csv"
+    data_file_val = "./data/hq/split_val_values.csv"
+    data_file_test = "./data/hq/split_test_values.csv"
+    data_time_train = "./data/hq/train100/split_train_datetimes.csv"
+    data_time_val = "./data/hq/split_val_datetimes.csv"
+    data_time_test = "./data/hq/split_test_datetimes.csv"
+
+    cols= range(112)
+    df_train = pd.read_csv(data_file_train, skiprows=1, delimiter=",", header=None, usecols=cols)
+    df_val = pd.read_csv(data_file_val, skiprows=1, delimiter=",", header=None, usecols=cols)
+    df_test = pd.read_csv(data_file_test, skiprows=1, delimiter=",", header=None, usecols=cols)
+    df_train_time = pd.read_csv(data_time_train, skiprows=1, delimiter=",", header=None, usecols=cols)
+    df_val_time = pd.read_csv(data_time_val, skiprows=1, delimiter=",", header=None, usecols=cols)
+    df_test_time = pd.read_csv(data_time_test, skiprows=1, delimiter=",", header=None, usecols=cols)
+
+    num_ts = df_train.shape[1]
+    ts_list = np.random.permutation(num_ts)
+    num_iter = int(np.ceil(num_ts/batch_size))
+    time_covariates=[]
+    mse_optim = 1e10
+    epoch_optim = 0
+    patience = 10
+    
+    # # Data loader
+    train_dtl_dict = {}
+    val_dtl_dict = {}
+    test_dtl_dict ={}
+
+    for ts in range(num_ts):
+        df_train_temp = df_train.iloc[:,[ts]]
+        df_train_temp.index = pd.to_datetime(df_train_time.iloc[:, ts])
+        last_idx = df_train_temp.iloc[:, 0].last_valid_index()
+        df_train_temp = df_train_temp.loc[:last_idx]
+
+        num_remove = 52 - input_seq_len
+        df_val_temp = df_val.iloc[num_remove:,[ts]]
+        df_val_temp.index = pd.to_datetime(df_val_time.iloc[num_remove:, ts])
+        last_idx = df_val_temp.iloc[:, 0].last_valid_index()
+        df_val_temp = df_val_temp.loc[:last_idx]
+
+        df_test_temp = df_test.iloc[num_remove:,[ts]]
+        df_test_temp.index = pd.to_datetime(df_test_time.iloc[num_remove:, ts])
+        last_idx = df_test_temp.iloc[:, 0].last_valid_index()
+        df_test_temp = df_test_temp.loc[:last_idx]
+
+        train_dtl_dict[ts] = TimeSeriesDataloader(
+            x_file="",
+            date_time_file="",
+            output_col=output_col,
+            input_seq_len=input_seq_len,
+            output_seq_len=output_seq_len,
+            num_features=num_features,
+            time_covariates =time_covariates,
+            # keep_last_time_cov=True,
+            stride=seq_stride,
+            df = df_train_temp,
+        )
+
+        val_dtl_dict[ts] = TimeSeriesDataloader(
+            x_file="",
+            date_time_file="",
+            output_col=output_col,
+            input_seq_len=input_seq_len,
+            output_seq_len=output_seq_len,
+            num_features=num_features,
+            stride=seq_stride,
+            df = df_val_temp,
+            x_mean=train_dtl_dict[ts].x_mean,
+            x_std=train_dtl_dict[ts].x_std,
+            time_covariates =time_covariates,
+            # keep_last_time_cov=True,
+        )
+
+        test_dtl_dict[ts] = TimeSeriesDataloader(
+            x_file="",
+            date_time_file="",
+            output_col=output_col,
+            input_seq_len=input_seq_len,
+            output_seq_len=output_seq_len,
+            num_features=num_features,
+            stride=seq_stride,
+            df = df_test_temp,
+            x_mean=train_dtl_dict[ts].x_mean,
+            x_std=train_dtl_dict[ts].x_std,
+            time_covariates =time_covariates,
+            # keep_last_time_cov=True,
+        )
+
 
     # Viz
     viz = PredictionViz(task_name="forecasting", data_name="sin_signal")
 
     # Network
+    input_size = num_features
     net = Sequential(
-        TLSTM(1, 8, False, input_seq_len),
-        TLSTM(8, 8, True, input_seq_len),
-        Linear(8, 1),
+        LSTM(input_size, 40, False, input_seq_len),
+        LSTM(40, 40, False ,input_seq_len),
+        LSTM(40, 40, True, input_seq_len),
+        Linear(40, 1),
     )
     # net.to_device("cuda")
     net.set_threads(1)  # multi-processing is slow on a small net
+    # net.input_state_update = True
     out_updater = OutputUpdater(net.device)
 
     # -------------------------------------------------------------------------#
     # Training
-    mses = []
     pbar = tqdm(range(num_epochs), desc="Training Progress")
     for epoch in pbar:
-        batch_iter = train_dtl.create_data_loader(batch_size, True)
 
         # Decaying observation's variance
         sigma_v = exponential_scheduler(
-            curr_v=sigma_v, min_v=0.3, decaying_factor=0.99, curr_iter=epoch
+            curr_v=sigma_v, min_v=0.01, decaying_factor=0.99, curr_iter=epoch
         )
         var_y = np.full(
             (batch_size * len(output_col),), sigma_v**2, dtype=np.float32
         )
 
-        for x, y in batch_iter:
-            # Feed forward
-            x = x.reshape(-1, input_seq_len, 1)
-            m_pred, _ = net(x)
+        # Train
+        for itera in range(num_iter):
+            ts_batch = ts_list[itera * batch_size:(itera + 1) * batch_size]
+            ts_data = {}
+            num_sample_inter = 0
 
-            # Update output layer
-            out_updater.update(
-                output_states=net.output_z_buffer,
-                mu_obs=y,
-                var_obs=var_y,
-                delta_states=net.input_delta_z_buffer,
-            )
+            for ts in ts_batch:
+                ts_data[int(ts)] = train_dtl_dict[ts].dataset["value"]
+                num_sample_inter = np.maximum(len(ts_data[ts][1]), num_sample_inter)
 
-            # Feed backward
-            net.backward()
-            net.step()
+            for t in range(num_sample_inter):
 
-            # Training metric
-            pred = normalizer.unstandardize(
-                m_pred,
-                train_dtl.x_mean[output_col],
-                train_dtl.x_std[output_col],
-            )
-            obs = normalizer.unstandardize(
-                y, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
-            )
-            mse = metric.mse(pred, obs)
-            mses.append(mse)
+                x, y = prep_x_y(t, ts_batch, ts_data, input_seq_len)
+                x = x.reshape(-1, input_seq_len, 1)
+            
+                # Feed forward
+                m_pred, _ = net(x)
 
-        net.reset_lstm_states()
+                # Update output layer
+                out_updater.update(
+                    output_states=net.output_z_buffer,
+                    mu_obs=y,
+                    var_obs=var_y,
+                    delta_states=net.input_delta_z_buffer,
+                )
+
+                # Feed backward
+                net.backward()
+                net.step()
+
+            net.reset_lstm_states()
+
+        # Validation
+        mu_preds = []
+        var_preds = []
+        y_val = []
+        for itera in range(num_iter):
+            ts_batch = ts_list[itera * batch_size:(itera + 1) * batch_size]
+            ts_data = {}
+            num_sample_inter = 0
+
+            for ts in ts_batch:
+                ts_data[ts] = val_dtl_dict[ts].dataset["value"]
+                num_sample_inter = np.maximum(len(ts_data[ts][1]), num_sample_inter)
+
+            for t in range(num_sample_inter):
+
+                x, y = prep_x_y(t, ts_batch, ts_data, input_seq_len)
+                x = x.reshape(-1, input_seq_len, 1)
+
+                # Feed forward
+                m_pred, v_pred = net(x)
+                mu_preds.extend(m_pred)
+                var_preds.extend(v_pred + sigma_v**2)
+                y_val.extend(y)
+
+            net.reset_lstm_states()
+        
+        std_preds = np.array(var_preds) ** 0.5
+        mse = metric.mse(np.array(mu_preds), np.array(y_val))
+
+        if mse < mse_optim:
+            mse_optim = mse
+            epoch_optim = epoch
+            net.save(f"saved_results/tlstm_hq_g_seq_{input_seq_len}_sv_001_.bin")
+
         # Progress bar
         pbar.set_description(
-            f"Epoch {epoch + 1}/{num_epochs}| mse: {sum(mses)/len(mses):>7.2f}",
+            f"Epoch {epoch + 1}/{num_epochs}| mse: {mse:0.4f}",
             refresh=True,
         )
 
+        if epoch - epoch_optim > patience:
+            break
+
     # -------------------------------------------------------------------------#
     # Testing
-    test_batch_iter = test_dtl.create_data_loader(batch_size, shuffle=False)
-    mu_preds = []
-    var_preds = []
-    y_test = []
-    x_test = []
+    print(f"Optimal epoch: {epoch_optim}")
+    print(f"MSE: {mse_optim:0.4f}")
 
-    for x, y in test_batch_iter:
-        # Predicion
-        x = x.reshape(-1, input_seq_len, 1)
-        m_pred, v_pred = net(x)
+def prep_x_y(timestep, ts_batch, ts_data, input_size):
+    x = np.array([])
+    y = np.array([])
+    for ts in ts_batch:
+        if timestep > len(ts_data[ts][1]) - 1:
+            _x = np.full(input_size, np.nan, dtype=np.float32)
+            _y = np.full(1, np.nan, dtype=np.float32)
+        else:
+            _x = ts_data[ts][0][timestep]
+            _y = ts_data[ts][1][timestep]
+        x = np.float32(np.concatenate((x,_x)))
+        x = np.nan_to_num(x, nan=0.0)
+        y = np.float32(np.concatenate((y,_y)))
 
-        mu_preds.extend(m_pred)
-        var_preds.extend(v_pred + sigma_v**2)
-        x_test.extend(x)
-        y_test.extend(y)
-
-    mu_preds = np.array(mu_preds)
-    std_preds = np.array(var_preds) ** 0.5
-    y_test = np.array(y_test)
-    x_test = np.array(x_test)
-
-    mu_preds = normalizer.unstandardize(
-        mu_preds, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
-    )
-    std_preds = normalizer.unstandardize_std(
-        std_preds, train_dtl.x_std[output_col]
-    )
-
-    y_test = normalizer.unstandardize(
-        y_test, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
-    )
-
-    # Compute log-likelihood
-    mse = metric.mse(mu_preds, y_test)
-    log_lik = metric.log_likelihood(
-        prediction=mu_preds, observation=y_test, std=std_preds
-    )
-
-    # Visualization
-    viz.plot_predictions(
-        x_test=test_dtl.dataset["date_time"][: len(y_test)],
-        y_test=y_test,
-        y_pred=mu_preds,
-        sy_pred=std_preds,
-        std_factor=1,
-        label="time_series_forecasting",
-        title=r"\textbf{Time Series Forecasting}",
-        time_series=True,
-    )
-
-    print("#############")
-    print(f"MSE           : {mse: 0.2f}")
-    print(f"Log-likelihood: {log_lik: 0.2f}")
+    return (x,y)
 
 
 class PredictionViz:
@@ -189,7 +263,7 @@ class PredictionViz:
         self,
         task_name: str,
         data_name: str,
-        figsize: tuple = (12, 12),
+        figsize: tuple = (9, 8),
         fontsize: int = 28,
         lw: int = 3,
         ms: int = 10,
