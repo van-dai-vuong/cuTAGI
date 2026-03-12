@@ -27,7 +27,7 @@ def main(ts: int = 3, batch_size: int = 1, sigma_v: float = 0.01):
     # Dataset
     output_col = [0]
     num_features = 2
-    input_seq_len = 20
+    input_seq_len = 10
     output_seq_len = 1
     seq_stride = 1
 
@@ -134,14 +134,14 @@ def main(ts: int = 3, batch_size: int = 1, sigma_v: float = 0.01):
     mu_preds = []
     var_preds = []
     std_preds = []
-    y_val = []
+    y_test = []
     for itera in range(num_iter):
         ts_batch = ts_list[itera * batch_size:(itera + 1) * batch_size]
         ts_data = {}
         num_sample_inter = 0
 
         for ts in ts_batch:
-            ts_data[ts] = val_dtl_dict[ts].dataset["value"]
+            ts_data[ts] = test_dtl_dict[ts].dataset["value"]
             num_sample_inter = np.maximum(len(ts_data[ts][1]), num_sample_inter)
 
         for t in range(num_sample_inter):
@@ -153,20 +153,30 @@ def main(ts: int = 3, batch_size: int = 1, sigma_v: float = 0.01):
             m_pred, v_pred = net(x)
             mu_preds.extend(m_pred)
             var_preds.extend(v_pred + sigma_v**2)
-            y_val.extend(y)
+            y_test.extend(y)
 
     mu_preds = np.array(mu_preds)
     std_preds = np.array(var_preds) **0.5
 
     # Visualization
+    y_train = train_dtl_dict[ts].dataset["value"][1].flatten()
+    y_val = val_dtl_dict[ts].dataset["value"][1].flatten()
+    y_trainVal = np.concatenate((y_train, y_val))
+
+    t_train = train_dtl_dict[ts].dataset["date_time"][: len(y_train)]
+    t_val = val_dtl_dict[ts].dataset["date_time"][: len(y_val)]
+    t_trainVal = np.concatenate((t_train, t_val))
+
     viz.plot_predictions(
-        x_test=test_dtl_dict[ts].dataset["date_time"][: len(y_val)],
-        y_test=y_val,
+        x_train=t_trainVal,
+        y_train=y_trainVal,
+        x_test=test_dtl_dict[ts].dataset["date_time"][: len(y_test)],
+        y_test=y_test,
         y_pred=mu_preds,
         sy_pred=std_preds,
         std_factor=1,
-        label="time_series_forecasting",
-        title=r"\textbf{Time Series Forecasting}",
+        # label="time_series_forecasting",
+        # title=r"\textbf{Time Series Forecasting}",
         time_series=True,
     )
 
