@@ -22,12 +22,12 @@ from pytagi.nn import Linear, OutputUpdater, Sequential
 from pytagi.nn import TLSTM as LSTM
 
 
-def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 3):
+def main(ts: int = 3, batch_size: int = 1, sigma_v: float = 0.01):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
     num_features = 2
-    input_seq_len = 10
+    input_seq_len = 20
     output_seq_len = 1
     seq_stride = 1
 
@@ -38,8 +38,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 3):
     data_time_val = "./data/hq/split_val_datetimes.csv"
     data_time_test = "./data/hq/split_test_datetimes.csv"
 
-    cols= range(112)
-    # cols= [120]
+    cols = [ts]
     df_train = pd.read_csv(data_file_train, skiprows=1, delimiter=",", header=None, usecols=cols)
     df_val = pd.read_csv(data_file_val, skiprows=1, delimiter=",", header=None, usecols=cols)
     df_test = pd.read_csv(data_file_test, skiprows=1, delimiter=",", header=None, usecols=cols)
@@ -51,9 +50,6 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 3):
     ts_list = np.random.permutation(num_ts)
     num_iter = int(np.ceil(num_ts/batch_size))
     time_covariates=["week_of_year"]
-    mse_optim = 1e10
-    epoch_optim = 0
-    patience = 10
     
     # # Data loader
     train_dtl_dict = {}
@@ -132,102 +128,47 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 3):
         LSTM(40, 40, True, 1),
         Linear(40, 1),
     )
-    # net.to_device("cuda")
-    net.set_threads(1)  # multi-processing is slow on a small net
-    out_updater = OutputUpdater(net.device)
+    net.load(f"saved_results/tlstm_hq_g_lb_{input_seq_len}_sv_001.bin")
+    
+    # Test
+    mu_preds = []
+    var_preds = []
+    std_preds = []
+    y_val = []
+    for itera in range(num_iter):
+        ts_batch = ts_list[itera * batch_size:(itera + 1) * batch_size]
+        ts_data = {}
+        num_sample_inter = 0
 
-    # -------------------------------------------------------------------------#
-    # Training
-    pbar = tqdm(range(num_epochs), desc="Training Progress")
-    for epoch in pbar:
+        for ts in ts_batch:
+            ts_data[ts] = val_dtl_dict[ts].dataset["value"]
+            num_sample_inter = np.maximum(len(ts_data[ts][1]), num_sample_inter)
 
-        # Decaying observation's variance
-        sigma_v = exponential_scheduler(
-            curr_v=sigma_v, min_v=0.01, decaying_factor=0.99, curr_iter=epoch
-        )
-        var_y = np.full(
-            (batch_size * len(output_col),), sigma_v**2, dtype=np.float32
-        )
+        for t in range(num_sample_inter):
 
-        # Train
-        for itera in range(num_iter):
-            ts_batch = ts_list[itera * batch_size:(itera + 1) * batch_size]
-            ts_data = {}
-            num_sample_inter = 0
+            x, y = prep_x_y(t, ts_batch, ts_data, input_size)
+            x = x.reshape(batch_size, 1, input_size)
 
-            for ts in ts_batch:
-                ts_data[int(ts)] = train_dtl_dict[ts].dataset["value"]
-                num_sample_inter = np.maximum(len(ts_data[ts][1]), num_sample_inter)
+            # Feed forward
+            m_pred, v_pred = net(x)
+            mu_preds.extend(m_pred)
+            var_preds.extend(v_pred + sigma_v**2)
+            y_val.extend(y)
 
-            for t in range(num_sample_inter):
+    mu_preds = np.array(mu_preds)
+    std_preds = np.array(var_preds) **0.5
 
-                x, y = prep_x_y(t, ts_batch, ts_data, input_size)
-                # x = x.reshape(batch_size, 1, input_size)
-                
-                # Feed forward
-                m_pred, _ = net(x)
-
-                # Update output layer
-                out_updater.update(
-                    output_states=net.output_z_buffer,
-                    mu_obs=y,
-                    var_obs=var_y,
-                    delta_states=net.input_delta_z_buffer,
-                )
-
-                # Feed backward
-                net.backward()
-                net.step()
-
-            net.reset_lstm_states()
-
-        # Validation
-        mu_preds = []
-        var_preds = []
-        y_val = []
-        for itera in range(num_iter):
-            ts_batch = ts_list[itera * batch_size:(itera + 1) * batch_size]
-            ts_data = {}
-            num_sample_inter = 0
-
-            for ts in ts_batch:
-                ts_data[ts] = val_dtl_dict[ts].dataset["value"]
-                num_sample_inter = np.maximum(len(ts_data[ts][1]), num_sample_inter)
-
-            for t in range(num_sample_inter):
-
-                x, y = prep_x_y(t, ts_batch, ts_data, input_size)
-                x = x.reshape(batch_size, 1, input_size)
-
-                # Feed forward
-                m_pred, v_pred = net(x)
-                mu_preds.extend(m_pred)
-                var_preds.extend(v_pred + sigma_v**2)
-                y_val.extend(y)
-
-            net.reset_lstm_states()
-        
-        std_preds = np.array(var_preds) ** 0.5
-        mse = metric.mse(np.array(mu_preds), np.array(y_val))
-
-        if mse < mse_optim:
-            mse_optim = mse
-            epoch_optim = epoch
-            net.save(f"saved_results/tlstm_hq_g_lb_{input_seq_len}_sv_001.bin")
-
-        # Progress bar
-        pbar.set_description(
-            f"Epoch {epoch + 1}/{num_epochs}| mse: {mse:0.4f}",
-            refresh=True,
-        )
-
-        if epoch - epoch_optim > patience:
-            break
-
-    # -------------------------------------------------------------------------#
-    # Testing
-    print(f"Optimal epoch: {epoch_optim}")
-    print(f"MSE: {mse_optim:0.4f}")
+    # Visualization
+    viz.plot_predictions(
+        x_test=test_dtl_dict[ts].dataset["date_time"][: len(y_val)],
+        y_test=y_val,
+        y_pred=mu_preds,
+        sy_pred=std_preds,
+        std_factor=1,
+        label="time_series_forecasting",
+        title=r"\textbf{Time Series Forecasting}",
+        time_series=True,
+    )
 
 def prep_x_y(timestep, ts_batch, ts_data, input_size):
     x = np.array([])

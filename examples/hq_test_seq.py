@@ -18,14 +18,15 @@ import pytagi.metric as metric
 from examples.data_loader import TimeSeriesDataloader
 from pytagi import Normalizer as normalizer
 from pytagi import exponential_scheduler
-from pytagi.nn import LSTM, Linear, OutputUpdater, Sequential
+from pytagi.nn import Linear, OutputUpdater, Sequential
+from pytagi.nn import TLSTM as LSTM
 
 
-def main(ts: int = 2, batch_size: int = 1, sigma_v: float = 0.1):
+def main(ts: int = 120, batch_size: int = 1, sigma_v: float = 0.01):
     """Run training for time-series forecasting model"""
     # Dataset
     output_col = [0]
-    num_features = 2
+    num_features = 1
     input_seq_len = 12
     output_seq_len = 1
     seq_stride = 1
@@ -48,7 +49,7 @@ def main(ts: int = 2, batch_size: int = 1, sigma_v: float = 0.1):
     num_ts = df_train.shape[1]
     ts_list = np.random.permutation(num_ts)
     num_iter = int(np.ceil(num_ts/batch_size))
-    time_covariates=["week_of_year"]
+    time_covariates=[]
     
     # # Data loader
     train_dtl_dict = {}
@@ -80,7 +81,7 @@ def main(ts: int = 2, batch_size: int = 1, sigma_v: float = 0.1):
             output_seq_len=output_seq_len,
             num_features=num_features,
             time_covariates =time_covariates,
-            keep_last_time_cov=True,
+            # keep_last_time_cov=True,
             stride=seq_stride,
             df = df_train_temp,
         )
@@ -97,7 +98,7 @@ def main(ts: int = 2, batch_size: int = 1, sigma_v: float = 0.1):
             x_mean=train_dtl_dict[ts].x_mean,
             x_std=train_dtl_dict[ts].x_std,
             time_covariates =time_covariates,
-            keep_last_time_cov=True,
+            # keep_last_time_cov=True,
         )
 
         test_dtl_dict[ts] = TimeSeriesDataloader(
@@ -112,7 +113,7 @@ def main(ts: int = 2, batch_size: int = 1, sigma_v: float = 0.1):
             x_mean=train_dtl_dict[ts].x_mean,
             x_std=train_dtl_dict[ts].x_std,
             time_covariates =time_covariates,
-            keep_last_time_cov=True,
+            # keep_last_time_cov=True,
         )
 
 
@@ -120,14 +121,14 @@ def main(ts: int = 2, batch_size: int = 1, sigma_v: float = 0.1):
     viz = PredictionViz(task_name="forecasting", data_name="sin_signal")
 
     # Network
-    input_size = input_seq_len + len(time_covariates)
+    input_size = num_features
     net = Sequential(
-        LSTM(input_size, 40, 1),
-        LSTM(40, 40, 1),
-        LSTM(40, 40, 1),
+        LSTM(input_size, 40, False, input_seq_len),
+        LSTM(40, 40, False ,input_seq_len),
+        LSTM(40, 40, True, input_seq_len),
         Linear(40, 1),
     )
-    net.load(f"saved_results/hq_global_seq_{input_seq_len}.bin")
+    net.load(f"saved_results/tlstm_hq_g_seq_{input_seq_len}_sv_001.bin")
     
     # Test
     mu_preds = []
@@ -145,7 +146,8 @@ def main(ts: int = 2, batch_size: int = 1, sigma_v: float = 0.1):
 
         for t in range(num_sample_inter):
 
-            x, y = prep_x_y(t, ts_batch, ts_data, input_size)
+            x, y = prep_x_y(t, ts_batch, ts_data, input_seq_len)
+            x = x.reshape(-1, input_seq_len, 1)
 
             # Feed forward
             m_pred, v_pred = net(x)

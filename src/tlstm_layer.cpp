@@ -496,7 +496,7 @@ void TLSTM::forward(BaseHiddenStates &input_states,
     output_states.actual_size = this->output_size;
 
     int end_chunk = no * batch_size;
-    if (seq_len == 1 && batch_size == 1) {
+    if (seq_len == 1) {
         lstm_states.mu_h_prev = lstm_states.mu_h_prior;
         lstm_states.var_h_prev = lstm_states.var_h_prior;
         lstm_states.mu_c_prev = lstm_states.mu_c_prior;
@@ -630,7 +630,7 @@ void TLSTM::forward(BaseHiddenStates &input_states,
         }
     }
 
-    if (seq_len == 1 && batch_size == 1) {
+    if (seq_len == 1) {
         for (int b = 0; b < batch_size; b++) {
             int src = b * seq_len * no + (seq_len - 1) * no;
             int dst = b * no;
@@ -694,7 +694,7 @@ void TLSTM::backward(BaseDeltaStates &input_delta_states,
     std::vector<float> sum_mu_b_c(no, 0.0f), sum_var_b_c(no, 0.0f);
     std::vector<float> sum_mu_b_o(no, 0.0f), sum_var_b_o(no, 0.0f);
 
-    if (seq_len == 1 && batch_size == 1) {
+    if (seq_len == 1) {
         int total_prior = batch_size * no;
         parallel_for(total_prior, this->num_threads, [&](int s, int e) {
             tlstm_update_hidden_state_posterior(
