@@ -26,7 +26,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 3):
     # Dataset
     output_col = [0]
     num_features = 2
-    input_seq_len = 36
+    input_seq_len = 12
     output_seq_len = 1
     seq_stride = 1
 
@@ -125,10 +125,8 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 3):
     # Network
     input_size = input_seq_len + len(time_covariates)
     net = Sequential(
-        LSTM(input_size, 40, 1),
-        LSTM(40, 40, 1),
-        LSTM(40, 40, 1),
-        Linear(40, 1),
+        LSTM(input_size, 150, 1),
+        Linear(150, 1),
     )
     # net.to_device("cuda")
     net.set_threads(1)  # multi-processing is slow on a small net
@@ -142,7 +140,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 3):
 
         # Decaying observation's variance
         sigma_v = exponential_scheduler(
-            curr_v=sigma_v, min_v=0.1, decaying_factor=0.99, curr_iter=epoch
+            curr_v=sigma_v, min_v=0.01, decaying_factor=0.99, curr_iter=epoch
         )
         var_y = np.full(
             (batch_size * len(output_col),), sigma_v**2, dtype=np.float32
@@ -210,7 +208,7 @@ def main(num_epochs: int = 50, batch_size: int = 16, sigma_v: float = 3):
         if mse < mse_optim:
             mse_optim = mse
             epoch_optim = epoch
-            net.save("saved_results/hq_global.bin")
+            net.save(f"saved_results/hq_global_seq_{input_seq_len}_sv_001_1layer.bin")
 
         # Progress bar
         pbar.set_description(

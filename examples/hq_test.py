@@ -26,7 +26,7 @@ def main(ts: int = 2, batch_size: int = 1, sigma_v: float = 0.1):
     # Dataset
     output_col = [0]
     num_features = 2
-    input_seq_len = 36
+    input_seq_len = 12
     output_seq_len = 1
     seq_stride = 1
 
@@ -49,9 +49,6 @@ def main(ts: int = 2, batch_size: int = 1, sigma_v: float = 0.1):
     ts_list = np.random.permutation(num_ts)
     num_iter = int(np.ceil(num_ts/batch_size))
     time_covariates=["week_of_year"]
-    mse_optim = 1e10
-    epoch_optim = 0
-    patience = 10
     
     # # Data loader
     train_dtl_dict = {}
@@ -130,8 +127,8 @@ def main(ts: int = 2, batch_size: int = 1, sigma_v: float = 0.1):
         LSTM(40, 40, 1),
         Linear(40, 1),
     )
-    net.load('saved_results/hq_global.bin')
-
+    net.load(f"saved_results/hq_global_seq_{input_seq_len}.bin")
+    
     # Test
     mu_preds = []
     var_preds = []
