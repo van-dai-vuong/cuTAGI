@@ -484,9 +484,16 @@ void even_exp_mean_var(std::vector<float> const &mu_z,
             var_a[i] = var_z[i];
             jcb_a[i] = jcb_z[i];
         } else {
-            mu_a[i] = expf(mu_z[i] + 0.5 * var_z[i]);
-            var_a[i] = expf(2 * mu_z[i] + var_z[i]) * (expf(var_z[i]) - 1);
-            jcb_a[i] = mu_a[i];
+            // Exponential
+            // mu_a[i] = expf(mu_z[i] + 0.5 * var_z[i]);
+            // var_a[i] = expf(2 * mu_z[i] + var_z[i]) * (expf(var_z[i]) - 1);
+            // jcb_a[i] = mu_a[i];
+
+            // Softplus
+            mu_a[i] = std::max(logf(1 + expf(mu_z[i])), 1e-6f);
+            float tmp = std::max(1 / (1 + expf(-mu_z[i])), 1e-6f);
+            jcb_a[i] = tmp;
+            var_a[i] = std::max(tmp * var_z[i] * tmp, 1e-6f);
         }
     }
 }

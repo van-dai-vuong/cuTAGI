@@ -81,6 +81,7 @@ class OutputUpdater:
         self,
         output_states: BaseHiddenStates,
         mu_obs: np.ndarray,
+        var_obs: np.ndarray,
         delta_states: BaseDeltaStates,
     ):
         """Computes delta states for heteroscedastic regression.
@@ -93,11 +94,12 @@ class OutputUpdater:
         :type output_states: pytagi.nn.data_struct.BaseHiddenStates
         :param mu_obs: The mean of the ground truth observations.
         :type mu_obs: np.ndarray
+        :type var_obs: np.ndarray
         :param delta_states: The delta states object to be updated with the computed error signal.
         :type delta_states: pytagi.nn.data_struct.BaseDeltaStates
         """
         self._cpp_backend.update_heteros(
-            output_states, mu_obs.tolist(), delta_states
+            output_states, mu_obs.tolist(), var_obs.tolist(), delta_states
         )
 
     @property

@@ -39,17 +39,16 @@ void compute_selected_delta_z_output(
 
 void compute_delta_z_heteros(std::vector<float> &mu_a,
                              std::vector<float> &var_a, std::vector<float> &jcb,
-                             std::vector<float> &obs, int start_chunk,
+                             std::vector<float> &obs,
+                             std::vector<float> &var_obs, int start_chunk,
                              int end_chunk, std::vector<float> &delta_mu,
                              std::vector<float> &delta_var);
 
-void compute_delta_z_heteros_mp(std::vector<float> &mu_a,
-                                std::vector<float> &var_a,
-                                std::vector<float> &jcb,
-                                std::vector<float> &obs, int n,
-                                unsigned int num_threads,
-                                std::vector<float> &delta_mu,
-                                std::vector<float> &delta_var);
+void compute_delta_z_heteros_mp(
+    std::vector<float> &mu_a, std::vector<float> &var_a,
+    std::vector<float> &jcb, std::vector<float> &obs, std::vector<float> &var_v,
+    int n, unsigned int num_threads, std::vector<float> &delta_mu,
+    std::vector<float> &delta_var);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Base Output Updater
@@ -100,6 +99,6 @@ class OutputUpdater {
                               BaseDeltaStates &delta_states);
 
     void update_heteros(BaseHiddenStates &output_states,
-                        std::vector<float> &mu_obs,
+                        std::vector<float> &mu_obs, std::vector<float> &var_obs,
                         BaseDeltaStates &delta_states);
 };

@@ -21,7 +21,7 @@ void bind_output_updater(pybind11::module_& modo)
              "Updates the output states using specified indices.")
         .def("update_heteros", &OutputUpdater::update_heteros,
              pybind11::arg("output_states"), pybind11::arg("mu_obs"),
-             pybind11::arg("delta_states"),
+             pybind11::arg("var_obs"), pybind11::arg("delta_states"),
              "Updates the output given heteroscedastic noise.")
         .def_readwrite("device", &OutputUpdater::device);
 }

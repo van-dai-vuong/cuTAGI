@@ -62,8 +62,9 @@ void heteros_test_runner(Sequential &model, float &mse, float &log_lik)
             // Forward pass
             model.forward(x_batch);
 
+            auto var_obs = std::vector<float>(y_batch.size(), 0.0f);
             output_updater.update_heteros(*model.output_z_buffer, y_batch,
-                                          *model.input_delta_z_buffer);
+                                          var_obs, *model.input_delta_z_buffer);
 
             // Backward pass
             model.backward();
