@@ -8,6 +8,7 @@ sys.path.append(
 )
 from typing import Optional
 
+import cutagi
 import fire
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,7 +19,34 @@ import pytagi.metric as metric
 from examples.data_loader import TimeSeriesDataloader
 from pytagi import Normalizer as normalizer
 from pytagi import exponential_scheduler
-from pytagi.nn import LSTM, Linear, OutputUpdater, Sequential
+
+# tagi_autograd: a torch-like layer (Module/LSTM/Linear) on top of
+# cutagi.tagi_autograd -- you only define Net.forward() below; calling
+# pred.observe(y, var_v) runs the TAGI backward sweep and updates every
+# weight/bias in place, so there is no separate OutputUpdater/backward()/
+# step() call like the hand-written-backward LSTM in pytagi.nn. Weight
+# init comes from param_init.cpp (same as production layers), seeded via
+# the process-wide cutagi.manual_seed() below rather than a per-layer seed.
+from pytagi.tagi_autograd import LSTM, Linear, Module
+
+
+class Net(Module):
+    """2 stacked LSTM layers (same per-layer semantics as torch.nn.LSTM)
+    + a Linear read-out head applied to the last time step. `hx` threads
+    each layer's (h, c) state through calls for truncated-BPTT rollouts;
+    pass None to start both layers from a fresh zero state (used below,
+    since each window is trained independently)."""
+
+    def __init__(self, input_size: int, hidden_size: int):
+        self.lstm1 = LSTM(input_size, hidden_size)
+        self.lstm2 = LSTM(hidden_size, hidden_size)
+        self.fc = Linear(hidden_size, 1)
+
+    def forward(self, x, hx=None):
+        hx1, hx2 = hx if hx is not None else (None, None)
+        out1, hx1 = self.lstm1(x, hx1)
+        out2, hx2 = self.lstm2(out1, hx2)
+        return self.fc(out2[-1]), (hx1, hx2)
 
 
 def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
@@ -29,6 +57,7 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
     input_seq_len = 5
     output_seq_len = 1
     seq_stride = 1
+    hidden_size = 8
 
     train_dtl = TimeSeriesDataloader(
         x_file="data/toy_time_series/x_train_sin_data.csv",
@@ -52,17 +81,16 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
     )
 
     # Viz
-    viz = PredictionViz(task_name="forecasting", data_name="sin_signal")
-
-    # Network
-    net = Sequential(
-        LSTM(1, 8, False, input_seq_len),
-        LSTM(8, 8, True, input_seq_len),
-        Linear(8, 1),
+    viz = PredictionViz(
+        task_name="forecasting", data_name="sin_signal_tagi_autograd"
     )
-    # net.to_device("cuda")
-    # net.set_threads(1)  # multi-processing is slow on a small net
-    out_updater = OutputUpdater(net.device)
+
+    # Network: 2 stacked LSTM layers unrolled over the window, then a
+    # Linear head reads out the last hidden state -- the tagi_autograd
+    # analogue of Sequential(LSTM(1, 8, False, input_seq_len),
+    # LSTM(8, 8, True, input_seq_len), Linear(8, 1)).
+    cutagi.manual_seed(1)
+    net = Net(input_size=num_features, hidden_size=hidden_size)
 
     # -------------------------------------------------------------------------#
     # Training
@@ -75,40 +103,32 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
         sigma_v = exponential_scheduler(
             curr_v=sigma_v, min_v=0.3, decaying_factor=0.99, curr_iter=epoch
         )
-        var_y = np.full(
-            (batch_size * len(output_col),), sigma_v**2, dtype=np.float32
-        )
+        var_y = float(sigma_v**2)
 
         for x, y in batch_iter:
-            # Feed forward
-            x = x.reshape(-1, input_seq_len, 1)
-            m_pred, _ = net(x)
+            x = x.reshape(-1, input_seq_len, num_features)
 
-            # Update output layer
-            out_updater.update(
-                output_states=net.output_z_buffer,
-                mu_obs=y,
-                var_obs=var_y,
-                delta_states=net.input_delta_z_buffer,
-            )
+            # Feed forward (each window trains from a fresh zero state,
+            # so hx is discarded)
+            pred, _ = net(x)
 
-            # Feed backward
-            net.backward()
-            net.step()
+            # Feed backward -- observing y is the whole backward pass;
+            # the closures built during net.forward() already update
+            # every weight/bias in place.
+            pred.observe(y.astype(float).tolist(), var_y)
 
             # Training metric
-            pred = normalizer.unstandardize(
-                m_pred,
+            pred_unstd = normalizer.unstandardize(
+                np.array(pred.mu),
                 train_dtl.x_mean[output_col],
                 train_dtl.x_std[output_col],
             )
-            obs = normalizer.unstandardize(
+            obs_unstd = normalizer.unstandardize(
                 y, train_dtl.x_mean[output_col], train_dtl.x_std[output_col]
             )
-            mse = metric.mse(pred, obs)
+            mse = metric.mse(pred_unstd, obs_unstd)
             mses.append(mse)
 
-        net.reset_lstm_states()
         # Progress bar
         pbar.set_description(
             f"Epoch {epoch + 1}/{num_epochs}| mse: {sum(mses)/len(mses):>7.2f}",
@@ -124,12 +144,13 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
     x_test = []
 
     for x, y in test_batch_iter:
-        # Predicion
-        x = x.reshape(-1, input_seq_len, 1)
-        m_pred, v_pred = net(x)
+        x = x.reshape(-1, input_seq_len, num_features)
 
-        mu_preds.extend(m_pred)
-        var_preds.extend(v_pred + sigma_v**2)
+        # Prediction: forward pass only, no observe()
+        pred, _ = net(x)
+
+        mu_preds.extend(pred.mu)
+        var_preds.extend(np.array(pred.var) + sigma_v**2)
         x_test.extend(x)
         y_test.extend(y)
 
@@ -162,8 +183,8 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
         y_pred=mu_preds,
         sy_pred=std_preds,
         std_factor=1,
-        label="time_series_forecasting",
-        title=r"\textbf{Time Series Forecasting}",
+        label="time_series_forecasting_tagi_autograd",
+        title=r"\textbf{Time Series Forecasting (tagi\_autograd LSTM)}",
         time_series=True,
     )
 

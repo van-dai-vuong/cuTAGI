@@ -49,4 +49,5 @@ PYBIND11_MODULE(cutagi, modo) {
     bind_closed_form_softmax(modo);
     bind_embedding(modo);
     bind_positional_encoding(modo);
+    bind_tagi_autograd(modo);
 }
