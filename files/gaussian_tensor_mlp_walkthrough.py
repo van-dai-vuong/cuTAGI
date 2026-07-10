@@ -24,7 +24,7 @@ We emulate each closure with a small function of the same shape.
 """
 
 import numpy as np
-from tagi_autograd import Parameter, linear, tanh, tensor
+from tagi_autocov import Parameter, linear, tanh, tensor
 
 LINE = "-" * 74
 

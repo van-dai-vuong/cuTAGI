@@ -125,7 +125,7 @@ mu_b_post = mu_b + var_b * r_mu  # cov(b_i, z_i) = var_b_i
 var_b_post = var_b + var_b**2 * r_var
 
 # ------------------------- engine cross-check ------------------------
-from tagi_autograd import Parameter, linear, tensor
+from tagi_autocov import Parameter, linear, tensor
 
 a_t = tensor(mu_a_v, var_a_v)
 W_t = Parameter(mu_W.copy(), var_W.copy())

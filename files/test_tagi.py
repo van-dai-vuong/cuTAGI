@@ -23,7 +23,7 @@ Checks, in order of increasing integration:
 """
 
 import numpy as np
-from tagi_autograd import (
+from tagi_autocov import (
     GaussianTensor,
     Linear,
     Module,
@@ -282,7 +282,7 @@ def test_chunk_exact():
     update ONLY the corresponding parent slice, with the same posterior as
     the direct scalar Kalman formula; the other slice must stay untouched.
     """
-    from tagi_autograd import chunk
+    from tagi_autocov import chunk
 
     x = tensor([0.5, -0.3, 1.1, 0.2], [0.4, 0.3, 0.2, 0.1]).retain()
     c0, c1 = chunk(x, 2)

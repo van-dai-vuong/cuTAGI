@@ -1,8 +1,14 @@
 """
-tagi_autograd.py
+tagi_autocov.py
 ================
-An "autograd for Bayesian inference" engine in the spirit of TAGI
-(Goulet et al. 2021; Vuong et al., TAGI-LSTM paper).
+A standalone pure-Python "autograd for Bayesian inference" engine in the
+spirit of TAGI (Goulet et al. 2021; Vuong et al., TAGI-LSTM paper), kept
+as readable reference material. NOTE: unlike the C++ engine
+(include/tagi_autocov.h), this mirror does NOT implement the covariance
+tape (add/mul here treat their operands as independent), and it chains
+RAW innovations with gains cov/var per op, whereas the C++ engine flows
+variance-NORMALIZED deltas (single division at observe(), production
+DeltaStates convention).
 
 You define only the FORWARD pass with torch-like syntax:
 
@@ -391,6 +397,7 @@ def _activation(x: GaussianTensor, f, df, name) -> GaussianTensor:
     def backward_fn(d_mu, d_var, x=x, cov=cov_z_a, out_var=var):
         j = _safe_div(cov, out_var)  # exact 1/J where var(a) > 0, else 0
         x._accumulate(j * d_mu, j**2 * d_var)
+        check = 1
 
     return GaussianTensor(
         mu, var, parents=(x,), backward_fn=backward_fn, name=_autoname(name)
@@ -582,7 +589,10 @@ if __name__ == "__main__":
             self.fc2 = Linear(64, 1, rng=rng)
 
         def forward(self, x):
-            return self.fc2(relu(self.fc1(x)))
+            z1 = self.fc1(x)
+            z2 = relu(z1)
+            output = self.fc2(z2)
+            return output
 
     def truth(x):
         return np.sin(3 * x) + 0.3 * x**2

@@ -21,7 +21,7 @@ Kalman formulas.
 """
 
 import numpy as np
-from tagi_autograd import Parameter, add, linear, tensor
+from tagi_autocov import Parameter, add, linear, tensor
 
 np.set_printoptions(precision=4, suppress=True)
 LINE = "-" * 72

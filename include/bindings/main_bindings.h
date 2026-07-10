@@ -22,5 +22,5 @@
 #include "sequential_bindings.h"
 #include "slinear_layer_bindings.h"
 #include "slstm_layer_bindings.h"
-#include "tagi_autograd_bindings.h"
+#include "tagi_autocov_bindings.h"
 #include "utils_bindings.h"

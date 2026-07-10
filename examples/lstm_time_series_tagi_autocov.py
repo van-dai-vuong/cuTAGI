@@ -20,14 +20,14 @@ from examples.data_loader import TimeSeriesDataloader
 from pytagi import Normalizer as normalizer
 from pytagi import exponential_scheduler
 
-# tagi_autograd: a torch-like layer (Module/LSTM/Linear) on top of
-# cutagi.tagi_autograd -- you only define Net.forward() below; calling
+# tagi_autocov: a torch-like layer (Module/LSTM/Linear) on top of
+# cutagi.tagi_autocov -- you only define Net.forward() below; calling
 # pred.observe(y, var_v) runs the TAGI backward sweep and updates every
 # weight/bias in place, so there is no separate OutputUpdater/backward()/
 # step() call like the hand-written-backward LSTM in pytagi.nn. Weight
 # init comes from param_init.cpp (same as production layers), seeded via
 # the process-wide cutagi.manual_seed() below rather than a per-layer seed.
-from pytagi.tagi_autograd import LSTM, Linear, Module
+from pytagi.tagi_autocov import LSTM, Linear, Module
 
 
 class Net(Module):
@@ -82,11 +82,11 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
 
     # Viz
     viz = PredictionViz(
-        task_name="forecasting", data_name="sin_signal_tagi_autograd"
+        task_name="forecasting", data_name="sin_signal_tagi_autocov"
     )
 
     # Network: 2 stacked LSTM layers unrolled over the window, then a
-    # Linear head reads out the last hidden state -- the tagi_autograd
+    # Linear head reads out the last hidden state -- the tagi_autocov
     # analogue of Sequential(LSTM(1, 8, False, input_seq_len),
     # LSTM(8, 8, True, input_seq_len), Linear(8, 1)).
     cutagi.manual_seed(1)
@@ -183,7 +183,7 @@ def main(num_epochs: int = 100, batch_size: int = 16, sigma_v: float = 1.0):
         y_pred=mu_preds,
         sy_pred=std_preds,
         std_factor=1,
-        label="time_series_forecasting_tagi_autograd",
+        label="time_series_forecasting_tagi_autocov",
         title=r"\textbf{Time Series Forecasting (tagi\_autograd LSTM)}",
         time_series=True,
     )
